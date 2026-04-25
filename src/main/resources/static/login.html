@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Motorepuestos Tato</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+
+    <style>
+        :root {
+            --fondo-app: #f0f9ff;
+            --azul-oscuro: #0369a1;
+            --logo-rojo: #e31b23;
+            --logo-naranja: #f97316;
+        }
+
+        body {
+            background-color: var(--fondo-app);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .login-card {
+            background-color: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(3, 105, 161, 0.1);
+            padding: 40px 30px;
+            width: 100%;
+            max-width: 400px;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .casco-logo { color: var(--logo-naranja); font-size: 3rem; }
+        .tato-rojo { color: var(--logo-rojo); font-weight: 900; font-size: 2.5rem; letter-spacing: -1px; }
+        .texto-motorepuestos { color: var(--azul-oscuro); font-weight: 700; font-size: 1rem; display: block; margin-top: -10px; }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--logo-naranja);
+            box-shadow: 0 0 0 0.25rem rgba(249, 115, 22, 0.25);
+        }
+
+        .btn-ingresar {
+            background-color: var(--logo-rojo);
+            color: white;
+            font-weight: bold;
+            padding: 12px;
+            border: none;
+            transition: all 0.3s;
+        }
+
+        .btn-ingresar:hover {
+            background-color: #c8161d;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+<div class="login-card">
+    <div class="logo-container">
+        <i class="bi bi-person-helmet casco-logo"></i>
+        <div>
+            <span class="tato-rojo">TATO</span>
+            <span class="texto-motorepuestos">MOTOREPUESTOS</span>
+        </div>
+    </div>
+
+    <form id="formLogin">
+        <div class="mb-3">
+            <label class="form-label fw-bold text-secondary">Usuario (Correo):</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
+                <input type="email" class="form-control" id="correo" required>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label fw-bold text-secondary">Contraseña:</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-lock"></i></span>
+                <input type="password" class="form-control" id="password" required>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <label class="form-label fw-bold text-secondary">Local:</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light"><i class="bi bi-shop"></i></span>
+                <select class="form-select" id="local" required>
+                    <option value="" selected disabled>Cargando locales...</option>
+                </select>
+            </div>
+        </div>
+
+        <button type="button" class="btn btn-ingresar w-100" onclick="iniciarSesion()">INGRESAR AL SISTEMA</button>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</body>
+</html>
