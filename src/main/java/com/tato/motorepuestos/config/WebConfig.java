@@ -33,6 +33,11 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/auth/login",
                         "/api/sucursales/activas",
                         "/uploads/**",
+                        "/activar-cuenta",
+                        "/restablecer-password",
+                        "/token-invalido",
+                        "/establecer-password.html",
+                        "/api/token/**",
                         "/error"
                 );
     }
