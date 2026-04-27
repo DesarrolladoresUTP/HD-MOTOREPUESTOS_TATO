@@ -39,6 +39,7 @@ public class AuthController {
                 && passwordEncoder.matches(password, usuario.getPassword())) {
 
             Rol rol = usuario.getRol();
+            // Determinamos si es admin SIN tocar la entidad
             boolean esAdmin = rol != null
                     && "Administrador".equalsIgnoreCase(rol.getNombre());
 
@@ -46,6 +47,7 @@ public class AuthController {
             session.setAttribute("usuarioId",  usuario.getId());
             session.setAttribute("sucursalId", Long.parseLong(sucursalId));
 
+            // Si es admin forzamos true en sesión, si no leemos el valor real del rol
             session.setAttribute("p_usuarios",         esAdmin || Boolean.TRUE.equals(rol.getPermisoUsuarios()));
             session.setAttribute("p_roles",            esAdmin || Boolean.TRUE.equals(rol.getPermisoRoles()));
             session.setAttribute("p_productos",        esAdmin || Boolean.TRUE.equals(rol.getPermisoProductos()));
@@ -86,6 +88,7 @@ public class AuthController {
                 boolean esAdmin = rol != null
                         && "Administrador".equalsIgnoreCase(rol.getNombre());
 
+                // Construimos el mapa de permisos sin tocar la entidad Rol
                 Map<String, Boolean> permisos = new HashMap<>();
                 permisos.put("permisoUsuarios",        esAdmin || Boolean.TRUE.equals(rol.getPermisoUsuarios()));
                 permisos.put("permisoRoles",           esAdmin || Boolean.TRUE.equals(rol.getPermisoRoles()));
