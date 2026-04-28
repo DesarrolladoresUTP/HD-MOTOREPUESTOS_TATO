@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro de Ventas - Motorepuestos Tato</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+  <style>
+    :root { --fondo-app: #f0f9ff; --azul-primario: #0ea5e9; --azul-oscuro: #0369a1; --logo-rojo: #e31b23; --logo-naranja: #f97316; }
+    body { background-color: var(--fondo-app); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; font-size: 0.9rem; }
+    .navbar-custom { background-color: var(--azul-oscuro); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    .navbar-custom .navbar-brand, .navbar-custom .nav-link { color: #ffffff; font-weight: 500; font-size: 1rem; }
+    .navbar-custom .nav-link.active, .navbar-custom .nav-link:hover { color: #38bdf8; }
+    .tato-rojo { color: var(--logo-rojo); font-weight: 900; margin-right: 5px; }
+    .casco-logo { color: var(--logo-naranja); }
+    .panel-erp { background-color: white; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-top: 4px solid var(--azul-primario); padding: 20px; }
+    .table-erp th { background-color: var(--azul-primario); color: white; font-weight: 500; font-size: 0.85rem; padding: 10px; text-transform: uppercase; }
+    .table-erp td { vertical-align: middle; padding: 12px 8px; font-weight: 500; border-bottom: 1px solid #edf2f7; }
+    .badge-estado-venta { background-color: #d1fae5; color: #065f46; padding: 5px 10px; border-radius: 4px; font-weight: bold; font-size: 0.75rem; border: 1px solid #34d399; }
+    .badge-estado-anulada { background-color: #fee2e2; color: #991b1b; padding: 5px 10px; border-radius: 4px; font-weight: bold; font-size: 0.75rem; border: 1px solid #fca5a5; }
+    .badge-sunat-sin { background-color: #f8fafc; color: #64748b; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 0.75rem; display: inline-flex; align-items: center; border: 1px solid #cbd5e1; }
+    .badge-sunat-pen { background-color: #fffbeb; color: #b45309; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 0.75rem; display: inline-flex; align-items: center; border: 1px solid #fcd34d; }
+    .badge-sunat-ace { background-color: #22c55e; color: white; padding: 6px 12px; border-radius: 20px; font-weight: bold; font-size: 0.75rem; display: inline-flex; align-items: center; }
+    .btn-acciones { background: white; border: 1px solid #cbd5e1; color: #475569; font-size: 0.8rem; font-weight: 600; border-radius: 6px; padding: 5px 15px; }
+    .btn-acciones:hover { background: #f1f5f9; }
+    .dropdown-menu-acciones { border: 0; box-shadow: 0 4px 15px rgba(0,0,0,0.1); border-radius: 8px; font-size: 0.85rem; }
+    .modal-header-blue { background: linear-gradient(135deg, var(--azul-oscuro), var(--azul-primario)); color: white; border-bottom: 0; padding: 20px; }
+    .card-doc { border: 2px solid #e2e8f0; border-radius: 12px; padding: 20px; cursor: pointer; transition: all 0.2s; background: white; }
+    .card-doc:hover { border-color: #cbd5e1; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+    .card-doc.selected { border-color: #22c55e; background: #f0fdf4; position: relative; }
+    .card-doc.selected::after { content: '\F26A'; font-family: 'bootstrap-icons'; position: absolute; top: 10px; right: 10px; color: #22c55e; font-size: 1.2rem; }
+    .card-doc.disabled-card { opacity: 0.5; filter: grayscale(100%); cursor: not-allowed; }
+    .caja-resumen { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 10px; padding: 20px; }
+    .lbl-resumen { font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 5px; }
+    .val-resumen { font-size: 1rem; font-weight: 700; color: #334155; background: white; padding: 10px; border-radius: 6px; border: 1px solid #e2e8f0; }
+    .val-resumen-bold { font-size: 1.1rem; font-weight: 800; color: var(--azul-oscuro); background: #e0f2fe; border-color: #bae6fd; }
+    .table-productos-modal th { background-color: var(--azul-oscuro); color: white; padding: 10px; font-size: 0.75rem; text-transform: uppercase; }
+    .table-productos-modal td { padding: 10px; border-bottom: 1px solid #e2e8f0; font-size: 0.85rem; }
+    body {
+    animation: fadeIn 0.1s ease-in;
+    }
+    @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="navbar-container"></div>
+
+<div class="container-fluid px-4 mt-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 style="color: var(--azul-oscuro); margin: 0;">
+      <i class="bi bi-journal-text me-2"></i>Registro de <span class="tato-rojo">Ventas</span>
+    </h4>
+    <input type="text" id="buscador" class="form-control form-control-sm w-25 shadow-sm"
+           placeholder="Buscar por cliente o comprobante..." onkeyup="filtrarTabla()">
+  </div>
+
+  <div class="panel-erp p-0 overflow-hidden">
+    <div class="table-responsive" style="min-height: 400px;">
+      <table class="table table-erp table-hover mb-0">
+        <thead>
+        <tr>
+          <th style="padding-left: 15px;">CLIENTE</th>
+          <th>VENDEDOR</th>
+          <th class="text-center">FECHA</th>
+          <th class="text-end">TOTAL</th>
+          <th class="text-center">FORMA PAGO</th>
+          <th class="text-center">ESTADO VENTA</th>
+          <th class="text-center">ESTADO SUNAT</th>
+          <th class="text-center" style="width: 120px;">ACCIONES</th>
+        </tr>
+        </thead>
+        <tbody id="tablaCuerpo">
+        <tr><td colspan="8" class="text-center text-muted py-5">Cargando registros...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Emitir Comprobante -->
+<div class="modal fade" id="modalEmitir" tabindex="-1" data-bs-backdrop="static">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-0 shadow-lg" style="border-radius: 15px; overflow: hidden;">
+      <div class="modal-header modal-header-blue d-flex align-items-center">
+        <i class="bi bi-file-earmark-text fs-3 me-3"></i>
+        <div>
+          <h5 class="modal-title fw-bold mb-0">Emitir Comprobante Electrónico</h5>
+          <small class="text-white-50">Tipo de documento y datos de facturación</small>
+        </div>
+        <button type="button" class="btn-close btn-close-white ms-auto" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4 bg-white">
+        <div class="row g-3 mb-4">
+          <div class="col-md-6">
+            <div class="card-doc" id="cardFactura" onclick="seleccionarDocumento('Factura')">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-file-earmark-spreadsheet fs-2 text-secondary me-3"></i>
+                <div>
+                  <h6 class="fw-bold mb-0">Factura</h6>
+                  <small class="text-muted">RUC • Formal<br><span class="badge bg-dark mt-1">Tipo 01</span></small>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="card-doc selected" id="cardBoleta" onclick="seleccionarDocumento('Boleta')">
+              <div class="d-flex align-items-center">
+                <i class="bi bi-ticket-detailed fs-2 text-warning me-3"></i>
+                <div>
+                  <h6 class="fw-bold mb-0">Boleta</h6>
+                  <small class="text-muted">DNI/RUC • Simple<br><span class="badge bg-dark mt-1">Tipo 03</span></small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="caja-resumen mb-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <div class="lbl-resumen">OP. TRIBUTARIA</div>
+              <div class="val-resumen">Gravada (0101)</div>
+            </div>
+            <div class="col-md-6">
+              <div class="lbl-resumen">TIPO DE PAGO</div>
+              <div class="val-resumen" id="modPago">Contado</div>
+            </div>
+            <div class="col-md-4">
+              <div class="lbl-resumen">SERIE</div>
+              <input type="text" class="form-control fw-bold text-uppercase" id="modSerie" readonly>
+            </div>
+            <div class="col-md-4">
+              <div class="lbl-resumen">NÚMERO</div>
+              <input type="text" class="form-control" id="modNum" readonly>
+            </div>
+            <div class="col-md-4">
+              <div class="lbl-resumen">NÚMERO COMPLETO</div>
+              <div class="val-resumen val-resumen-bold text-center" id="modCompleto">-</div>
+            </div>
+          </div>
+        </div>
+        <div class="caja-resumen mb-4">
+          <div class="lbl-resumen mb-2">DATOS DEL CLIENTE</div>
+          <div id="cajaClienteBloqueado" style="display: none;">
+            <h6 class="fw-bold text-dark mb-0" id="modCliNombre">-</h6>
+            <small class="text-muted">Documento Registrado: <span class="fw-bold text-primary" id="modCliDoc">-</span></small>
+          </div>
+          <div id="cajaClienteEditable" style="display: none;">
+            <div class="row g-2">
+              <div class="col-md-4">
+                <div class="input-group input-group-sm">
+                  <input type="text" class="form-control fw-bold" id="modInputDoc" placeholder="Buscar DNI o RUC...">
+                  <button class="btn btn-outline-primary" type="button" onclick="consultarClienteModal()">
+                    <i class="bi bi-search"></i>
+                  </button>
+                </div>
+              </div>
+              <div class="col-md-8">
+                <input type="text" class="form-control form-control-sm" id="modInputNombre" placeholder="Razón Social o Nombres Completos">
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="table-responsive border rounded mb-4">
+          <table class="table table-productos-modal mb-0">
+            <thead>
+            <tr>
+              <th>PRODUCTO</th>
+              <th class="text-center">CANT.</th>
+              <th class="text-end">PRECIO</th>
+              <th class="text-end">TOTAL</th>
+            </tr>
+            </thead>
+            <tbody id="modTablaProductos"></tbody>
+          </table>
+        </div>
+        <div class="caja-resumen">
+          <div class="row g-2">
+            <div class="col-4 text-center">
+              <div class="lbl-resumen">SUBTOTAL</div>
+              <div class="val-resumen">S/ <span id="modSub">0.00</span></div>
+            </div>
+            <div class="col-4 text-center">
+              <div class="lbl-resumen">IGV (18%)</div>
+              <div class="val-resumen">S/ <span id="modIgv">0.00</span></div>
+            </div>
+            <div class="col-4 text-center">
+              <div class="lbl-resumen text-primary">TOTAL</div>
+              <div class="val-resumen val-resumen-bold text-primary">S/ <span id="modTot">0.00</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 p-4 pt-0 bg-white">
+        <button type="button" class="btn btn-lg btn-success w-100 fw-bold shadow-sm" onclick="confirmarEmision()">
+          <i class="bi bi-check-circle me-2"></i>Generar Comprobante Oficial
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Detalle -->
+<div class="modal fade" id="modalDetalle" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header" style="background-color: var(--azul-oscuro); color: white;">
+        <h5 class="modal-title"><i class="bi bi-info-circle me-2"></i>Detalle de la Venta</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body bg-light">
+        <div class="row">
+          <div class="col-md-6">
+            <div class="caja-resumen mb-3">
+              <div class="lbl-resumen">Comprobante</div>
+              <div class="fw-bold text-primary fs-5" id="detComp">-</div>
+              <div class="text-muted small mt-1" id="detFecha">-</div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="caja-resumen mb-3">
+              <div class="lbl-resumen">Cliente</div>
+              <div class="fw-bold text-dark" id="detCliNom">-</div>
+              <div class="text-muted small">Doc: <span id="detCliDoc">-</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="table-responsive border rounded mb-3 bg-white">
+          <table class="table table-productos-modal mb-0">
+            <thead>
+            <tr>
+              <th>PRODUCTO</th>
+              <th class="text-center">CANT.</th>
+              <th class="text-end">PRECIO</th>
+              <th class="text-end">TOTAL</th>
+            </tr>
+            </thead>
+            <tbody id="detTablaProductos"></tbody>
+          </table>
+        </div>
+        <div class="row">
+          <div class="col-6">
+            <div class="caja-resumen">
+              <div class="lbl-resumen">Forma Pago</div>
+              <div class="fw-bold text-success" id="detPago">-</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="caja-resumen">
+              <div class="lbl-resumen">Total Venta</div>
+              <div class="fw-bold text-primary fs-5 text-end">S/ <span id="detTotal">0.00</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="/navbar.js?v1"></script>
+<script>
+  let registros = [];
+  let modalEmitir;
+  let modalDetalleObj;
+  let ventaSeleccionada = null;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+      await initNavbar();
+      modalEmitir    = new bootstrap.Modal(document.getElementById('modalEmitir'));
+      modalDetalleObj = new bootstrap.Modal(document.getElementById('modalDetalle'));
+      cargarRegistros();
+  });
+
+  async function cargarRegistros() {
+      try {
+          const res = await fetch('/api/ventas');
+          if (!res.ok) return;
+          registros = await res.json();
+          renderizarTabla(registros);
+      } catch (e) { console.error('Error cargando ventas:', e); }
+  }
+
+  function poblarProductosModal(detalles, tbodyId) {
+      const tbody = document.getElementById(tbodyId);
+      tbody.innerHTML = '';
+      if (!detalles || detalles.length === 0) return;
+      detalles.forEach(d => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+              <td class="fw-bold text-dark">${d.producto.nombre}
+                  <br><small class="text-muted fw-normal">${d.producto.codigoInterno}</small></td>
+              <td class="text-center align-middle">${d.cantidad}</td>
+              <td class="text-end align-middle">S/ ${parseFloat(d.precioUnitario).toFixed(2)}</td>
+              <td class="text-end fw-bold text-primary align-middle">S/ ${parseFloat(d.subtotal).toFixed(2)}</td>
+          `;
+          tbody.appendChild(tr);
+      });
+  }
+
+  function renderizarTabla(lista) {
+      const tbody = document.getElementById('tablaCuerpo');
+      tbody.innerHTML = '';
+      if (lista.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-5">No hay ventas registradas.</td></tr>';
+          return;
+      }
+      lista.forEach(v => {
+          // Obtener nombre y documento del cliente desde el objeto anidado
+          const nombreCliente  = v.cliente ? v.cliente.razonSocialNombre : (v.nombreCliente || 'Público General');
+          const docCliente     = v.cliente ? v.cliente.numeroDocumento   : (v.documentoCliente || '-');
+          const fecha = new Date(v.fecha).toLocaleDateString('es-PE');
+
+          let badgeSunat = '';
+          let btnPrincipal = '';
+          if (v.estadoVenta === 'ANULADA') {
+              badgeSunat   = `<span class="badge-sunat-sin"><i class="bi bi-x me-1"></i>-</span>`;
+              btnPrincipal = `<button class="dropdown-item text-muted" disabled><i class="bi bi-slash-circle me-2"></i>Venta Anulada</button>`;
+          } else if (v.estadoSunat === 'SIN EMITIR') {
+              badgeSunat   = `<span class="badge-sunat-sin"><i class="bi bi-dash me-1"></i> SIN EMITIR</span>`;
+              btnPrincipal = `<button class="dropdown-item fw-bold text-success" onclick="prepararEmision(${v.id})"><i class="bi bi-receipt me-2"></i> Emitir Comprobante</button>`;
+          } else if (v.estadoSunat === 'PENDIENTE') {
+              badgeSunat   = `<span class="badge-sunat-pen"><i class="bi bi-hourglass-split me-1"></i> PENDIENTE</span>`;
+              btnPrincipal = `<button class="dropdown-item fw-bold text-warning" onclick="enviarSunat(${v.id})"><i class="bi bi-cloud-arrow-up me-2"></i> Enviar a SUNAT</button>`;
+          } else {
+              badgeSunat   = `<span class="badge-sunat-ace"><i class="bi bi-check-circle-fill me-1"></i> ACEPTADO</span>`;
+              btnPrincipal = `<button class="dropdown-item fw-bold text-primary" onclick="enviarCorreo(${v.id})"><i class="bi bi-envelope-paper me-2"></i> Enviar a Cliente</button>`;
+          }
+
+          const estadoBadge = v.estadoVenta === 'ANULADA'
+              ? `<span class="badge-estado-anulada">${v.estadoVenta}</span>`
+              : `<span class="badge-estado-venta">${v.estadoVenta}</span>`;
+
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+              <td style="padding-left: 15px;">
+                  <div class="fw-bold" style="color: var(--azul-oscuro);">${nombreCliente}</div>
+                  <small class="text-muted">${docCliente}</small>
+              </td>
+              <td class="text-muted">${v.usuario ? v.usuario.nombres : 'Sistema'}</td>
+              <td class="text-center fw-bold text-secondary">${fecha}</td>
+              <td class="text-end fw-bold text-dark">S/ ${parseFloat(v.total).toFixed(2)}</td>
+              <td class="text-center"><span class="text-primary" style="font-size:0.8rem; font-weight:600;">${v.metodoPago}</span></td>
+              <td class="text-center">${estadoBadge}</td>
+              <td class="text-center">${badgeSunat}</td>
+              <td class="text-center">
+                  <div class="dropdown">
+                      <button class="btn btn-acciones dropdown-toggle" data-bs-toggle="dropdown">
+                          <i class="bi bi-sliders2 me-1"></i> Acciones
+                      </button>
+                      <ul class="dropdown-menu dropdown-menu-end dropdown-menu-acciones">
+                          <li>${btnPrincipal}</li>
+                          <li><button class="dropdown-item text-secondary" onclick="verDetalle(${v.id})">
+                              <i class="bi bi-info-circle me-2"></i> Ver Detalle</button></li>
+                          ${v.estadoSunat !== 'SIN EMITIR' && v.estadoVenta !== 'ANULADA' ? `
+                          <li><button class="dropdown-item text-primary fw-bold" onclick="descargarPdf(${v.id})">
+                              <i class="bi bi-file-earmark-pdf me-2"></i> Imprimir / Ver PDF</button></li>` : ''}
+                          ${v.estadoVenta !== 'ANULADA' ? `
+                          <li><hr class="dropdown-divider"></li>
+                          <li><button class="dropdown-item text-danger" onclick="anularVenta(${v.id})">
+                              <i class="bi bi-trash me-2"></i> Anular Venta</button></li>` : ''}
+                      </ul>
+                  </div>
+              </td>
+          `;
+          tbody.appendChild(tr);
+      });
+  }
+
+  function filtrarTabla() {
+      const txt = document.getElementById('buscador').value.toLowerCase();
+      const filtrados = registros.filter(v => {
+          const nombre = v.cliente ? v.cliente.razonSocialNombre : (v.nombreCliente || '');
+          const doc    = v.cliente ? v.cliente.numeroDocumento   : (v.documentoCliente || '');
+          return nombre.toLowerCase().includes(txt) || doc.includes(txt) ||
+                 (v.serie + '-' + v.numeroComprobante).toLowerCase().includes(txt);
+      });
+      renderizarTabla(filtrados);
+  }
+
+  function verDetalle(id) {
+      const v = registros.find(x => x.id === id);
+      if (!v) return;
+      const nombreCliente = v.cliente ? v.cliente.razonSocialNombre : (v.nombreCliente || 'Público General');
+      const docCliente    = v.cliente ? v.cliente.numeroDocumento   : (v.documentoCliente || '-');
+      document.getElementById('detComp').innerText    = `${v.tipoComprobante} ${v.serie}-${v.numeroComprobante}`;
+      document.getElementById('detFecha').innerText   = new Date(v.fecha).toLocaleString('es-PE');
+      document.getElementById('detCliNom').innerText  = nombreCliente;
+      document.getElementById('detCliDoc').innerText  = docCliente;
+      document.getElementById('detPago').innerText    = v.metodoPago;
+      document.getElementById('detTotal').innerText   = parseFloat(v.total).toFixed(2);
+      poblarProductosModal(v.detalles, 'detTablaProductos');
+      modalDetalleObj.show();
+  }
+
+  async function anularVenta(id) {
+      Swal.fire({
+          title: '¿Anular Venta?',
+          text: 'La venta quedará marcada como ANULADA. Esta acción no se puede deshacer.',
+          icon: 'warning',
+          showCancelButton: true,
+          confirmButtonColor: '#e31b23',
+          cancelButtonColor: '#6c757d',
+          confirmButtonText: 'Sí, anular'
+      }).then(async result => {
+          if (result.isConfirmed) {
+              try {
+                  const res = await fetch(`/api/ventas/${id}`, { method: 'DELETE' });
+                  if (res.ok) {
+                      Swal.fire({ icon: 'success', title: 'Venta Anulada', showConfirmButton: false, timer: 1500 });
+                      cargarRegistros();
+                  } else {
+                      Swal.fire({ icon: 'error', title: 'Error', text: await res.text() });
+                  }
+              } catch (e) {}
+          }
+      });
+  }
+
+  async function prepararEmision(id) {
+      ventaSeleccionada = registros.find(v => v.id === id);
+      if (!ventaSeleccionada) return;
+
+      document.getElementById('modPago').innerText   = ventaSeleccionada.metodoPago;
+      document.getElementById('modSub').innerText    = parseFloat(ventaSeleccionada.subtotal).toFixed(2);
+      document.getElementById('modIgv').innerText    = parseFloat(ventaSeleccionada.igv).toFixed(2);
+      document.getElementById('modTot').innerText    = parseFloat(ventaSeleccionada.total).toFixed(2);
+      poblarProductosModal(ventaSeleccionada.detalles, 'modTablaProductos');
+
+      document.getElementById('modInputDoc').value    = '';
+      document.getElementById('modInputNombre').value = '';
+      document.getElementById('cardFactura').classList.remove('disabled-card');
+
+      const docCliente = ventaSeleccionada.cliente ? ventaSeleccionada.cliente.numeroDocumento : null;
+      const nomCliente = ventaSeleccionada.cliente ? ventaSeleccionada.cliente.razonSocialNombre : null;
+
+      if (!docCliente || docCliente === '00000000') {
+          document.getElementById('cajaClienteBloqueado').style.display = 'none';
+          document.getElementById('cajaClienteEditable').style.display  = 'block';
+          seleccionarDocumento('Boleta');
+      } else {
+          document.getElementById('cajaClienteEditable').style.display  = 'none';
+          document.getElementById('cajaClienteBloqueado').style.display = 'block';
+          document.getElementById('modCliNombre').innerText = nomCliente || '-';
+          document.getElementById('modCliDoc').innerText    = docCliente;
+          if (docCliente.length === 8) {
+              document.getElementById('cardFactura').classList.add('disabled-card');
+              seleccionarDocumento('Boleta');
+          } else {
+              seleccionarDocumento('Factura');
+          }
+      }
+      modalEmitir.show();
+  }
+
+  async function seleccionarDocumento(tipo) {
+      if (tipo === 'Factura' && document.getElementById('cardFactura').classList.contains('disabled-card')) {
+          Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'El cliente tiene DNI. Requiere RUC para Factura.', showConfirmButton: false, timer: 3000 });
+          return;
+      }
+      document.getElementById('cardFactura').classList.remove('selected');
+      document.getElementById('cardBoleta').classList.remove('selected');
+      document.getElementById('card' + tipo).classList.add('selected');
+
+      const serie = tipo === 'Factura' ? 'F001' : 'B001';
+      document.getElementById('modSerie').value = serie;
+      try {
+          const res = await fetch(`/api/ventas/correlativo?tipo=${tipo}&serie=${serie}`);
+          const num = await res.text();
+          document.getElementById('modNum').value       = num;
+          document.getElementById('modCompleto').innerText = `${serie}-${num}`;
+          if (ventaSeleccionada) ventaSeleccionada.tempTipo = tipo;
+      } catch (e) {}
+  }
+
+  async function consultarClienteModal() {
+      const doc = document.getElementById('modInputDoc').value.trim();
+      if (doc.length !== 8 && doc.length !== 11) {
+          Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'Ingrese DNI o RUC válido', showConfirmButton: false, timer: 2000 });
+          return;
+      }
+      document.getElementById('cardFactura').classList.remove('disabled-card');
+      if (doc.length === 8) {
+          document.getElementById('cardFactura').classList.add('disabled-card');
+          seleccionarDocumento('Boleta');
+      } else {
+          seleccionarDocumento('Factura');
+      }
+      Swal.fire({ title: 'Buscando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      try {
+          const res  = await fetch(`/api/consultas/documento/${doc}`);
+          const text = await res.text();
+          if (!res.ok) throw new Error();
+          let data = {};
+          try { data = JSON.parse(text); } catch (e) {}
+          let nombre = data.razonSocial || data.nombre || data.razon_social || data.nombre_completo;
+          if (!nombre && data.datos) {
+              nombre = data.datos.razon_social || data.datos.nombre_completo;
+              if (!nombre && data.datos.nombres)
+                  nombre = `${data.datos.nombres} ${data.datos.ape_paterno || ''} ${data.datos.ape_materno || ''}`;
+          }
+          if (!nombre && data.nombres)
+              nombre = `${data.nombres} ${data.ape_paterno || ''} ${data.ape_materno || ''}`;
+
+          if (nombre && nombre.trim()) {
+              document.getElementById('modInputNombre').value = nombre.replace(/\s+/g, ' ').trim();
+              Swal.close();
+          } else {
+              Swal.fire({ icon: 'info', title: 'No encontrado', text: 'Ingrese el nombre manualmente.' });
+          }
+      } catch (e) {
+          Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'Ingrese manualmente', showConfirmButton: false, timer: 2000 });
+      }
+  }
+
+  async function confirmarEmision() {
+      const payload = {
+          tipoDocumento: ventaSeleccionada.tempTipo,
+          serie:  document.getElementById('modSerie').value,
+          numero: document.getElementById('modNum').value
+      };
+      if (document.getElementById('cajaClienteEditable').style.display === 'block') {
+          const nuevoDoc = document.getElementById('modInputDoc').value.trim();
+          const nuevoNom = document.getElementById('modInputNombre').value.trim();
+          if (!nuevoDoc || !nuevoNom) {
+              Swal.fire({ icon: 'warning', title: 'Datos Faltantes', text: 'Complete documento y nombre del cliente.' });
+              return;
+          }
+          if (payload.tipoDocumento === 'Factura' && nuevoDoc.length !== 11) {
+              Swal.fire({ icon: 'warning', title: 'RUC Inválido', text: 'La factura requiere un RUC de 11 dígitos.' });
+              return;
+          }
+          payload.documentoCliente = nuevoDoc;
+          payload.nombreCliente    = nuevoNom;
+      }
+      Swal.fire({ title: 'Generando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      try {
+          const res = await fetch(`/api/ventas/${ventaSeleccionada.id}/emitir`, {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(payload)
+          });
+          if (res.ok) {
+              modalEmitir.hide();
+              Swal.fire({ icon: 'success', title: 'Emitido Exitosamente', showConfirmButton: false, timer: 1500 });
+              cargarRegistros();
+          } else {
+              Swal.fire({ icon: 'error', title: 'Error', text: await res.text() });
+          }
+      } catch (e) {}
+  }
+
+  async function enviarSunat(id) {
+      Swal.fire({ title: 'Firmando y Enviando a SUNAT...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      try {
+          const res = await fetch(`/api/ventas/${id}/sunat`, { method: 'PUT' });
+          if (res.ok) {
+              Swal.fire({ icon: 'success', title: 'Aceptado por SUNAT', showConfirmButton: false, timer: 1500 });
+              cargarRegistros();
+          }
+      } catch (e) {}
+  }
+
+  async function enviarCorreo(id) {
+      const v = registros.find(x => x.id === id);
+      const correoGuardado = v.correoCliente || '';
+      const { value: email } = await Swal.fire({
+          title: 'Enviar Documentos al Cliente',
+          input: 'email',
+          inputLabel: 'Correo Electrónico',
+          inputValue: correoGuardado,
+          showCancelButton: true,
+          confirmButtonText: 'Enviar Archivos'
+      });
+      if (email) {
+          Swal.fire({ title: 'Enviando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+          try {
+              const res = await fetch(`/api/ventas/${id}/enviar-cliente`, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ correoCliente: email })
+              });
+              if (res.ok) {
+                  Swal.fire({ icon: 'success', title: 'Enviado', text: 'PDF, XML y CDR enviados correctamente.' });
+              } else {
+                  Swal.fire({ icon: 'error', title: 'Error', text: await res.text() });
+              }
+          } catch (e) {}
+      }
+  }
+
+  function descargarPdf(id) {
+  window.open(`/api/ventas/${id}/pdf`, '_blank');
+  }
+</script>
+</body>
+</html>

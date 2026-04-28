@@ -39,7 +39,7 @@ public class UsuarioService {
 
     public Usuario guardarUsuario(Usuario usuario, MultipartFile foto, Long actorId, Long sucursalId, String baseUrl) {
         usuario.setActivo(false);
-        usuario.setPassword(""); // sin contraseña aún
+        usuario.setPassword("");
         Usuario guardado = guardarConFoto(usuario, foto);
 
         String token = tokenAccesoService.generarToken(guardado, TokenAcceso.TipoToken.ACTIVACION);
