@@ -16,6 +16,11 @@ public class VistasController {
         return "forward:/inicio.html";
     }
 
+    @GetMapping("/venta")
+    public String mostrarVenta() {
+        return "forward:/venta.html";
+    }
+
     @GetMapping("/usuarios")
     public String mostrarUsuarios() {
         return "forward:/usuarios.html";
@@ -51,4 +56,23 @@ public class VistasController {
         return "forward:/traslados.html";
     }
 
+    @GetMapping("/historial")
+    public String mostrarHistorial() {
+        return "forward:/historial.html";
+    }
+
+    @GetMapping("/compras")
+    public String mostrarCompras() {
+        return "forward:/compras.html";
+    }
+
+    @GetMapping("/registro_compras")
+    public String mostrarRegistroCompras() {
+        return "forward:/registro_compras.html";
+    }
+
+    @GetMapping("/registro_ventas")
+    public String mostrarRegistroVentas() {
+        return "forward:/registro_ventas.html";
+    }
 }

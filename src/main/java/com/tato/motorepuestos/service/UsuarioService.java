@@ -18,6 +18,8 @@ public class UsuarioService {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired
+    private HistorialService historialService;
 
     @Autowired
     private TokenAccesoService tokenAccesoService;
@@ -61,6 +63,9 @@ public class UsuarioService {
             );
         } catch (Exception ignored) {}
 
+        historialService.registrarAccion("Usuarios", "Creación",
+                "Se registró al usuario: " + guardado.getNombres() + " " + guardado.getApellidos(),
+                actorId, sucursalId);
         return guardado;
     }
 
@@ -74,6 +79,7 @@ public class UsuarioService {
             usuarioExistente.setRol(detallesNuevos.getRol());
 
             Usuario actualizado = guardarConFoto(usuarioExistente, foto);
+            historialService.registrarAccion("Usuarios", "Actualización", "Se editaron los datos del usuario: " + actualizado.getNombres(), actorId, sucursalId);
             return actualizado;
         }
         return null;
@@ -84,6 +90,7 @@ public class UsuarioService {
         if (usuario != null) {
             usuario.setActivo(false);
             usuarioRepository.save(usuario);
+            historialService.registrarAccion("Usuarios", "Desactivación", "Se suspendió el acceso al usuario: " + usuario.getNombres(), actorId, sucursalId);
         }
     }
 
@@ -92,6 +99,7 @@ public class UsuarioService {
         if (usuario != null) {
             usuario.setActivo(true);
             usuarioRepository.save(usuario);
+            historialService.registrarAccion("Usuarios", "Reactivación", "Se restauró el acceso al usuario: " + usuario.getNombres(), actorId, sucursalId);
         }
     }
 
@@ -100,6 +108,10 @@ public class UsuarioService {
         if (usuario != null) {
             usuario.setActivo(false);
             usuarioRepository.save(usuario);
+            historialService.registrarAccion("Usuarios", "Eliminación Lógica",
+                    "Se desactivó definitivamente al usuario: "
+                            + usuario.getNombres() + " " + usuario.getApellidos(),
+                    actorId, sucursalId);
         }
     }
 
@@ -143,5 +155,8 @@ public class UsuarioService {
             );
         } catch (Exception ignored) {}
 
+        historialService.registrarAccion("Usuarios", "Reset Contraseña",
+                "Se envió correo de restablecimiento a: " + usuario.getNombres(),
+                actorId, sucursalId);
     }
 }

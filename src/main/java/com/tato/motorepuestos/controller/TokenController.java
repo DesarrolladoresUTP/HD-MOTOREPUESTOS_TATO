@@ -42,7 +42,6 @@ public class TokenController {
         return "forward:/establecer-password.html";
     }
 
-
     @PostMapping("/api/token/establecer-password")
     @ResponseBody
     public ResponseEntity<?> establecerPassword(@RequestBody Map<String, String> body) {

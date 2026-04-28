@@ -34,6 +34,8 @@ public class ProductoService {
     @Autowired
     private SucursalRepository sucursalRepository;
 
+    @Autowired
+    private HistorialService historialService;
 
     private final String UPLOAD_DIR = "uploads/";
 
@@ -85,6 +87,9 @@ public class ProductoService {
         producto.setCategoria(categoria);
         producto = guardarConImagen(producto, imagen);
 
+        historialService.registrarAccion("Productos", "Creación",
+                "Se registró el producto: " + nombre + " (" + codigoGenerado + ")",
+                usuarioId, sucursalId);
 
         return crearInventario(producto, sucursalId, stock, stockMinimo,
                 precioCompra, precioVenta, usuarioId);
@@ -121,6 +126,9 @@ public class ProductoService {
         inventario.setStockMinimo(stockMinimo);
         InventarioSucursal actualizado = inventarioRepository.save(inventario);
 
+        historialService.registrarAccion("Productos", "Actualización",
+                "Se actualizaron los datos del producto: " + nombre,
+                usuarioId, sucursalId);
 
         return actualizado;
     }
@@ -132,6 +140,9 @@ public class ProductoService {
         inventarioRepository.save(inventario);
 
         String accion = estado ? "Reactivación" : "Ocultamiento";
+        historialService.registrarAccion("Productos", accion,
+                "Se cambió el estado del producto: " + inventario.getProducto().getNombre(),
+                usuarioId, sucursalId);
     }
 
     public void eliminarLogico(Long inventarioId, Long usuarioId, Long sucursalId) {

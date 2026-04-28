@@ -25,6 +25,8 @@ public class TrasladoService {
     @Autowired
     private SucursalRepository sucursalRepository;
 
+    @Autowired
+    private HistorialService historialService;
 
     @Transactional
     public void procesarTraslado(Long sucursalOrigenId, Long sucursalDestinoId,
@@ -74,6 +76,14 @@ public class TrasladoService {
             destinoInv.setStock(destinoInv.getStock() + cantidad);
             inventarioRepository.save(destinoInv);
 
+            historialService.registrarAccion(
+                    "Traslados",
+                    "Envío de Mercadería",
+                    "Se trasladaron " + cantidad + " unid. del producto '"
+                            + origen.getProducto().getNombre() + "' hacia " + destino.getNombre(),
+                    usuarioId,
+                    sucursalOrigenId
+            );
         }
     }
 }

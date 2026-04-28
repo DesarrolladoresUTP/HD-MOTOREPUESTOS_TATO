@@ -41,10 +41,24 @@ public class SeguridadInterceptor implements HandlerInterceptor {
         if (esRutaRestringida(uri, "/traslados", "/api/traslados") && !tienePermiso(session, "p_traslados")) {
             return rechazarAcceso(uri, response);
         }
-        if (esRutaRestringida(uri, "/compras", "/api/compras") && !tienePermiso(session, "p_compras")) {
+        // ── COMPRAS ──────────────────────────────────────────────────────────────────
+        if (uri.startsWith("/compras") && !uri.startsWith("/registro_compras") && !tienePermiso(session, "p_compras_ingresar")) {
             return rechazarAcceso(uri, response);
         }
-        if (esRutaRestringida(uri, "/venta", "/api/ventas") && !tienePermiso(session, "p_ventas")) {
+        if (uri.startsWith("/registro_compras") && !tienePermiso(session, "p_compras_registro")) {
+            return rechazarAcceso(uri, response);
+        }
+        if (uri.startsWith("/api/compras") && !tienePermiso(session, "p_compras_ingresar") && !tienePermiso(session, "p_compras_registro")) {
+            return rechazarAcceso(uri, response);
+        }
+        // ── VENTAS ────────────────────────────────────────────────────────────────────
+        if (uri.startsWith("/venta") && !uri.startsWith("/registro_ventas") && !tienePermiso(session, "p_ventas_realizar")) {
+            return rechazarAcceso(uri, response);
+        }
+        if (uri.startsWith("/registro_ventas") && !tienePermiso(session, "p_ventas_registro")) {
+            return rechazarAcceso(uri, response);
+        }
+        if (uri.startsWith("/api/ventas") && !tienePermiso(session, "p_ventas_realizar") && !tienePermiso(session, "p_ventas_registro")) {
             return rechazarAcceso(uri, response);
         }
 

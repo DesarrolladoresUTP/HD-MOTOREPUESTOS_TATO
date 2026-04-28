@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ingreso de Compras - Motorepuestos Tato</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+  <style>
+    :root { --fondo-app:#f0f9ff;--azul-primario:#0ea5e9;--azul-oscuro:#0369a1;--logo-rojo:#e31b23; }
+    body { background-color:var(--fondo-app); font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:0.9rem; }
+    .navbar-custom { background-color:var(--azul-oscuro); box-shadow:0 4px 6px rgba(0,0,0,0.1); }
+    .navbar-custom .navbar-brand,.navbar-custom .nav-link { color:#fff; font-weight:500; font-size:1rem; }
+    .navbar-custom .nav-link.active,.navbar-custom .nav-link:hover { color:#38bdf8; }
+    .tato-rojo { color:var(--logo-rojo); font-weight:900; margin-right:5px; }
+    .panel-erp { background-color:white; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.05); border-top:4px solid var(--azul-oscuro); padding:20px; margin-bottom:20px; }
+    .form-label { font-weight:bold; color:#475569; margin-bottom:0.2rem; font-size:0.85rem; }
+    .table-erp th { background-color:var(--azul-oscuro); color:white; font-weight:500; font-size:0.85rem; padding:10px; }
+    .table-erp td { vertical-align:middle; padding:8px; }
+    .totales-caja { background-color:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:15px; }
+    .totales-fila { display:flex; justify-content:space-between; margin-bottom:8px; font-weight:bold; color:#334155; }
+    .totales-fila.gran-total { font-size:1.25rem; color:var(--logo-rojo); border-top:2px solid #cbd5e1; padding-top:8px; margin-bottom:0; }
+    body {
+    animation: fadeIn 0.1s ease-in;
+    }
+    @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="navbar-container"></div>
+
+<div class="container-fluid px-4">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 style="color:var(--azul-oscuro);margin:0;">
+      <i class="bi bi-cart-plus-fill me-2 text-secondary"></i>Registro de <span class="tato-rojo">Compra</span>
+    </h4>
+    <button class="btn btn-sm btn-success fw-bold" onclick="procesarCompra()">
+      <i class="bi bi-save"></i> Guardar Compra
+    </button>
+  </div>
+
+  <!-- Cabecera del documento -->
+  <div class="panel-erp">
+    <div class="row g-3">
+      <div class="col-md-2">
+        <label class="form-label">Documento</label>
+        <select class="form-select form-select-sm" id="tipoDocumento">
+          <option value="Factura">Factura</option>
+          <option value="Boleta">Boleta</option>
+          <option value="Guia">Guía de Remisión</option>
+          <option value="Ticket">Ticket</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Serie</label>
+        <input type="text" class="form-control form-control-sm text-uppercase" id="serie" placeholder="Ej. F001">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Número</label>
+        <input type="text" class="form-control form-control-sm" id="numeroComprobante" placeholder="00000000">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Fecha Emisión</label>
+        <input type="date" class="form-control form-control-sm" id="fechaEmision">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Fecha Vencimiento</label>
+        <input type="date" class="form-control form-control-sm" id="fechaVencimiento">
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Moneda</label>
+        <select class="form-select form-select-sm" id="moneda">
+          <option value="Soles">Soles (S/)</option>
+          <option value="Dolares">Dólares ($)</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <label class="form-label">RUC / DNI Proveedor</label>
+        <div class="input-group input-group-sm">
+          <input type="text" class="form-control" id="rucProveedor" placeholder="Ingrese número">
+          <button class="btn btn-outline-primary" onclick="consultarRucApi()"><i class="bi bi-search"></i></button>
+        </div>
+      </div>
+      <div class="col-md-5">
+        <label class="form-label">Razón Social</label>
+        <input type="text" class="form-control form-control-sm bg-light" id="razonSocial" readonly>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Condición</label>
+        <select class="form-select form-select-sm" id="condicionPago" onchange="toggleFechas()">
+          <option value="CONTADO">CONTADO</option>
+          <option value="CREDITO">CRÉDITO</option>
+        </select>
+      </div>
+      <div class="col-md-2">
+        <label class="form-label">Tipo de Cambio</label>
+        <input type="number" step="0.001" class="form-control form-control-sm text-end" id="tipoCambio" placeholder="0.000">
+      </div>
+      <div class="col-md-8">
+        <label class="form-label">Observación</label>
+        <input type="text" class="form-control form-control-sm" id="observacion">
+      </div>
+      <div class="col-md-2 d-flex align-items-end">
+        <div class="form-check form-switch pb-1">
+          <input class="form-check-input" type="checkbox" id="incluyeIgv" checked onchange="calcularTotalesGlobales()">
+          <label class="form-check-label fw-bold text-success" for="incluyeIgv">Precios incluyen IGV</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detalle productos -->
+  <div class="panel-erp p-0 overflow-hidden">
+    <div class="d-flex justify-content-between align-items-center p-2 bg-light border-bottom">
+      <h6 class="mb-0 ms-2 fw-bold text-secondary"><i class="bi bi-list-check me-2"></i>Detalle de Productos</h6>
+      <button class="btn btn-sm btn-primary" onclick="abrirModalBuscador()">
+        <i class="bi bi-plus-circle me-1"></i> Agregar Producto (F4)
+      </button>
+    </div>
+    <div class="table-responsive" style="min-height:250px;">
+      <table class="table table-erp mb-0">
+        <thead>
+        <tr>
+          <th style="width:120px;">CÓDIGO</th>
+          <th>NOMBRE</th>
+          <th class="text-center" style="width:100px;">CANTIDAD</th>
+          <th class="text-center" style="width:150px;">PRECIO UNIT.</th>
+          <th class="text-end" style="width:150px;">IMPORTE</th>
+          <th class="text-center" style="width:60px;">X</th>
+        </tr>
+        </thead>
+        <tbody id="tablaDetalleCompra">
+        <tr><td colspan="6" class="text-center text-muted py-5">Presione "Agregar Producto" para buscar en el catálogo.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="row justify-content-end mb-5">
+    <div class="col-md-4 col-lg-3">
+      <div class="totales-caja shadow-sm">
+        <div class="totales-fila"><span>Op. Gravada:</span><span id="lblSubtotal">0.00</span></div>
+        <div class="totales-fila"><span>IGV (18%):</span><span id="lblIgv">0.00</span></div>
+        <div class="totales-fila gran-total"><span>Total:</span><span id="lblTotal">0.00</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Buscador -->
+<div class="modal fade" id="modalBuscador" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header" style="background-color:var(--azul-oscuro);color:white;">
+        <h5 class="modal-title"><i class="bi bi-search me-2"></i>Buscar Producto</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body bg-light">
+        <input type="text" id="inputBusqueda" class="form-control mb-3" placeholder="Nombre o código..." onkeyup="filtrarCatalogo()">
+        <div class="list-group shadow-sm" id="listaCatalogo" style="max-height:400px;overflow-y:auto;"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="/navbar.js?v1"></script>
+<script>
+  // inventarioCatalogo: List<InventarioSucursal>
+  let inventarioCatalogo = [];
+  let carritoCompra = [];
+  let modalBuscador;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+      await initNavbar();
+      cargarCatalogo();
+      document.getElementById('fechaEmision').valueAsDate = new Date();
+      modalBuscador = new bootstrap.Modal(document.getElementById('modalBuscador'));
+      toggleFechas();
+  });
+
+  document.addEventListener('keydown', e => {
+      if (e.key === 'F4') { e.preventDefault(); abrirModalBuscador(); }
+  });
+
+  function toggleFechas() {
+      const cond = document.getElementById('condicionPago').value;
+      const inputVenc = document.getElementById('fechaVencimiento');
+      if (cond === 'CONTADO') {
+          inputVenc.value = document.getElementById('fechaEmision').value;
+          inputVenc.readOnly = true;
+          inputVenc.classList.add('bg-light');
+      } else {
+          inputVenc.readOnly = false;
+          inputVenc.classList.remove('bg-light');
+      }
+  }
+
+  async function consultarRucApi() {
+      const doc = document.getElementById('rucProveedor').value.trim();
+      if (doc.length !== 8 && doc.length !== 11) {
+          Swal.fire({ toast:true, position:'top-end', icon:'warning', title:'Ingrese DNI o RUC válido', showConfirmButton:false, timer:2000 });
+          return;
+      }
+      Swal.fire({ title:'Buscando...', allowOutsideClick:false, didOpen:()=>Swal.showLoading() });
+      try {
+          const res = await fetch(`/api/consultas/documento/${doc}`);
+          const text = await res.text();
+          if (!res.ok) throw new Error();
+          let data = {};
+          try { data = JSON.parse(text); } catch(e) {}
+          let nombre = data.razonSocial || data.nombre || data.razon_social || data.nombre_completo;
+          if (!nombre && data.datos) {
+              nombre = data.datos.razon_social || data.datos.nombre_completo;
+              if (!nombre && data.datos.nombres) nombre = `${data.datos.nombres} ${data.datos.ape_paterno||''} ${data.datos.ape_materno||''}`;
+          }
+          if (!nombre && data.nombres) nombre = `${data.nombres} ${data.ape_paterno||''} ${data.ape_materno||''}`;
+          if (nombre && nombre.trim()) {
+              document.getElementById('razonSocial').value = nombre.replace(/\s+/g,' ').trim();
+              Swal.close();
+          } else {
+              Swal.fire({ icon:'info', title:'No encontrado', text:'Ingrese la razón social manualmente.' });
+              document.getElementById('razonSocial').readOnly = false;
+              document.getElementById('razonSocial').classList.remove('bg-light');
+          }
+      } catch (e) {
+          Swal.fire({ toast:true, position:'top-end', icon:'info', title:'No hallado. Ingrese manualmente.', showConfirmButton:false, timer:2500 });
+          document.getElementById('razonSocial').readOnly = false;
+          document.getElementById('razonSocial').classList.remove('bg-light');
+      }
+  }
+
+  async function cargarCatalogo() {
+      try {
+          const res = await fetch('/api/productos');
+          // /api/productos devuelve List<InventarioSucursal>
+          inventarioCatalogo = await res.json();
+      } catch (e) {}
+  }
+
+  function abrirModalBuscador() {
+      document.getElementById('inputBusqueda').value = '';
+      renderizarCatalogo(inventarioCatalogo);
+      modalBuscador.show();
+      setTimeout(() => document.getElementById('inputBusqueda').focus(), 500);
+  }
+
+  function renderizarCatalogo(lista) {
+      const cont = document.getElementById('listaCatalogo');
+      cont.innerHTML = '';
+      lista.forEach(inv => {
+          if (!inv.activo) return;
+          const p = inv.producto;
+          const btn = document.createElement('button');
+          btn.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center border-bottom';
+          btn.innerHTML = `
+              <div>
+                  <strong style="color:var(--azul-oscuro);">${p.nombre}</strong><br>
+                  <small class="text-muted fw-bold">${p.codigoInterno}</small>
+              </div>
+              <i class="bi bi-plus-circle text-primary fs-4"></i>`;
+          btn.onclick = () => agregarAlDetalle(inv);
+          cont.appendChild(btn);
+      });
+  }
+
+  function filtrarCatalogo() {
+      const txt = document.getElementById('inputBusqueda').value.toLowerCase();
+      renderizarCatalogo(inventarioCatalogo.filter(inv =>
+          inv.producto.nombre.toLowerCase().includes(txt) ||
+          inv.producto.codigoInterno.toLowerCase().includes(txt)
+      ));
+  }
+
+  function agregarAlDetalle(inv) {
+      // En compras, el backend espera productoId (del catálogo global)
+      if (carritoCompra.find(i => i.productoId === inv.producto.id)) {
+          Swal.fire({ toast:true, position:'top-end', icon:'info', title:'Producto ya en lista', showConfirmButton:false, timer:1500 });
+          return;
+      }
+      carritoCompra.push({
+          productoId: inv.producto.id,
+          nombre: inv.producto.nombre,
+          codigo: inv.producto.codigoInterno,
+          precioUnitario: inv.precioCompra || 0,
+          cantidad: 1,
+          importe: inv.precioCompra || 0
+      });
+      modalBuscador.hide();
+      actualizarTablaDetalle();
+  }
+
+  function actualizarTablaDetalle() {
+      const tbody = document.getElementById('tablaDetalleCompra');
+      tbody.innerHTML = '';
+      if (carritoCompra.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-5">Presione "Agregar Producto" para buscar.</td></tr>';
+          calcularTotalesGlobales(); return;
+      }
+      carritoCompra.forEach((item, i) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+              <td class="fw-bold text-secondary">${item.codigo}</td>
+              <td class="fw-bold" style="color:var(--azul-oscuro);">${item.nombre}</td>
+              <td><input type="number" class="form-control form-control-sm text-center fw-bold" value="${item.cantidad}" min="1" onchange="recalcular(${i},'cantidad',this.value)"></td>
+              <td><input type="number" step="0.001" class="form-control form-control-sm text-end" value="${item.precioUnitario.toFixed(3)}" onchange="recalcular(${i},'precio',this.value)"></td>
+              <td class="text-end fw-bold text-primary pe-3">${item.importe.toFixed(2)}</td>
+              <td class="text-center"><button class="btn btn-sm btn-outline-danger border-0" onclick="quitarItem(${i})"><i class="bi bi-x-lg"></i></button></td>`;
+          tbody.appendChild(tr);
+      });
+      calcularTotalesGlobales();
+  }
+
+  function recalcular(i, campo, valor) {
+      let v = parseFloat(valor) || 0;
+      if (campo === 'cantidad' && v < 1) v = 1;
+      if (campo === 'precio' && v < 0) v = 0;
+      if (campo === 'cantidad') carritoCompra[i].cantidad = parseInt(v);
+      if (campo === 'precio')   carritoCompra[i].precioUnitario = v;
+      carritoCompra[i].importe = carritoCompra[i].cantidad * carritoCompra[i].precioUnitario;
+      actualizarTablaDetalle();
+  }
+
+  function quitarItem(i) { carritoCompra.splice(i,1); actualizarTablaDetalle(); }
+
+  let gSubtotal = 0, gIgv = 0, gTotal = 0;
+  function calcularTotalesGlobales() {
+      const suma = carritoCompra.reduce((s,i) => s + i.importe, 0);
+      if (document.getElementById('incluyeIgv').checked) {
+          gTotal = suma; gSubtotal = gTotal/1.18; gIgv = gTotal - gSubtotal;
+      } else {
+          gSubtotal = suma; gIgv = gSubtotal*0.18; gTotal = gSubtotal + gIgv;
+      }
+      document.getElementById('lblSubtotal').innerText = gSubtotal.toFixed(2);
+      document.getElementById('lblIgv').innerText = gIgv.toFixed(2);
+      document.getElementById('lblTotal').innerText = gTotal.toFixed(2);
+  }
+
+  async function procesarCompra() {
+      const payload = {
+          tipoDocumento: document.getElementById('tipoDocumento').value,
+          serie: document.getElementById('serie').value.trim().toUpperCase(),
+          numeroComprobante: document.getElementById('numeroComprobante').value.trim(),
+          fechaEmision: document.getElementById('fechaEmision').value,
+          fechaVencimiento: document.getElementById('fechaVencimiento').value,
+          moneda: document.getElementById('moneda').value,
+          rucProveedor: document.getElementById('rucProveedor').value.trim(),
+          razonSocialProveedor: document.getElementById('razonSocial').value.trim(),
+          condicionPago: document.getElementById('condicionPago').value,
+          tipoCambio: document.getElementById('tipoCambio').value || 1.0,
+          observacion: document.getElementById('observacion').value.trim(),
+          incluyeIgv: document.getElementById('incluyeIgv').checked,
+          subtotal: gSubtotal, igv: gIgv, total: gTotal,
+          items: carritoCompra
+      };
+      if (!payload.serie || !payload.numeroComprobante || !payload.rucProveedor || !payload.razonSocialProveedor || carritoCompra.length === 0) {
+          Swal.fire({ icon:'warning', title:'Datos Incompletos', text:'Complete todos los campos y agregue al menos un producto.', confirmButtonColor:'#f59e0b' });
+          return;
+      }
+      Swal.fire({
+          title:'¿Guardar Compra?', text:'Se registrará y actualizará el stock.',
+          icon:'question', showCancelButton:true, confirmButtonColor:'#198754', confirmButtonText:'Sí, guardar'
+      }).then(async r => {
+          if (r.isConfirmed) {
+              try {
+                  const res = await fetch('/api/compras', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+                  if (res.ok) {
+                      Swal.fire({ icon:'success', title:'¡Compra Registrada!', confirmButtonColor:'#198754' }).then(()=>location.reload());
+                  } else {
+                      Swal.fire({ icon:'error', title:'Error', text: await res.text() });
+                  }
+              } catch (e) {}
+          }
+      });
+  }
+</script>
+</body>
+</html>
