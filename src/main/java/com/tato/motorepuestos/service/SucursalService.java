@@ -25,4 +25,18 @@ public class SucursalService {
         return sucursalRepository.findById(id).orElse(null);
     }
 
+    public Sucursal guardarSucursal(Sucursal sucursal) {
+        return sucursalRepository.save(sucursal);
+    }
+
+    public void cambiarEstado(Long id, boolean estado) {
+        Sucursal sucursal = sucursalRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Sucursal no encontrada"));
+        sucursal.setActivo(estado);
+        sucursalRepository.save(sucursal);
+    }
+
+    public void eliminarLogico(Long id) {
+        cambiarEstado(id, false);
+    }
 }

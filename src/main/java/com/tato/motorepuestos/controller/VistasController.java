@@ -16,14 +16,39 @@ public class VistasController {
         return "forward:/inicio.html";
     }
 
-    @GetMapping("/venta")
-    public String mostrarVenta() {
-        return "forward:/venta.html";
-    }
-
     @GetMapping("/usuarios")
     public String mostrarUsuarios() {
         return "forward:/usuarios.html";
+    }
+
+    @GetMapping("/permisos")
+    public String mostrarPermisos() {
+        return "forward:/permisos.html";
+    }
+
+    @GetMapping("/productos")
+    public String mostrarProductos() {
+        return "forward:/productos.html";
+    }
+
+    @GetMapping("/categorias")
+    public String mostrarCategorias() {
+        return "forward:/categorias.html";
+    }
+
+    @GetMapping("/sucursales")
+    public String mostrarSucursales() {
+        return "forward:/sucursales.html";
+    }
+
+    @GetMapping("/stocks")
+    public String mostrarStocks() {
+        return "forward:/stocks.html";
+    }
+
+    @GetMapping("/traslados")
+    public String mostrarTraslados() {
+        return "forward:/traslados.html";
     }
 
 }

@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gestión de Sucursales - Motorepuestos Tato</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+  <style>
+    :root { --fondo-app:#f0f9ff;--azul-primario:#0ea5e9;--azul-oscuro:#0369a1;--azul-hover:#38bdf8;--logo-rojo:#e31b23;--logo-naranja:#f97316; }
+    body { background-color:var(--fondo-app); font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; }
+    .navbar-custom { background-color:var(--azul-oscuro); box-shadow:0 4px 6px rgba(0,0,0,0.1); }
+    .navbar-custom .navbar-brand,.navbar-custom .nav-link { color:#fff; font-weight:500; }
+    .navbar-custom .nav-link.active,.navbar-custom .nav-link:hover { color:var(--azul-hover); }
+    .tato-rojo { color:var(--logo-rojo); font-weight:900; margin-right:5px; }
+    .casco-logo { color:var(--logo-naranja); }
+    .table-custom th { background-color:var(--azul-oscuro); color:white; border-bottom:2px solid var(--azul-primario); }
+    .table-custom tbody tr:hover { background-color:rgba(14,165,233,0.05); }
+    .item-inactivo { opacity:0.6; filter:grayscale(80%) blur(0.5px); background-color:#f8f9fa; }
+    body {
+    animation: fadeIn 0.1s ease-in;
+    }
+    @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="navbar-container"></div>
+
+<div class="container mt-4 pt-3">
+  <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
+    <h3 style="color:var(--azul-oscuro);">
+      <i class="bi bi-shop me-2 casco-logo"></i>Gestión de <span class="tato-rojo">Sucursales</span>
+    </h3>
+    <button class="btn btn-primary" onclick="abrirModalNuevo()">
+      <i class="bi bi-plus-circle me-1"></i> Nueva Sucursal
+    </button>
+  </div>
+  <div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-custom mb-0 align-middle text-center">
+          <thead>
+          <tr>
+            <th style="width:150px;">Acciones</th>
+            <th class="text-start">Nombre</th>
+            <th class="text-start">Dirección</th>
+            <th>Teléfono</th>
+            <th>Estado</th>
+          </tr>
+          </thead>
+          <tbody id="tablaSucursalesBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="modalSucursal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header" style="background-color:var(--azul-oscuro);color:white;">
+        <h5 class="modal-title" id="tituloModal"><i class="bi bi-shop me-2"></i>Registrar Sucursal</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body bg-light">
+        <form id="formSucursal">
+          <input type="hidden" id="sucursalId">
+          <div class="mb-3">
+            <label class="form-label fw-bold">Nombre del Local</label>
+            <input type="text" class="form-control" id="nombre" placeholder="Ej. Local Principal" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Dirección</label>
+            <input type="text" class="form-control" id="direccion" placeholder="Ej. Calle Principal 123" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label fw-bold">Teléfono <small class="text-muted">(Opcional)</small></label>
+            <input type="text" class="form-control" id="telefono">
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+        <button type="button" class="btn btn-success" onclick="guardarSucursal()">
+          <i class="bi bi-save me-1"></i> <span id="textoBtnGuardar">Guardar</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="/navbar.js?v1"></script>
+<script>
+  let modalSucursal;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+      await initNavbar();
+      modalSucursal = new bootstrap.Modal(document.getElementById('modalSucursal'));
+      cargarSucursales();
+  });
+
+  async function cargarSucursales() {
+      try {
+          const res = await fetch('/api/sucursales');
+          const data = await res.json();
+          const tbody = document.getElementById('tablaSucursalesBody');
+          tbody.innerHTML = '';
+          if (data.length === 0) {
+              tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No hay sucursales registradas.</td></tr>';
+              return;
+          }
+          data.forEach(s => {
+              const inactivo = !s.activo;
+              const badge = s.activo ? '<span class="badge bg-success">Activa</span>' : '<span class="badge bg-secondary">Inactiva</span>';
+              let botones = s.activo
+                  ? `<button class="btn btn-outline-primary" onclick="abrirModalEditar(${s.id})"><i class="bi bi-pencil-square"></i></button>
+                     <button class="btn btn-outline-warning" onclick="cambiarEstado(${s.id},'${s.nombre}',false)"><i class="bi bi-pause-circle"></i></button>
+                     <button class="btn btn-outline-danger" onclick="eliminarSucursal(${s.id},'${s.nombre}')"><i class="bi bi-trash"></i></button>`
+                  : `<button class="btn btn-outline-success" onclick="cambiarEstado(${s.id},'${s.nombre}',true)"><i class="bi bi-play-circle"></i></button>
+                     <button class="btn btn-outline-danger" onclick="eliminarSucursal(${s.id},'${s.nombre}')"><i class="bi bi-trash"></i></button>`;
+              const tr = document.createElement('tr');
+              if (inactivo) tr.className = 'item-inactivo';
+              tr.innerHTML = `
+                  <td><div class="btn-group btn-group-sm">${botones}</div></td>
+                  <td class="text-start fw-bold" style="color:var(--azul-oscuro);">${s.nombre}</td>
+                  <td class="text-start">${s.direccion}</td>
+                  <td>${s.telefono || '-'}</td>
+                  <td>${badge}</td>`;
+              tbody.appendChild(tr);
+          });
+      } catch (e) {}
+  }
+
+  function abrirModalNuevo() {
+      document.getElementById('formSucursal').reset();
+      document.getElementById('sucursalId').value = '';
+      document.getElementById('tituloModal').innerHTML = '<i class="bi bi-shop me-2"></i>Registrar Nueva Sucursal';
+      document.getElementById('textoBtnGuardar').innerText = 'Guardar';
+      modalSucursal.show();
+  }
+
+  async function abrirModalEditar(id) {
+      try {
+          const res = await fetch(`/api/sucursales/${id}`);
+          if (res.ok) {
+              const s = await res.json();
+              document.getElementById('sucursalId').value = s.id;
+              document.getElementById('nombre').value = s.nombre;
+              document.getElementById('direccion').value = s.direccion;
+              document.getElementById('telefono').value = s.telefono || '';
+              document.getElementById('tituloModal').innerHTML = '<i class="bi bi-pencil-square me-2"></i>Editar Sucursal';
+              document.getElementById('textoBtnGuardar').innerText = 'Actualizar';
+              modalSucursal.show();
+          }
+      } catch (e) {}
+  }
+
+  async function guardarSucursal() {
+      const id       = document.getElementById('sucursalId').value;
+      const nombre   = document.getElementById('nombre').value.trim();
+      const direccion= document.getElementById('direccion').value.trim();
+      const telefono = document.getElementById('telefono').value.trim();
+      if (!nombre || !direccion) {
+          Swal.fire({ icon:'warning', title:'Campos Incompletos', confirmButtonColor:'#0ea5e9' });
+          return;
+      }
+      try {
+          const res = await fetch(id ? `/api/sucursales/${id}` : '/api/sucursales', {
+              method: id ? 'PUT' : 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ nombre, direccion, telefono })
+          });
+          if (res.ok) {
+              modalSucursal.hide();
+              cargarSucursales();
+              Swal.fire({ icon:'success', title:'Guardado', showConfirmButton:false, timer:1500 });
+          } else {
+              const err = await res.text();
+              Swal.fire({ icon:'error', title:'Error', text: err || 'El nombre ya existe.' });
+          }
+      } catch (e) {}
+  }
+
+  function cambiarEstado(id, nombre, activar) {
+      Swal.fire({
+          title: activar ? '¿Reactivar?' : '¿Desactivar?',
+          text: `"${nombre}"`,
+          icon: activar ? 'info' : 'warning',
+          showCancelButton: true,
+          confirmButtonColor: activar ? '#198754' : '#f59e0b'
+      }).then(async r => {
+          if (r.isConfirmed) {
+              try {
+                  const res = await fetch(`/api/sucursales/${id}/estado?activo=${activar}`, { method:'PUT' });
+                  if (res.ok) cargarSucursales();
+              } catch (e) {}
+          }
+      });
+  }
+
+  function eliminarSucursal(id, nombre) {
+      Swal.fire({
+          title:'¿Desactivar Sucursal?',
+          text:`"${nombre}" quedará inactiva.`,
+          icon:'warning', showCancelButton:true,
+          confirmButtonColor:'#e31b23', confirmButtonText:'Sí, desactivar'
+      }).then(async r => {
+          if (r.isConfirmed) {
+              try {
+                  const res = await fetch(`/api/sucursales/${id}`, { method:'DELETE' });
+                  if (res.ok) cargarSucursales();
+                  else { const err = await res.text(); Swal.fire({ icon:'error', title:'Error', text:err }); }
+              } catch (e) {}
+          }
+      });
+  }
+</script>
+</body>
+</html>

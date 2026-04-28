@@ -32,4 +32,36 @@ public class SucursalRestController {
         return ResponseEntity.notFound().build();
     }
 
+    @PostMapping
+    public ResponseEntity<Sucursal> crear(@RequestBody Sucursal sucursal) {
+        return ResponseEntity.ok(sucursalService.guardarSucursal(sucursal));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Sucursal> actualizar(@PathVariable Long id, @RequestBody Sucursal detalles) {
+        Sucursal sucursal = sucursalService.obtenerPorId(id);
+        if (sucursal != null) {
+            sucursal.setNombre(detalles.getNombre());
+            sucursal.setDireccion(detalles.getDireccion());
+            sucursal.setTelefono(detalles.getTelefono());
+            return ResponseEntity.ok(sucursalService.guardarSucursal(sucursal));
+        }
+        return ResponseEntity.notFound().build();
+    }
+
+    @PutMapping("/{id}/estado")
+    public ResponseEntity<?> cambiarEstado(@PathVariable Long id, @RequestParam boolean activo) {
+        sucursalService.cambiarEstado(id, activo);
+        return ResponseEntity.ok().build();
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> eliminar(@PathVariable Long id) {
+        try {
+            sucursalService.eliminarLogico(id);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
 }

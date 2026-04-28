@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Traslados - Motorepuestos Tato</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+  <style>
+    :root { --fondo-app:#f0f9ff;--azul-primario:#0ea5e9;--azul-oscuro:#0369a1;--logo-rojo:#e31b23;--logo-naranja:#f97316; }
+    body { background-color:var(--fondo-app); font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; }
+    .navbar-custom { background-color:var(--azul-oscuro); box-shadow:0 4px 6px rgba(0,0,0,0.1); }
+    .navbar-custom .navbar-brand,.navbar-custom .nav-link { color:#fff; font-weight:500; }
+    .navbar-custom .nav-link.active,.navbar-custom .nav-link:hover { color:#38bdf8; }
+    .tato-rojo { color:var(--logo-rojo); font-weight:900; margin-right:5px; }
+    .casco-logo { color:var(--logo-naranja); }
+    .card-header-traslado { background-color:var(--azul-oscuro); color:white; }
+    body {
+    animation: fadeIn 0.1s ease-in;
+    }
+    @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="navbar-container"></div>
+
+<div class="container mt-2">
+  <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
+    <h3 style="color:var(--azul-oscuro);">
+      <i class="bi bi-truck me-2 casco-logo"></i>Proceso de <span class="tato-rojo">Traslado</span>
+    </h3>
+  </div>
+  <div class="row g-4">
+    <div class="col-md-5">
+      <div class="card shadow-sm border-0">
+        <div class="card-header card-header-traslado fw-bold py-3">
+          <i class="bi bi-1-circle me-2"></i>Selección de Productos (Origen)
+        </div>
+        <div class="card-body bg-light">
+          <input type="text" id="busqueda" class="form-control mb-3" placeholder="Buscar por nombre o código..." onkeyup="filtrarProductos()">
+          <div class="list-group shadow-sm" id="listaOrigen" style="max-height:400px;overflow-y:auto;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-7">
+      <div class="card shadow-sm border-0">
+        <div class="card-header bg-success text-white fw-bold py-3">
+          <i class="bi bi-2-circle me-2"></i>Productos a Trasladar y Destino
+        </div>
+        <div class="card-body bg-light">
+          <label class="form-label fw-bold" style="color:var(--azul-oscuro);">Sucursal Destino:</label>
+          <select id="sucursalDestino" class="form-select mb-4 shadow-sm"></select>
+          <div class="table-responsive bg-white rounded shadow-sm p-2 mb-4 border">
+            <table class="table table-hover table-sm align-middle mb-0">
+              <thead class="table-light">
+              <tr>
+                <th>Producto</th>
+                <th style="width:120px;" class="text-center">Cantidad</th>
+                <th style="width:60px;" class="text-center">Quitar</th>
+              </tr>
+              </thead>
+              <tbody id="tablaTraslado"></tbody>
+            </table>
+          </div>
+          <div class="d-grid">
+            <button class="btn btn-primary btn-lg shadow-sm" onclick="procesarTraslado()">
+              <i class="bi bi-send-check me-2"></i>Confirmar Traslado
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="/navbar.js?v1"></script>
+<script>
+  // inventarioDisponible: List<InventarioSucursal> con stock > 0
+  let inventarioDisponible = [];
+  let carritoTraslado = [];
+  let sucursalActualId = null;
+
+  document.addEventListener('DOMContentLoaded', async () => {
+      await initNavbar(data => {
+          sucursalActualId = data.sucursalActiva;
+          cargarSucursales();
+      });
+      cargarInventario();
+  });
+
+  async function cargarInventario() {
+      try {
+          const res = await fetch('/api/productos');
+          // Filtramos solo los activos con stock > 0
+          const todos = await res.json();
+          inventarioDisponible = todos.filter(inv => inv.activo && inv.stock > 0);
+          renderizarOrigen(inventarioDisponible);
+      } catch (e) {}
+  }
+
+  function renderizarOrigen(lista) {
+      const cont = document.getElementById('listaOrigen');
+      cont.innerHTML = '';
+      if (lista.length === 0) {
+          cont.innerHTML = '<div class="text-muted text-center py-3">Sin productos con stock disponible.</div>';
+          return;
+      }
+      lista.forEach(inv => {
+          const p = inv.producto;
+          const btn = document.createElement('button');
+          btn.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center border-bottom';
+          btn.innerHTML = `
+              <div>
+                  <strong style="color:var(--azul-oscuro);">${p.nombre}</strong><br>
+                  <small class="text-muted"><i class="bi bi-upc-scan me-1"></i>${p.codigoInterno} |
+                  <span class="text-success fw-bold">Stock: ${inv.stock}</span></small>
+              </div>
+              <i class="bi bi-plus-circle-fill text-primary fs-4"></i>`;
+          btn.onclick = () => agregarAlCarrito(inv);
+          cont.appendChild(btn);
+      });
+  }
+
+  function filtrarProductos() {
+      const txt = document.getElementById('busqueda').value.toLowerCase();
+      const filtrados = inventarioDisponible.filter(inv =>
+          inv.producto.nombre.toLowerCase().includes(txt) ||
+          inv.producto.codigoInterno.toLowerCase().includes(txt)
+      );
+      renderizarOrigen(filtrados);
+  }
+
+  function agregarAlCarrito(inv) {
+      if (carritoTraslado.find(i => i.inventarioId === inv.id)) {
+          Swal.fire({ toast:true, position:'top-end', icon:'info', title:'Ya está en la lista', showConfirmButton:false, timer:1500 });
+          return;
+      }
+      carritoTraslado.push({ inventarioId: inv.id, nombre: inv.producto.nombre, codigo: inv.producto.codigoInterno, stockMax: inv.stock, cantidad: 1 });
+      actualizarTabla();
+  }
+
+  function actualizarTabla() {
+      const tbody = document.getElementById('tablaTraslado');
+      tbody.innerHTML = '';
+      if (carritoTraslado.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">Selecciona productos de la lista</td></tr>';
+          return;
+      }
+      carritoTraslado.forEach((item, i) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+              <td><strong style="color:var(--azul-oscuro);">${item.nombre}</strong><br>
+                  <small class="text-muted">${item.codigo}</small></td>
+              <td class="text-center">
+                  <input type="number" class="form-control form-control-sm text-center fw-bold"
+                         value="${item.cantidad}" min="1" max="${item.stockMax}"
+                         onchange="cambiarCantidad(${i},this.value)">
+              </td>
+              <td class="text-center">
+                  <button class="btn btn-sm btn-outline-danger" onclick="quitarItem(${i})">
+                      <i class="bi bi-trash-fill"></i>
+                  </button>
+              </td>`;
+          tbody.appendChild(tr);
+      });
+  }
+
+  function cambiarCantidad(i, valor) {
+      let cant = parseInt(valor);
+      if (cant > carritoTraslado[i].stockMax) cant = carritoTraslado[i].stockMax;
+      if (cant < 1) cant = 1;
+      carritoTraslado[i].cantidad = cant;
+      actualizarTabla();
+  }
+
+  function quitarItem(i) {
+      carritoTraslado.splice(i, 1);
+      actualizarTabla();
+  }
+
+  async function cargarSucursales() {
+      try {
+          const res = await fetch('/api/sucursales/activas');
+          const suc = await res.json();
+          const sel = document.getElementById('sucursalDestino');
+          sel.innerHTML = '<option value="" disabled selected>Seleccione una sucursal...</option>';
+          suc.forEach(s => {
+              if (String(s.id) !== String(sucursalActualId)) {
+                  const o = document.createElement('option');
+                  o.value = s.id;
+                  o.textContent = s.nombre;
+                  sel.appendChild(o);
+              }
+          });
+      } catch (e) {}
+  }
+
+  async function procesarTraslado() {
+      const destinoId = document.getElementById('sucursalDestino').value;
+      if (!destinoId || carritoTraslado.length === 0) {
+          Swal.fire({ icon:'warning', title:'Atención', text:'Selecciona destino y al menos un producto.' });
+          return;
+      }
+      Swal.fire({
+          title: '¿Confirmar Traslado?',
+          text: `Se enviarán ${carritoTraslado.length} producto(s).`,
+          icon: 'question', showCancelButton: true,
+          confirmButtonColor: '#0ea5e9', confirmButtonText: 'Sí, enviar'
+      }).then(async r => {
+          if (r.isConfirmed) {
+              // Enviamos inventarioId (no productoId) al backend
+              const payload = {
+                  sucursalDestinoId: destinoId,
+                  items: carritoTraslado.map(i => ({ id: i.inventarioId, cantidad: i.cantidad }))
+              };
+              try {
+                  const res = await fetch('/api/traslados', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(payload)
+                  });
+                  if (res.ok) {
+                      Swal.fire({ icon:'success', title:'¡Enviado!', text:'Traslado realizado correctamente.', confirmButtonColor:'#198754' })
+                          .then(() => location.reload());
+                  } else {
+                      const err = await res.text();
+                      Swal.fire({ icon:'error', title:'Error', text: err });
+                  }
+              } catch (e) {}
+          }
+      });
+  }
+</script>
+</body>
+</html>
