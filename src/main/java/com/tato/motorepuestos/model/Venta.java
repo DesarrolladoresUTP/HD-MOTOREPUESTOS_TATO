@@ -29,7 +29,7 @@ public class Venta {
     @Column(nullable = false)
     private String numeroComprobante;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "cliente_id", nullable = false)
     private Cliente cliente;
 
@@ -57,7 +57,7 @@ public class Venta {
     @JoinColumn(name = "sucursal_id", nullable = false)
     private Sucursal sucursal;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "usuario_id", nullable = false)
     private Usuario usuario;
 

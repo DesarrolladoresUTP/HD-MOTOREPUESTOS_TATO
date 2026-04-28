@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Historial - Motorepuestos Tato</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    :root { --fondo-app:#f0f9ff;--azul-primario:#0ea5e9;--azul-oscuro:#0369a1;--azul-hover:#38bdf8;--logo-rojo:#e31b23;--logo-naranja:#f97316; }
+    body { background-color:var(--fondo-app); font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; }
+    .navbar-custom { background-color:var(--azul-oscuro); box-shadow:0 4px 6px rgba(0,0,0,0.1); }
+    .navbar-custom .navbar-brand,.navbar-custom .nav-link { color:#fff; font-weight:500; }
+    .navbar-custom .nav-link.active,.navbar-custom .nav-link:hover { color:var(--azul-hover); }
+    .tato-rojo { color:var(--logo-rojo); font-weight:900; margin-right:5px; }
+    .casco-logo { color:var(--logo-naranja); }
+    .nav-tabs .nav-link { color:var(--azul-oscuro); font-weight:bold; }
+    .nav-tabs .nav-link.active { color:var(--logo-rojo); border-bottom:3px solid var(--logo-rojo); }
+    .table-custom th { background-color:var(--azul-oscuro); color:white; }
+    body {
+    animation: fadeIn 0.1s ease-in;
+    }
+    @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+    }
+  </style>
+</head>
+<body>
+
+<div id="navbar-container"></div>
+
+<div class="container mt-2">
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h3 style="color:var(--azul-oscuro);">
+      <i class="bi bi-clock-history me-2 casco-logo"></i>Registro de <span class="tato-rojo">Actividades</span>
+    </h3>
+  </div>
+  <div class="card shadow-sm border-0">
+    <div class="card-header bg-white pt-3 pb-0 border-bottom-0">
+      <ul class="nav nav-tabs" id="misPestanas">
+        <li class="nav-item"><button class="nav-link active" onclick="filtrar('Todos',this)">Todo el Historial</button></li>
+        <li class="nav-item"><button class="nav-link" onclick="filtrar('Traslados',this)">Traslados</button></li>
+        <li class="nav-item"><button class="nav-link" onclick="filtrar('Productos',this)">Productos</button></li>
+        <li class="nav-item"><button class="nav-link" onclick="filtrar('Ventas',this)">Ventas</button></li>
+        <li class="nav-item"><button class="nav-link" onclick="filtrar('Compras',this)">Compras</button></li>
+        <li class="nav-item"><button class="nav-link" onclick="filtrar('Usuarios',this)">Usuarios</button></li>
+      </ul>
+    </div>
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover table-custom mb-0 align-middle">
+          <thead>
+          <tr>
+            <th style="width:150px;">Fecha y Hora</th>
+            <th>Usuario</th>
+            <th>Módulo</th>
+            <th>Acción</th>
+            <th>Descripción</th>
+          </tr>
+          </thead>
+          <tbody id="tablaHistorialBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/navbar.js?v1"></script>
+<script>
+  let historialGlobal = [];
+
+  document.addEventListener('DOMContentLoaded', async () => {
+      await initNavbar();
+      cargarHistorial();
+  });
+
+  async function cargarHistorial() {
+      try {
+          const res = await fetch('/api/historial');
+          historialGlobal = await res.json();
+          filtrar('Todos');
+      } catch (e) {}
+  }
+
+  function filtrar(modulo, btn) {
+      // Actualizar tabs
+      document.querySelectorAll('#misPestanas .nav-link').forEach(t => t.classList.remove('active'));
+      if (btn) btn.classList.add('active');
+
+      const datos = modulo === 'Todos'
+          ? historialGlobal
+          : historialGlobal.filter(h => h.modulo === modulo);
+
+      const tbody = document.getElementById('tablaHistorialBody');
+      tbody.innerHTML = '';
+
+      if (datos.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4">No hay registros.</td></tr>';
+          return;
+      }
+
+      datos.forEach(log => {
+          const fecha = new Date(log.fecha);
+          const fechaFmt = fecha.toLocaleDateString('es-PE') + ' ' + fecha.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+          // Historial ahora tiene usuario (objeto) y sucursal (objeto)
+          const usuarioNombre = log.usuario
+              ? `${log.usuario.nombres} ${log.usuario.apellidos}`
+              : 'Sistema';
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+              <td class="text-muted fw-bold"><i class="bi bi-calendar-event me-1"></i>${fechaFmt}</td>
+              <td class="fw-bold text-dark"><i class="bi bi-person-circle me-1 text-secondary"></i>${usuarioNombre}</td>
+              <td><span class="badge bg-secondary">${log.modulo}</span></td>
+              <td><span class="badge bg-primary">${log.accion}</span></td>
+              <td>${log.descripcion}</td>`;
+          tbody.appendChild(tr);
+      });
+  }
+</script>
+</body>
+</html>

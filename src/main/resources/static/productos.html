@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Productos - Motorepuestos Tato</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <style>
+        :root { --fondo-app:#f0f9ff;--azul-primario:#0ea5e9;--azul-oscuro:#0369a1;--azul-hover:#38bdf8;--logo-rojo:#e31b23;--logo-naranja:#f97316; }
+        body { background-color:var(--fondo-app); font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; }
+        .navbar-custom { background-color:var(--azul-oscuro); box-shadow:0 4px 6px rgba(0,0,0,0.1); }
+        .navbar-custom .navbar-brand,.navbar-custom .nav-link { color:#fff; font-weight:500; }
+        .navbar-custom .nav-link.active,.navbar-custom .nav-link:hover { color:var(--azul-hover); }
+        .tato-rojo { color:var(--logo-rojo); font-weight:900; margin-right:5px; }
+        .casco-logo { color:var(--logo-naranja); }
+        .table-custom th { background-color:var(--azul-oscuro); color:white; border-bottom:2px solid var(--azul-primario); }
+        .table-custom tbody tr:hover { background-color:rgba(14,165,233,0.05); }
+        .producto-inactivo { opacity:0.6; filter:grayscale(80%) blur(0.5px); background-color:#f8f9fa; }
+        .foto-producto-tabla { width:40px; height:40px; border-radius:8px; object-fit:cover; border:1px solid #cbd5e1; }
+        body {
+        animation: fadeIn 0.1s ease-in;
+        }
+        @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to   { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="navbar-container"></div>
+
+<div class="container-fluid mt-4 px-4 pt-3">
+    <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
+        <h3 style="color:var(--azul-oscuro);">
+            <i class="bi bi-box-fill me-2 casco-logo"></i>Gestión de <span class="tato-rojo">Productos</span>
+        </h3>
+        <button class="btn btn-primary" onclick="abrirModalNuevo()">
+            <i class="bi bi-plus-circle me-1"></i> Nuevo Producto
+        </button>
+    </div>
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-custom mb-0 align-middle">
+                    <thead>
+                    <tr>
+                        <th class="text-center" style="width:170px;">Acciones</th>
+                        <th>Img</th>
+                        <th>Cód. Interno</th>
+                        <th>Nombre</th>
+                        <th>Categoría</th>
+                        <th>Marca</th>
+                        <th>P. Venta</th>
+                        <th>Stock</th>
+                        <th>Estado</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tablaProductosBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal producto -->
+<div class="modal fade" id="modalProducto" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color:var(--azul-oscuro);color:white;">
+                <h5 class="modal-title" id="tituloModal"><i class="bi bi-box-seam me-2"></i>Registrar Producto</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <form id="formProducto">
+                    <!-- inventarioId: al editar, es el id del registro inventario_sucursal -->
+                    <input type="hidden" id="inventarioId">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Cód. Interno (Sistema)</label>
+                            <input type="text" class="form-control" id="codigoInterno" readonly
+                                   style="background:#f1f5f9; color:#64748b; font-weight:bold;">
+                            <small class="text-muted">Asignado automáticamente por el sistema</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Nombre del Producto</label>
+                            <input type="text" class="form-control" id="nombre" placeholder="Ej. Casco Integral Negro" required>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">Marca</label>
+                            <input type="text" class="form-control" id="marca" placeholder="Ej. LS2, Motul" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Categoría</label>
+                            <!-- Ahora envía el id de la categoría, no el nombre -->
+                            <select class="form-select" id="categoriaId" required>
+                                <option value="" selected disabled>Cargando categorías...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-secondary">Precio Compra <small>(Opcional)</small></label>
+                            <input type="number" step="0.01" class="form-control" id="precioCompra" placeholder="0.00">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Precio Venta (S/)</label>
+                            <input type="number" step="0.01" class="form-control" id="precioVenta" placeholder="0.00" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold text-secondary">Stock Inicial <small>(Opcional)</small></label>
+                            <input type="number" class="form-control" id="stock" placeholder="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Stock Mínimo (Alerta)</label>
+                            <input type="number" class="form-control" id="stockMinimo" placeholder="5" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Imagen del Producto</label>
+                            <input class="form-control" type="file" id="imagen" accept="image/png,image/jpeg,image/webp">
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Descripción Detallada</label>
+                            <textarea class="form-control" id="descripcion" rows="3" placeholder="Especificaciones técnicas..."></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="guardarProducto()">
+                    <i class="bi bi-save me-1"></i> <span id="textoBtnGuardar">Guardar Producto</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="/navbar.js?v1"></script>
+<script>
+    let modalProducto;
+    let inventarioGlobal = []; // lista de InventarioSucursal
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await initNavbar();
+        modalProducto = new bootstrap.Modal(document.getElementById('modalProducto'));
+        cargarCategoriasSelect();
+        cargarProductos();
+    });
+
+    async function cargarCategoriasSelect() {
+        try {
+            const res = await fetch('/api/categorias/activas');
+            if (res.ok) {
+                const cats = await res.json();
+                const sel = document.getElementById('categoriaId');
+                sel.innerHTML = '<option value="" selected disabled>Seleccione...</option>';
+                cats.forEach(c => {
+                    const o = document.createElement('option');
+                    o.value = c.id;       // enviamos el ID
+                    o.textContent = c.nombre;
+                    sel.appendChild(o);
+                });
+            }
+        } catch (e) {}
+    }
+
+    async function cargarProductos() {
+        try {
+            // /api/productos ahora devuelve List<InventarioSucursal>
+            const res = await fetch('/api/productos');
+            inventarioGlobal = await res.json();
+            const tbody = document.getElementById('tablaProductosBody');
+            tbody.innerHTML = '';
+            if (inventarioGlobal.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="9" class="text-center text-muted py-4">No hay productos en esta sucursal.</td></tr>';
+                return;
+            }
+            inventarioGlobal.forEach(inv => {
+                const p = inv.producto;
+                const urlImg = p.imagen
+                    ? `/uploads/${p.imagen}`
+                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(p.nombre.charAt(0))}&background=0ea5e9&color=fff&rounded=true`;
+                const inactivo = !inv.activo;
+                const badge = inv.activo
+                    ? '<span class="badge bg-success">Activo</span>'
+                    : '<span class="badge bg-secondary">Inactivo</span>';
+                const badgeStock = inv.stock <= inv.stockMinimo
+                    ? `<span class="badge bg-danger">${inv.stock} (Bajo)</span>`
+                    : `<span class="badge bg-primary">${inv.stock}</span>`;
+                const nombre = p.nombre.replace(/'/g, "\\'");
+                let botones = `<button class="btn btn-outline-dark" onclick="imprimirEtiquetaQR('${p.codigoInterno}','${nombre}')" title="QR"><i class="bi bi-qr-code"></i></button>`;
+                if (inv.activo) {
+                    botones += `
+                        <button class="btn btn-outline-primary" onclick="abrirModalEditar(${inv.id})"><i class="bi bi-pencil-square"></i></button>
+                        <button class="btn btn-outline-warning" onclick="cambiarEstado(${inv.id},'${nombre}',false)"><i class="bi bi-pause-circle"></i></button>
+                        <button class="btn btn-outline-danger" onclick="eliminarProducto(${inv.id},'${nombre}')"><i class="bi bi-trash"></i></button>`;
+                } else {
+                    botones += `<button class="btn btn-outline-success" onclick="cambiarEstado(${inv.id},'${nombre}',true)"><i class="bi bi-play-circle"></i></button>
+                        <button class="btn btn-outline-danger" onclick="eliminarProducto(${inv.id},'${nombre}')"><i class="bi bi-trash"></i></button>`;
+                }
+                const tr = document.createElement('tr');
+                if (inactivo) tr.className = 'producto-inactivo';
+                tr.innerHTML = `
+                    <td class="text-center"><div class="btn-group btn-group-sm">${botones}</div></td>
+                    <td><img src="${urlImg}" class="foto-producto-tabla" alt="Img"></td>
+                    <td class="fw-bold text-muted">${p.codigoInterno}</td>
+                    <td class="fw-bold" style="color:var(--azul-oscuro);">${p.nombre}</td>
+                    <td>${p.categoria ? p.categoria.nombre : '-'}</td>
+                    <td>${p.marca}</td>
+                    <td class="text-success fw-bold">S/ ${inv.precioVenta.toFixed(2)}</td>
+                    <td>${badgeStock}</td>
+                    <td>${badge}</td>`;
+                tbody.appendChild(tr);
+            });
+        } catch (e) {}
+    }
+
+    function abrirModalNuevo() {
+        document.getElementById('formProducto').reset();
+        document.getElementById('inventarioId').value = '';
+
+
+        document.getElementById('codigoInterno').value = 'Auto-generado';
+        document.getElementById('tituloModal').innerHTML = '<i class="bi bi-box-seam me-2"></i>Registrar Nuevo Producto';
+        document.getElementById('textoBtnGuardar').innerText = 'Guardar Producto';
+        modalProducto.show();
+    }
+
+    async function abrirModalEditar(inventarioId) {
+        // Buscar en datos locales
+        const inv = inventarioGlobal.find(i => i.id === inventarioId);
+        if (!inv) return;
+        const p = inv.producto;
+        document.getElementById('inventarioId').value = inv.id;
+        document.getElementById('codigoInterno').value = p.codigoInterno;
+        document.getElementById('nombre').value = p.nombre;
+        document.getElementById('marca').value = p.marca;
+        document.getElementById('descripcion').value = p.descripcion || '';
+        document.getElementById('precioCompra').value = inv.precioCompra || '';
+        document.getElementById('precioVenta').value = inv.precioVenta;
+        document.getElementById('stock').value = inv.stock;
+        document.getElementById('stockMinimo').value = inv.stockMinimo;
+        // Seleccionar categoría por id
+        if (p.categoria) document.getElementById('categoriaId').value = p.categoria.id;
+        document.getElementById('tituloModal').innerHTML = '<i class="bi bi-pencil-square me-2"></i>Editar Producto';
+        document.getElementById('textoBtnGuardar').innerText = 'Actualizar Producto';
+        modalProducto.show();
+    }
+
+    async function guardarProducto() {
+        const inventarioId = document.getElementById('inventarioId').value;
+        const codigoInterno = document.getElementById('codigoInterno').value.trim();
+        const nombre        = document.getElementById('nombre').value.trim();
+        const categoriaId   = document.getElementById('categoriaId').value;
+        const marca         = document.getElementById('marca').value.trim();
+        const precioCompra  = document.getElementById('precioCompra').value;
+        const precioVenta   = document.getElementById('precioVenta').value;
+        const stock         = document.getElementById('stock').value;
+        const stockMinimo   = document.getElementById('stockMinimo').value;
+        const descripcion   = document.getElementById('descripcion').value.trim();
+        const imagenInput   = document.getElementById('imagen');
+
+        if (!nombre || !categoriaId || !marca || !precioVenta || !stockMinimo) {
+            Swal.fire({ icon: 'warning', title: 'Campos Incompletos', confirmButtonColor: '#0ea5e9' });
+            return;
+        }
+
+        const formData = new FormData();
+        if (inventarioId) formData.append('codigoInterno', codigoInterno);
+        formData.append('nombre', nombre);
+        formData.append('categoriaId', categoriaId);   // ahora es el ID
+        formData.append('marca', marca);
+        formData.append('precioCompra', precioCompra || 0);
+        formData.append('precioVenta', precioVenta);
+        formData.append('stock', stock || 0);
+        formData.append('stockMinimo', stockMinimo);
+        formData.append('descripcion', descripcion);
+        if (imagenInput.files.length > 0) formData.append('imagen', imagenInput.files[0]);
+
+        const url    = inventarioId ? `/api/productos/${inventarioId}` : '/api/productos';
+        const metodo = inventarioId ? 'PUT' : 'POST';
+
+        try {
+            const res = await fetch(url, { method: metodo, body: formData });
+            if (res.ok) {
+                modalProducto.hide();
+                await cargarProductos();
+                Swal.fire({
+                    title: inventarioId ? '¡Producto Actualizado!' : '¡Producto Registrado!',
+                    text: '¿Desea imprimir el Sticker QR ahora?',
+                    icon: 'success', showCancelButton: true,
+                    confirmButtonColor: '#0ea5e9', cancelButtonColor: '#6c757d',
+                    confirmButtonText: '<i class="bi bi-printer"></i> Imprimir QR',
+                    cancelButtonText: 'Cerrar'
+                }).then(r => { if (r.isConfirmed) imprimirEtiquetaQR(codigoInterno, nombre); });
+            } else {
+                const err = await res.text();
+                Swal.fire({ icon: 'error', title: 'Error', text: err || 'No se pudo guardar el producto.' });
+            }
+        } catch (e) {}
+    }
+
+    function cambiarEstado(inventarioId, nombre, activar) {
+        Swal.fire({
+            title: activar ? '¿Reactivar Producto?' : '¿Ocultar Producto?',
+            text: `Se cambiará el estado de "${nombre}".`,
+            icon: activar ? 'info' : 'warning',
+            showCancelButton: true,
+            confirmButtonColor: activar ? '#198754' : '#f59e0b',
+            confirmButtonText: activar ? 'Sí, reactivar' : 'Sí, ocultar'
+        }).then(async r => {
+            if (r.isConfirmed) {
+                try {
+                    const res = await fetch(`/api/productos/${inventarioId}/estado?activo=${activar}`, { method: 'PUT' });
+                    if (res.ok) cargarProductos();
+                } catch (e) {}
+            }
+        });
+    }
+
+    function eliminarProducto(inventarioId, nombre) {
+        Swal.fire({
+            title: '¿Desactivar Producto?',
+            text: `"${nombre}" se marcará como inactivo en esta sucursal.`,
+            icon: 'warning', showCancelButton: true,
+            confirmButtonColor: '#e31b23', confirmButtonText: 'Sí, desactivar'
+        }).then(async r => {
+            if (r.isConfirmed) {
+                try {
+                    const res = await fetch(`/api/productos/${inventarioId}`, { method: 'DELETE' });
+                    if (res.ok) cargarProductos();
+                } catch (e) {}
+            }
+        });
+    }
+
+    function imprimirEtiquetaQR(codigo, nombre) {
+        const pw = window.open('', '', 'width=350,height=400');
+        pw.document.write(`<html><head><title>QR ${codigo}</title>
+        <style>body{text-align:center;font-family:'Segoe UI',sans-serif;padding:20px;background:#fff;}
+        .sticker{display:inline-block;padding:15px;border:2px dashed #000;border-radius:10px;min-width:180px;}
+        .titulo{font-size:14px;font-weight:bold;margin-bottom:10px;}
+        #qrcode{display:flex;justify-content:center;margin:10px 0;}
+        .codigo{font-size:18px;font-weight:900;letter-spacing:2px;margin-top:5px;}</style></head>
+        <body><div class="sticker">
+        <div class="titulo">${nombre.length > 25 ? nombre.substring(0,25)+'...' : nombre}</div>
+        <div id="qrcode"></div><div class="codigo">${codigo}</div></div>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"><\/script>
+        <script>new QRCode(document.getElementById("qrcode"),{text:"${codigo}",width:120,height:120});
+        setTimeout(()=>{window.print();window.close();},500);<\/script></body></html>`);
+        pw.document.close();
+    }
+</script>
+</body>
+</html>
