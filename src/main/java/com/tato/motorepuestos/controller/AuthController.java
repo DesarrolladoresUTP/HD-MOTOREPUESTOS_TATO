@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -38,28 +37,31 @@ public class AuthController {
                 && Boolean.TRUE.equals(usuario.getActivo())
                 && passwordEncoder.matches(password, usuario.getPassword())) {
 
-            Rol rol = usuario.getRol();
-            // Determinamos si es admin SIN tocar la entidad
-            boolean esAdmin = rol != null
-                    && "Administrador".equalsIgnoreCase(rol.getNombre());
-
-            HttpSession session = request.getSession();
+            HttpSession session = request.getSession(true);
             session.setAttribute("usuarioId",  usuario.getId());
-            session.setAttribute("sucursalId", Long.parseLong(sucursalId));
 
-            // Si es admin forzamos true en sesión, si no leemos el valor real del rol
-            session.setAttribute("p_usuarios",         esAdmin || Boolean.TRUE.equals(rol.getPermisoUsuarios()));
-            session.setAttribute("p_roles",            esAdmin || Boolean.TRUE.equals(rol.getPermisoRoles()));
-            session.setAttribute("p_productos",        esAdmin || Boolean.TRUE.equals(rol.getPermisoProductos()));
-            session.setAttribute("p_categorias",       esAdmin || Boolean.TRUE.equals(rol.getPermisoCategorias()));
-            session.setAttribute("p_sucursales",       esAdmin || Boolean.TRUE.equals(rol.getPermisoSucursales()));
-            session.setAttribute("p_stocks",           esAdmin || Boolean.TRUE.equals(rol.getPermisoStocks()));
-            session.setAttribute("p_traslados",        esAdmin || Boolean.TRUE.equals(rol.getPermisoTraslados()));
-            session.setAttribute("p_historial",        esAdmin || Boolean.TRUE.equals(rol.getPermisoHistorial()));
-            session.setAttribute("p_compras_ingresar", esAdmin || Boolean.TRUE.equals(rol.getPermisoComprasIngresar()));
-            session.setAttribute("p_compras_registro", esAdmin || Boolean.TRUE.equals(rol.getPermisoComprasRegistro()));
-            session.setAttribute("p_ventas_realizar",  esAdmin || Boolean.TRUE.equals(rol.getPermisoVentasRealizar()));
-            session.setAttribute("p_ventas_registro",  esAdmin || Boolean.TRUE.equals(rol.getPermisoVentasRegistro()));
+            try {
+                session.setAttribute("sucursalId", Long.parseLong(sucursalId));
+            } catch (NumberFormatException e) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(Map.of("error", "Sucursal inválida"));
+            }
+
+            Rol rol = usuario.getRol();
+            boolean esAdmin = rol != null && "Administrador".equalsIgnoreCase(rol.getNombre());
+
+            session.setAttribute("p_usuarios",         esAdmin || (rol != null && rol.isPermisoUsuarios()));
+            session.setAttribute("p_roles",            esAdmin || (rol != null && rol.isPermisoRoles()));
+            session.setAttribute("p_productos",        esAdmin || (rol != null && rol.isPermisoProductos()));
+            session.setAttribute("p_categorias",       esAdmin || (rol != null && rol.isPermisoCategorias()));
+            session.setAttribute("p_sucursales",       esAdmin || (rol != null && rol.isPermisoSucursales()));
+            session.setAttribute("p_stocks",           esAdmin || (rol != null && rol.isPermisoStocks()));
+            session.setAttribute("p_traslados",        esAdmin || (rol != null && rol.isPermisoTraslados()));
+            session.setAttribute("p_historial",        esAdmin || (rol != null && rol.isPermisoHistorial()));
+            session.setAttribute("p_compras_ingresar", esAdmin || (rol != null && rol.isPermisoComprasIngresar()));
+            session.setAttribute("p_compras_registro", esAdmin || (rol != null && rol.isPermisoComprasRegistro()));
+            session.setAttribute("p_ventas_realizar",  esAdmin || (rol != null && rol.isPermisoVentasRealizar()));
+            session.setAttribute("p_ventas_registro",  esAdmin || (rol != null && rol.isPermisoVentasRegistro()));
 
             return ResponseEntity.ok(Map.of("mensaje", "Login exitoso"));
         }
@@ -85,26 +87,24 @@ public class AuthController {
 
             if (usuario != null) {
                 Rol rol = usuario.getRol();
-                boolean esAdmin = rol != null
-                        && "Administrador".equalsIgnoreCase(rol.getNombre());
+                boolean esAdmin = rol != null && "Administrador".equalsIgnoreCase(rol.getNombre());
 
-                // Construimos el mapa de permisos sin tocar la entidad Rol
                 Map<String, Boolean> permisos = new HashMap<>();
-                permisos.put("permisoUsuarios",        esAdmin || Boolean.TRUE.equals(rol.getPermisoUsuarios()));
-                permisos.put("permisoRoles",           esAdmin || Boolean.TRUE.equals(rol.getPermisoRoles()));
-                permisos.put("permisoProductos",       esAdmin || Boolean.TRUE.equals(rol.getPermisoProductos()));
-                permisos.put("permisoCategorias",      esAdmin || Boolean.TRUE.equals(rol.getPermisoCategorias()));
-                permisos.put("permisoSucursales",      esAdmin || Boolean.TRUE.equals(rol.getPermisoSucursales()));
-                permisos.put("permisoStocks",          esAdmin || Boolean.TRUE.equals(rol.getPermisoStocks()));
-                permisos.put("permisoTraslados",       esAdmin || Boolean.TRUE.equals(rol.getPermisoTraslados()));
-                permisos.put("permisoHistorial",       esAdmin || Boolean.TRUE.equals(rol.getPermisoHistorial()));
-                permisos.put("permisoComprasIngresar", esAdmin || Boolean.TRUE.equals(rol.getPermisoComprasIngresar()));
-                permisos.put("permisoComprasRegistro", esAdmin || Boolean.TRUE.equals(rol.getPermisoComprasRegistro()));
-                permisos.put("permisoVentasRealizar",  esAdmin || Boolean.TRUE.equals(rol.getPermisoVentasRealizar()));
-                permisos.put("permisoVentasRegistro",  esAdmin || Boolean.TRUE.equals(rol.getPermisoVentasRegistro()));
-
+                permisos.put("permisoUsuarios",        esAdmin || (rol != null && rol.isPermisoUsuarios()));
+                permisos.put("permisoRoles",           esAdmin || (rol != null && rol.isPermisoRoles()));
+                permisos.put("permisoProductos",       esAdmin || (rol != null && rol.isPermisoProductos()));
+                permisos.put("permisoCategorias",      esAdmin || (rol != null && rol.isPermisoCategorias()));
+                permisos.put("permisoSucursales",      esAdmin || (rol != null && rol.isPermisoSucursales()));
+                permisos.put("permisoStocks",          esAdmin || (rol != null && rol.isPermisoStocks()));
+                permisos.put("permisoTraslados",       esAdmin || (rol != null && rol.isPermisoTraslados()));
+                permisos.put("permisoHistorial",       esAdmin || (rol != null && rol.isPermisoHistorial()));
+                permisos.put("permisoComprasIngresar", esAdmin || (rol != null && rol.isPermisoComprasIngresar()));
+                permisos.put("permisoComprasRegistro", esAdmin || (rol != null && rol.isPermisoComprasRegistro()));
+                permisos.put("permisoVentasRealizar",  esAdmin || (rol != null && rol.isPermisoVentasRealizar()));
+                permisos.put("permisoVentasRegistro",  esAdmin || (rol != null && rol.isPermisoVentasRegistro()));
                 Map<String, Object> userData = new HashMap<>();
-                userData.put("nombre",       usuario.getNombres());
+                userData.put("id",           usuario.getId());
+                userData.put("nombre",       usuario.getNombres() + " " + usuario.getApellidos());
                 userData.put("foto",         usuario.getFoto());
                 userData.put("permisos",     permisos);
                 userData.put("sucursalActiva", session.getAttribute("sucursalId"));
