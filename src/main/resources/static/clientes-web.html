@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión Clientes Web - Motorepuestos Tato</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <style>
+        :root { --fondo-app:#f0f9ff; --azul-primario:#0ea5e9; --azul-oscuro:#0369a1; --azul-hover:#38bdf8; --logo-rojo:#e31b23; --logo-naranja:#f97316; }
+        body { background-color: var(--fondo-app); font-family: 'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; animation: fadeIn 0.1s ease-in; }
+        .table-custom th { background-color: var(--azul-oscuro); color: white; border-bottom: 2px solid var(--azul-primario); }
+        .table-custom tbody tr:hover { background-color: rgba(14,165,233,0.05); }
+        .cliente-inactivo { opacity: 0.6; background-color: #f8f9fa; }
+        .tato-rojo { color: var(--logo-rojo); font-weight: 900; margin-right: 5px; }
+        .casco-logo { color: var(--logo-naranja); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div id="navbar-container"></div>
+
+<div class="container-fluid mt-4 px-4 pt-3">
+    <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
+        <h3 style="color: var(--azul-oscuro);">
+            <i class="bi bi-cloud-check-fill me-2 casco-logo"></i>Auditoría de Clientes <span class="tato-rojo">Web</span>
+        </h3>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-custom mb-0 align-middle">
+                    <thead>
+                    <tr>
+                        <th class="text-center" style="width: 120px;">Acciones</th>
+                        <th>Nombre / Razón Social</th>
+                        <th>Correo Electrónico (Usuario)</th>
+                        <th>Tipo Doc.</th>
+                        <th>N° Documento</th>
+                        <th>Fecha de Registro</th>
+                        <th>Estado</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tablaClientesWebBody">
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            <div class="spinner-border spinner-border-sm text-primary me-2"></div> Cargando padrón de usuarios...
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="/navbar.js"></script>
+<script>
+    let clientesGlobal = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await initNavbar();
+        cargarClientesWeb();
+    });
+
+    async function cargarClientesWeb() {
+        try {
+            const res = await fetch('/api/clientes-web-admin');
+            if (!res.ok) throw new Error("No se pudieron cargar los datos.");
+
+            clientesGlobal = await res.json();
+            const tbody = document.getElementById('tablaClientesWebBody');
+            tbody.innerHTML = '';
+
+            if (clientesGlobal.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Ningún cliente se ha registrado en la tienda virtual todavía.</td></tr>';
+                return;
+            }
+
+            clientesGlobal.forEach(c => {
+                const inactivo = !c.activo;
+                const badgeStatus = c.activo
+                    ? '<span class="badge bg-success">Activo</span>'
+                    : '<span class="badge bg-danger">Suspendido</span>';
+
+                const fecha = new Date(c.fechaRegistro).toLocaleDateString('es-PE', {
+                    day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute:'2-digit'
+                });
+
+                let botonAccion = c.activo
+                    ? `<button class="btn btn-sm btn-outline-warning" onclick="cambiarEstadoCliente(${c.id}, '${c.nombreCompleto}', false)" title="Suspender Acceso"><i class="bi bi-patch-exclamation"></i> Suspender</button>`
+                    : `<button class="btn btn-sm btn-outline-success" onclick="cambiarEstadoCliente(${c.id}, '${c.nombreCompleto}', true)" title="Habilitar Acceso"><i class="bi bi-check-circle"></i> Activar</button>`;
+
+                const tr = document.createElement('tr');
+                if (inactivo) tr.className = 'cliente-inactivo';
+
+                tr.innerHTML = `
+                    <td class="text-center">${botonAccion}</td>
+                    <td class="fw-bold text-dark">${c.nombreCompleto}</td>
+                    <td class="fw-bold text-muted">${c.email}</td>
+                    <td><span class="badge bg-secondary">${c.tipoDocumento}</span></td>
+                    <td class="font-monospace">${c.numeroDocumento}</td>
+                    <td class="small text-secondary">${fecha}</td>
+                    <td>${badgeStatus}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (error) {
+            document.getElementById('tablaClientesWebBody').innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Error: ${error.message}</td></tr>`;
+        }
+    }
+
+    function cambiarEstadoCliente(id, nombre, activar) {
+        Swal.fire({
+            title: activar ? '¿Habilitar Cuenta?' : '¿Suspender Cuenta?',
+            text: `¿Estás seguro de cambiar el estado de acceso de "${nombre}"?`,
+            icon: activar ? 'info' : 'warning',
+            showCancelButton: true,
+            confirmButtonColor: activar ? '#198754' : '#e31b23',
+            confirmButtonText: activar ? 'Sí, activar' : 'Sí, suspender',
+            cancelButtonText: 'Cancelar'
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                try {
+                    const res = await fetch(`/api/clientes-web-admin/${id}/estado?activo=${activar}`, { method: 'PUT' });
+                    if (res.ok) {
+                        Swal.fire('¡Actualizado!', 'El estado del usuario ha cambiado.', 'success');
+                        cargarClientesWeb();
+                    } else {
+                        throw new Error("No se pudo procesar la solicitud.");
+                    }
+                } catch (e) {
+                    Swal.fire('Error', e.message, 'error');
+                }
+            }
+        });
+    }
+</script>
+</body>
+</html>

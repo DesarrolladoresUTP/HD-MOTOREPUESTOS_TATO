@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Clientes - Motorepuestos Tato</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <style>
+        /* Variables Globales de Color */
+        :root {
+            --fondo-app: #f0f9ff;
+            --azul-primario: #0ea5e9;
+            --azul-oscuro: #0369a1;
+            --azul-hover: #38bdf8;
+            --logo-rojo: #e31b23;
+            --logo-naranja: #f97316;
+        }
+
+        body { background-color: var(--fondo-app); font-family: 'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; animation: fadeIn 0.1s ease-in; }
+
+        /* Estilos del Navbar Compartido */
+        .navbar-custom { background-color: var(--azul-oscuro); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .navbar-custom .navbar-brand, .navbar-custom .nav-link { color: #fff !important; font-weight: 500; }
+        .navbar-custom .nav-link.active, .navbar-custom .nav-link:hover { color: var(--azul-hover) !important; }
+
+        /* Colores de Marca */
+        .tato-rojo { color: var(--logo-rojo); font-weight: 900; margin-right: 5px; }
+        .casco-logo { color: var(--logo-naranja); }
+
+        /* Estilos de Tablas Generales */
+        .table-custom th { background-color: var(--azul-oscuro); color: white; border-bottom: 2px solid var(--azul-primario); }
+        .table-custom tbody tr:hover { background-color: rgba(14,165,233,0.05); }
+
+        /* Clases Específicas */
+        .cliente-inactivo { opacity: 0.6; background-color: #f8f9fa; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div id="navbar-container"></div>
+
+<div class="container-fluid mt-4 px-4 pt-3">
+    <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
+        <h3 style="color:var(--azul-oscuro);">
+            <i class="bi bi-person-vcard-fill me-2 casco-logo"></i>Cartera de <span class="tato-rojo">Clientes</span>
+        </h3>
+        <button class="btn btn-primary fw-bold" onclick="abrirModalNuevo()">
+            <i class="bi bi-plus-circle me-1"></i> Registrar Cliente
+        </button>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-custom mb-0 align-middle">
+                    <thead>
+                    <tr>
+                        <th class="text-center" style="width: 100px;">Acciones</th>
+                        <th>Documento</th>
+                        <th>Razón Social / Nombres</th>
+                        <th>Correo Electrónico</th>
+                        <th>Teléfono</th>
+                        <th>Estado</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tablaClientes">
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            <div class="spinner-border spinner-border-sm text-primary me-2"></div> Cargando clientes...
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalCliente" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header" style="background-color:var(--azul-oscuro);color:white;">
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-plus-fill me-2"></i>Ficha del Cliente</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <form id="formCliente">
+                    <input type="hidden" id="cliId">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold small">Tipo Doc.</label>
+                            <select class="form-select" id="cliTipoDoc">
+                                <option value="DNI">DNI</option>
+                                <option value="RUC">RUC</option>
+                                <option value="CE">CE</option>
+                            </select>
+                        </div>
+                        <div class="col-md-8">
+                            <label class="form-label fw-bold small">Número de Documento</label>
+                            <input type="text" class="form-control font-monospace" id="cliNumDoc" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold small">Razón Social o Nombre Completo</label>
+                            <input type="text" class="form-control" id="cliNombre" required>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-secondary">Correo Electrónico (Opcional)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="bi bi-envelope"></i></span>
+                                <input type="email" class="form-control" id="cliCorreo">
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-secondary">Teléfono (Opcional)</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-white"><i class="bi bi-telephone"></i></span>
+                                <input type="text" class="form-control" id="cliTelefono">
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light border-top-0">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-success fw-bold" onclick="guardarCliente()">
+                    <i class="bi bi-save me-1"></i> Guardar Cliente
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="/navbar.js?v3"></script>
+<script>
+    let modalCliente;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await initNavbar();
+        modalCliente = new bootstrap.Modal(document.getElementById('modalCliente'));
+        cargarClientes();
+    });
+
+    async function cargarClientes() {
+        try {
+            const res = await fetch('/api/clientes');
+            const data = await res.json();
+            const tbody = document.getElementById('tablaClientes');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No hay clientes registrados.</td></tr>';
+                return;
+            }
+
+            data.forEach(c => {
+                const inactivoClase = !c.activo ? 'cliente-inactivo' : '';
+                const badge = c.activo ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-danger">Bloqueado</span>';
+
+                const btnEstado = c.activo
+                  ? `<button class="btn btn-sm btn-outline-warning" onclick="cambiarEstado(${c.id}, false)" title="Bloquear"><i class="bi bi-ban"></i></button>`
+                  : `<button class="btn btn-sm btn-outline-success" onclick="cambiarEstado(${c.id}, true)" title="Activar"><i class="bi bi-check-circle"></i></button>`;
+
+                tbody.innerHTML += `
+                    <tr class="${inactivoClase}">
+                        <td class="text-center">${btnEstado}</td>
+                        <td class="font-monospace text-muted">${c.tipoDocumento} ${c.numeroDocumento}</td>
+                        <td class="fw-bold text-dark">${c.razonSocialNombre}</td>
+                        <td class="text-primary">${c.correo || '-'}</td>
+                        <td>${c.telefono || '-'}</td>
+                        <td>${badge}</td>
+                    </tr>`;
+            });
+        } catch (e) {
+            document.getElementById('tablaClientes').innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Error al cargar clientes.</td></tr>';
+        }
+    }
+
+    function abrirModalNuevo() {
+        document.getElementById('formCliente').reset();
+        document.getElementById('cliId').value = '';
+        modalCliente.show();
+    }
+
+    async function guardarCliente() {
+        const payload = {
+            id: document.getElementById('cliId').value || null,
+            tipoDocumento: document.getElementById('cliTipoDoc').value,
+            numeroDocumento: document.getElementById('cliNumDoc').value.trim(),
+            razonSocialNombre: document.getElementById('cliNombre').value.trim(),
+            correo: document.getElementById('cliCorreo').value.trim(),
+            telefono: document.getElementById('cliTelefono').value.trim()
+        };
+
+        if (!payload.numeroDocumento || !payload.razonSocialNombre) {
+            Swal.fire({ icon: 'warning', title: 'Campos requeridos', text: 'Completa el documento y el nombre.', confirmButtonColor: '#0ea5e9' });
+            return;
+        }
+
+        try {
+            const res = await fetch('/api/clientes', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            if(res.ok) {
+                modalCliente.hide();
+                cargarClientes();
+                Swal.fire({icon:'success', title:'Guardado', timer:1500, showConfirmButton:false});
+            } else {
+                Swal.fire({icon:'error', title:'Error', text: await res.text()});
+            }
+        } catch (e) {
+            Swal.fire({icon:'error', title:'Error de conexión'});
+        }
+    }
+
+    function cambiarEstado(id, estado) {
+        Swal.fire({
+            title: estado ? '¿Reactivar Cliente?' : '¿Bloquear Cliente?',
+            icon: estado ? 'info' : 'warning',
+            showCancelButton: true,
+            confirmButtonColor: estado ? '#198754' : '#e31b23',
+            confirmButtonText: estado ? 'Sí, reactivar' : 'Sí, bloquear'
+        }).then(async r => {
+            if (r.isConfirmed) {
+                await fetch(`/api/clientes/${id}/estado?activo=${estado}`, { method: 'PUT' });
+                cargarClientes();
+            }
+        });
+    }
+</script>
+</body>
+</html>

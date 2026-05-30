@@ -123,7 +123,7 @@ public class ProductoService {
         inventario.setPrecioCompra(precioCompra != null ? precioCompra : BigDecimal.ZERO);
         inventario.setPrecioVenta(precioVenta);
         inventario.setStock(stock != null ? stock : 0);
-        inventario.setStockMinimo(stockMinimo);
+        inventario.setStockMinimo(stockMinimo != null ? stockMinimo : 5);
         InventarioSucursal actualizado = inventarioRepository.save(inventario);
 
         historialService.registrarAccion("Productos", "Actualización",
@@ -194,5 +194,20 @@ public class ProductoService {
                 .max()
                 .orElse(0);
         return String.format("%04d", max + 1);
+    }
+
+    @Transactional
+    public InventarioSucursal ajustarInventario(Long inventarioId, Integer nuevoStock, Integer nuevoStockMinimo, Long usuarioId, Long sucursalId) throws Exception {
+        InventarioSucursal inv = inventarioRepository.findById(inventarioId)
+                .orElseThrow(() -> new Exception("Inventario no encontrado en esta sucursal."));
+
+        inv.setStock(nuevoStock);
+        inv.setStockMinimo(nuevoStockMinimo);
+
+        historialService.registrarAccion("Almacén", "Ajuste de Stock",
+                "Se ajustó el stock del producto: " + inv.getProducto().getNombre() + " a " + nuevoStock + " unidades.",
+                usuarioId, sucursalId);
+
+        return inventarioRepository.save(inv);
     }
 }

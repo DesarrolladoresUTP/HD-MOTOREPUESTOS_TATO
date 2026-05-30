@@ -54,7 +54,6 @@
     </div>
 
     <div class="row">
-        <!-- Panel izquierdo -->
         <div class="col-lg-3">
             <div class="panel-erp mb-3">
                 <h6 class="fw-bold border-bottom pb-2 text-secondary"><i class="bi bi-receipt"></i> Comprobante Inicial</h6>
@@ -91,12 +90,10 @@
                     <label class="form-label">Correo <small class="text-muted">(Opcional)</small></label>
                     <input type="email" class="form-control form-control-sm" id="correoCliente">
                 </div>
-                <!-- clienteId oculto para vincularlo en el backend -->
                 <input type="hidden" id="clienteIdSeleccionado">
             </div>
         </div>
 
-        <!-- Panel derecho -->
         <div class="col-lg-9">
             <div class="caja-escaneo shadow-sm mb-3">
                 <div class="flex-grow-1">
@@ -152,7 +149,6 @@
     </div>
 </div>
 
-<!-- Modal Cámara -->
 <div class="modal fade" id="modalCamara" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content border-0 shadow-lg">
@@ -167,7 +163,6 @@
     </div>
 </div>
 
-<!-- Modal Buscador -->
 <div class="modal fade" id="modalBuscador" tabindex="-1">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -187,9 +182,8 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-<script src="/navbar.js?v1"></script>
+<script src="/navbar.js?v2"></script>
 <script>
-    // inventarioCatalogo: List<InventarioSucursal>
     let inventarioCatalogo = [];
     let carritoVenta = [];
     let modalBuscador, modalCamaraObj, html5QrcodeScanner;
@@ -222,7 +216,6 @@
         } catch (e) {}
     }
 
-    // ─── Consulta de cliente: primero BD local, luego API externa ───
     async function consultarCliente() {
         const doc = document.getElementById('documentoCliente').value.trim();
         if (doc.length !== 8 && doc.length !== 11) {
@@ -232,7 +225,6 @@
 
         Swal.fire({ title:'Buscando...', allowOutsideClick:false, didOpen:()=>Swal.showLoading() });
 
-        // 1️⃣ Buscar en tabla clientes (ahorra llamada a la API)
         try {
             const resLocal = await fetch(`/api/clientes/buscar?documento=${doc}`);
             if (resLocal.ok) {
@@ -245,7 +237,6 @@
             }
         } catch (e) {}
 
-        // 2️⃣ Si no está en BD, consultar API externa
         try {
             const resApi = await fetch(`/api/consultas/documento/${doc}`);
             const text = await resApi.text();
@@ -265,9 +256,8 @@
             if (nombre && nombre.trim()) {
                 nombre = nombre.replace(/\s+/g,' ').trim();
                 document.getElementById('nombreCliente').value = nombre;
-                document.getElementById('clienteIdSeleccionado').value = ''; // se creará al registrar la venta
+                document.getElementById('clienteIdSeleccionado').value = '';
                 Swal.close();
-                // Guardar cliente en BD para futuras consultas
                 try {
                     await fetch('/api/clientes', {
                         method:'POST',
@@ -287,7 +277,6 @@
         }
     }
 
-    // ─── Catálogo y carrito ───
     function buscarPorCodigo(codigo) {
         const inv = inventarioCatalogo.find(i => i.producto.codigoInterno.toLowerCase() === codigo.toLowerCase() && i.activo);
         if (!inv) {
@@ -356,8 +345,8 @@
             existe.importe = existe.cantidad * existe.precioUnitario;
         } else {
             carritoVenta.push({
-                inventarioId: inv.id,          // clave para el backend
-                productoId: inv.producto.id,   // por compatibilidad si se necesita
+                inventarioId: inv.id,
+                productoId: inv.producto.id,
                 nombre: inv.producto.nombre,
                 codigo: inv.producto.codigoInterno,
                 precioUnitario: inv.precioVenta,
@@ -437,13 +426,12 @@
             tipoComprobante: 'Nota de Venta',
             serie: 'T001',
             numeroComprobante: 'PROFORMA',
-            documentoCliente: doc,   // para que el backend resuelva el cliente
+            documentoCliente: doc,
             metodoPago: document.getElementById('metodoPago').value,
             correoCliente: document.getElementById('correoCliente').value.trim(),
             subtotal: gSubtotal,
             igv: gIgv,
             total: gTotal,
-            // El backend ahora usa inventarioId para descontar stock
             items: carritoVenta.map(i => ({
                 inventarioId: i.inventarioId,
                 cantidad: i.cantidad,
@@ -498,7 +486,6 @@
         });
     }
 
-    // Cámara
     function abrirCamara() {
         modalCamaraObj.show();
         html5QrcodeScanner = new Html5QrcodeScanner('reader', { fps:10, qrbox:{width:250,height:250} }, false);

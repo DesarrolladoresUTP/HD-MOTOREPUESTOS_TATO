@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acceso Clientes | Motorepuestos Tato</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body { background-color: #f8f9fa; }
+        .bg-tato-dark { background-color: #212529 !important; }
+        .btn-tato-red { background-color: #e31b23; color: white; border: none; }
+        .btn-tato-red:hover { background-color: #c8161d; color: white; }
+        .text-tato-red { color: #e31b23 !important; }
+        .nav-pills .nav-link.active { background-color: #e31b23 !important; }
+        .nav-pills .nav-link { color: #212529; font-weight: bold; }
+    </style>
+</head>
+<body class="d-flex align-items-center min-vh-100">
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-5">
+
+            <div class="text-center mb-4">
+                <a href="/tienda" class="text-decoration-none">
+                    <i class="bi bi-person-helmet fs-1 text-tato-red"></i>
+                    <h2 class="fw-bold text-dark mt-2">TATO <span class="fw-light">MOTOREPUESTOS</span></h2>
+                </a>
+            </div>
+
+            <div class="card shadow border-0 rounded-4 p-4">
+                <ul class="nav nav-pills nav-justified mb-4" id="pills-tab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="pills-login-tab" data-bs-toggle="pill" data-bs-target="#pills-login" type="button">Iniciar Sesión</button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="pills-registro-tab" data-bs-toggle="pill" data-bs-target="#pills-registro" type="button">Crear Cuenta</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content" id="pills-tabContent">
+
+                    <div class="tab-pane fade show active" id="pills-login" role="tabpanel">
+                        <form id="formLoginCliente">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Correo Electrónico</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                                    <input type="email" class="form-control" placeholder="tu@correo.com" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Contraseña</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                                    <input type="password" class="form-control" placeholder="••••••••" required>
+                                </div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-4">
+                                <div class="form-check">
+                                    <input type="checkbox" class="form-check-input" id="recordarme">
+                                    <label class="form-check-label small" for="recordarme">Recordarme</label>
+                                </div>
+                                <a href="#" class="small text-tato-red text-decoration-none fw-bold" onclick="recuperarPassword()">¿Olvidaste tu contraseña?</a>
+                            </div>
+                            <button type="submit" class="btn btn-tato-red w-100 fw-bold py-2">Ingresar a mi Cuenta</button>
+                        </form>
+                    </div>
+
+                    <div class="tab-pane fade" id="pills-registro" role="tabpanel">
+                        <form id="formRegistroCliente">
+                            <div class="row g-3 mb-3">
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Tipo Doc.</label>
+                                    <select class="form-select">
+                                        <option value="DNI">DNI</option>
+                                        <option value="RUC">RUC</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label fw-bold small">Número</label>
+                                    <input type="text" class="form-control" placeholder="Doc. de Identidad" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small">Nombre Completo o Razón Social</label>
+                                    <input type="text" class="form-control" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small">Correo Electrónico (Será tu usuario)</label>
+                                    <input type="email" class="form-control" required>
+                                </div>
+                                <div class="col-12">
+                                    <label class="form-label fw-bold small">Contraseña Segura</label>
+                                    <input type="password" class="form-control" required>
+                                </div>
+                            </div>
+                            <button type="submit" class="btn btn-dark w-100 fw-bold py-2">Crear mi Cuenta</button>
+                        </form>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    document.getElementById('formRegistroCliente').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Creando...';
+        btn.disabled = true;
+
+        const datos = {
+            tipoDocumento: e.target.querySelector('select').value,
+            numeroDocumento: e.target.querySelectorAll('input')[0].value.trim(),
+            nombreCompleto: e.target.querySelectorAll('input')[1].value.trim(),
+            email: e.target.querySelectorAll('input')[2].value.trim(),
+            password: e.target.querySelectorAll('input')[3].value
+        };
+
+        try {
+            const response = await fetch('/api/clientes-web/registro', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datos)
+            });
+
+            if (response.ok) {
+                Swal.fire('¡Bienvenido!', 'Tu cuenta ha sido creada exitosamente. Ahora puedes iniciar sesión.', 'success')
+                    .then(() => {
+                        document.getElementById('pills-login-tab').click();
+                        e.target.reset();
+                    });
+            } else {
+                const errorMsg = await response.text();
+                Swal.fire('Error al registrar', errorMsg, 'error');
+            }
+        } catch (error) {
+            Swal.fire('Error', 'No se pudo conectar con el servidor', 'error');
+        } finally {
+            btn.innerHTML = 'Crear mi Cuenta';
+            btn.disabled = false;
+        }
+    });
+
+    document.getElementById('formLoginCliente').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const btn = e.target.querySelector('button[type="submit"]');
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Ingresando...';
+        btn.disabled = true;
+
+        const credenciales = {
+            email: e.target.querySelectorAll('input')[0].value.trim(),
+            password: e.target.querySelectorAll('input')[1].value
+        };
+
+        try {
+            const response = await fetch('/api/clientes-web/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(credenciales)
+            });
+
+            if (response.ok) {
+                const clienteData = await response.json();
+
+                localStorage.setItem('tato_cliente_nombre', clienteData.nombreCompleto);
+
+                window.location.href = '/tienda';
+            } else {
+                const errorMsg = await response.text();
+                Swal.fire('Acceso Denegado', errorMsg, 'error');
+            }
+        } catch (error) {
+            Swal.fire('Error', 'Error de conexión con el servidor', 'error');
+        } finally {
+            btn.innerHTML = 'Ingresar a mi Cuenta';
+            btn.disabled = false;
+        }
+    });
+
+z
+    function recuperarPassword() {
+        Swal.fire({
+            title: 'Recuperar Contraseña',
+            text: "Ingresa tu correo registrado:",
+            input: 'email',
+            inputPlaceholder: 'tu@correo.com',
+            showCancelButton: true,
+            confirmButtonColor: '#e31b23',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: 'Enviar Enlace',
+            showLoaderOnConfirm: true,
+            preConfirm: async (email) => {
+                try {
+                    const response = await fetch(`/api/clientes-web/recuperar-password?email=${encodeURIComponent(email)}`, { method: 'POST' });
+                    if (!response.ok) {
+                        throw new Error(await response.text());
+                    }
+                    return true;
+                } catch (error) {
+                    Swal.showValidationMessage(`<i class="bi bi-exclamation-circle"></i> ${error.message}`);
+                }
+            },
+            allowOutsideClick: () => !Swal.isLoading()
+        }).then((result) => {
+            if (result.isConfirmed) {
+                Swal.fire('¡Enviado!', 'Revisa tu bandeja de entrada o carpeta de SPAM para continuar.', 'success');
+            }
+        });
+    }
+</script>
+</body>
+</html>

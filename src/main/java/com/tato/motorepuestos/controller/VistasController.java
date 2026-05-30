@@ -6,7 +6,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class VistasController {
 
-    @GetMapping({"/", "/login"})
+    @GetMapping({"/", "/tienda"})
+    public String mostrarTienda() {
+        return "forward:/tienda.html";
+    }
+
+    @GetMapping("/login")
     public String mostrarLogin() {
         return "forward:/login.html";
     }
@@ -75,4 +80,42 @@ public class VistasController {
     public String mostrarRegistroVentas() {
         return "forward:/registro_ventas.html";
     }
+
+    @GetMapping("/clientes")
+    public String mostrarClientes() {
+        return "forward:/clientes.html";
+    }
+
+    @GetMapping("/gestion-web")
+    public String mostrarGestionWeb() {
+        return "forward:/gestion-web.html";
+    }
+
+    @GetMapping("/login-cliente")
+    public String mostrarLoginCliente() {
+        return "forward:/login-cliente.html";
+    }
+
+    @GetMapping("/clientes-web")
+    public String mostrarClientesWeb() {
+        return "forward:/clientes-web.html";
+    }
+
+    @GetMapping("/almacen")
+    public String mostrarAlmacen() {
+        return "forward:/almacen.html";
+    }
+
+    @GetMapping("/checkout")
+    public String mostrarCheckout() {
+        return "forward:/checkout.html";
+    }
+
+    @GetMapping("/pedidos")
+    public String mostrarPedidos() {return "forward:/pedidos.html";}
+
+    @GetMapping("/mis-pedidos")
+    public String mostrarMisPedidos() {return "forward:/mis-pedidos.html";}
+
+
 }

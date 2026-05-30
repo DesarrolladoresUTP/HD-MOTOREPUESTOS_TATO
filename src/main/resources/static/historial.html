@@ -67,7 +67,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-<script src="/navbar.js?v1"></script>
+<script src="/navbar.js?v2"></script>
 <script>
   let historialGlobal = [];
 
@@ -85,7 +85,7 @@
   }
 
   function filtrar(modulo, btn) {
-      // Actualizar tabs
+
       document.querySelectorAll('#misPestanas .nav-link').forEach(t => t.classList.remove('active'));
       if (btn) btn.classList.add('active');
 
@@ -104,7 +104,7 @@
       datos.forEach(log => {
           const fecha = new Date(log.fecha);
           const fechaFmt = fecha.toLocaleDateString('es-PE') + ' ' + fecha.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-          // Historial ahora tiene usuario (objeto) y sucursal (objeto)
+
           const usuarioNombre = log.usuario
               ? `${log.usuario.nombres} ${log.usuario.apellidos}`
               : 'Sistema';

@@ -41,7 +41,6 @@ public class SeguridadInterceptor implements HandlerInterceptor {
         if (esRutaRestringida(uri, "/traslados", "/api/traslados") && !tienePermiso(session, "p_traslados")) {
             return rechazarAcceso(uri, response);
         }
-        // ── COMPRAS ──────────────────────────────────────────────────────────────────
         if (uri.startsWith("/compras") && !uri.startsWith("/registro_compras") && !tienePermiso(session, "p_compras_ingresar")) {
             return rechazarAcceso(uri, response);
         }
@@ -51,7 +50,6 @@ public class SeguridadInterceptor implements HandlerInterceptor {
         if (uri.startsWith("/api/compras") && !tienePermiso(session, "p_compras_ingresar") && !tienePermiso(session, "p_compras_registro")) {
             return rechazarAcceso(uri, response);
         }
-        // ── VENTAS ────────────────────────────────────────────────────────────────────
         if (uri.startsWith("/venta") && !uri.startsWith("/registro_ventas") && !tienePermiso(session, "p_ventas_realizar")) {
             return rechazarAcceso(uri, response);
         }

@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Almacén - Motorepuestos Tato</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <style>
+        :root { --fondo-app:#f0f9ff;--azul-primario:#0ea5e9;--azul-oscuro:#0369a1;--logo-rojo:#e31b23;--logo-naranja:#f97316; }
+        body { background-color:var(--fondo-app); font-family:'Segoe UI',sans-serif; animation: fadeIn 0.1s ease-in; }
+        .tato-rojo { color:var(--logo-rojo); font-weight:900; margin-right:5px; }
+        .casco-logo { color:var(--logo-naranja); }
+        .table-custom th { background-color:var(--azul-oscuro); color:white; border-bottom:2px solid var(--azul-primario); }
+        .table-custom tbody tr:hover { background-color:rgba(14,165,233,0.05); }
+        .stock-critico { background-color: #ffe5e5 !important; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div id="navbar-container"></div>
+
+<div class="container-fluid mt-4 px-4 pt-3">
+    <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
+        <h3 style="color:var(--azul-oscuro);">
+            <i class="bi bi-boxes me-2 casco-logo"></i>Gestión de <span class="tato-rojo">Almacén</span>
+        </h3>
+        <button class="btn btn-outline-secondary fw-bold" onclick="cargarAlmacen()">
+            <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
+        </button>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-custom mb-0 align-middle text-center">
+                    <thead>
+                    <tr>
+                        <th class="text-start ps-4">Producto</th>
+                        <th>Categoría</th>
+                        <th>Cód. Sistema</th>
+                        <th>Stock Actual</th>
+                        <th>Stock Mínimo</th>
+                        <th>Vendidos</th>
+                        <th>Rotación</th>
+                        <th>Ajuste Manual</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tablaAlmacenBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalAjuste" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-tools me-2"></i>Ajuste Físico</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <form id="formAjuste">
+                    <input type="hidden" id="ajusteInventarioId">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-muted small">Producto</label>
+                        <input type="text" class="form-control fw-bold bg-white" id="ajusteNombre" readonly disabled>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Stock Real (Físico)</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-box-seam"></i></span>
+                            <input type="number" class="form-control fw-bold fs-5" id="ajusteStock" required min="0">
+                        </div>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label fw-bold text-danger">Stock Mínimo (Alerta)</label>
+                        <input type="number" class="form-control" id="ajusteMinimo" required min="1">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light border-top-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-warning fw-bold text-dark" onclick="guardarAjuste()">
+                    <i class="bi bi-check-circle me-1"></i> Guardar Ajuste
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="/navbar.js"></script>
+<script>
+    let modalAjuste;
+    let almacenGlobal = [];
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await initNavbar();
+        modalAjuste = new bootstrap.Modal(document.getElementById('modalAjuste'));
+        cargarAlmacen();
+    });
+
+    async function cargarAlmacen() {
+        try {
+            const res = await fetch('/api/almacen');
+            almacenGlobal = await res.json();
+            const tbody = document.getElementById('tablaAlmacenBody');
+            tbody.innerHTML = '';
+
+            if (almacenGlobal.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No hay productos registrados en el sistema.</td></tr>';
+                return;
+            }
+
+            almacenGlobal.forEach(inv => {
+                if(!inv.activo) return;
+
+                const p = inv.producto;
+                const estaBajo = inv.stock <= inv.stockMinimo;
+
+                const badgeStock = estaBajo
+                    ? `<span class="badge bg-danger fs-6 px-3 py-2">${inv.stock} u.</span>`
+                    : `<span class="badge bg-primary fs-6 px-3 py-2">${inv.stock} u.</span>`;
+
+                const tr = document.createElement('tr');
+                if (estaBajo) tr.className = 'stock-critico';
+
+                const vendidas = inv.unidadesVendidas || 0;
+                let rotacionBadge = '<span class="badge bg-secondary">Baja</span>';
+                if (vendidas >= 20) rotacionBadge = '<span class="badge bg-success">Alta</span>';
+                else if (vendidas >= 5) rotacionBadge = '<span class="badge bg-warning text-dark">Media</span>';
+
+                tr.innerHTML = `
+                    <td class="text-start ps-4 fw-bold text-dark">${p.nombre}</td>
+                    <td>${p.categoria ? p.categoria.nombre : '-'}</td>
+                    <td class="font-monospace text-muted">${p.codigoInterno}</td>
+                    <td>${badgeStock}</td>
+                    <td><span class="badge bg-light text-dark border">${inv.stockMinimo} u.</span></td>
+                    <td class="fw-bold text-primary">${vendidas}</td>
+                    <td>${rotacionBadge}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-dark fw-bold" onclick="abrirAjuste(${inv.id})">
+                            <i class="bi bi-sliders me-1"></i> Ajustar
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        } catch (e) {
+            Swal.fire('Error', 'No se pudo cargar el almacén.', 'error');
+        }
+    }
+
+    function abrirAjuste(inventarioId) {
+        const inv = almacenGlobal.find(i => i.id === inventarioId);
+        if (!inv) return;
+
+        document.getElementById('ajusteInventarioId').value = inv.id;
+        document.getElementById('ajusteNombre').value = inv.producto.nombre;
+        document.getElementById('ajusteStock').value = inv.stock;
+        document.getElementById('ajusteMinimo').value = inv.stockMinimo;
+
+        modalAjuste.show();
+    }
+
+    async function guardarAjuste() {
+        const id = document.getElementById('ajusteInventarioId').value;
+        const stock = document.getElementById('ajusteStock').value;
+        const minimo = document.getElementById('ajusteMinimo').value;
+
+        if(stock === "" || minimo === "") {
+            Swal.fire({ icon: 'warning', title: 'Atención', text: 'Rellena ambos campos.' });
+            return;
+        }
+
+        try {
+            const res = await fetch(`/api/almacen/${id}/ajuste?stock=${stock}&stockMinimo=${minimo}`, { method: 'PUT' });
+            if (res.ok) {
+                modalAjuste.hide();
+                Swal.fire({ icon: 'success', title: 'Inventario Actualizado', timer: 1500, showConfirmButton: false });
+                cargarAlmacen();
+            } else {
+                const err = await res.text();
+                Swal.fire('Error', err, 'error');
+            }
+        } catch (e) {
+            Swal.fire('Error de conexión', '', 'error');
+        }
+    }
+</script>
+</body>
+</html>

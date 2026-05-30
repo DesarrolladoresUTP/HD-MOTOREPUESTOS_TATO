@@ -26,7 +26,6 @@ public class RolService {
     }
 
     public Rol guardarRol(Rol rol) {
-
         if (rol.getId() == null) {
             rol.setActivo(true);
         }
@@ -44,6 +43,9 @@ public class RolService {
         rolExistente.setPermisoProductos(detallesNuevos.isPermisoProductos());
         rolExistente.setPermisoCategorias(detallesNuevos.isPermisoCategorias());
         rolExistente.setPermisoSucursales(detallesNuevos.isPermisoSucursales());
+
+        rolExistente.setPermisoClientes(detallesNuevos.isPermisoClientes());
+        rolExistente.setPermisoWeb(detallesNuevos.isPermisoWeb());
 
         rolExistente.setPermisoStocks(detallesNuevos.isPermisoStocks());
         rolExistente.setPermisoTraslados(detallesNuevos.isPermisoTraslados());

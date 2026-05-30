@@ -28,17 +28,40 @@ public class WebConfig implements WebMvcConfigurer {
                 .addPathPatterns("/**")
                 .excludePathPatterns(
                         "/",
+                        "/error",
+                        "/uploads/**",
+
                         "/login",
                         "/login.html",
                         "/api/auth/login",
                         "/api/sucursales/activas",
-                        "/uploads/**",
+
                         "/activar-cuenta",
                         "/restablecer-password",
                         "/token-invalido",
                         "/establecer-password.html",
                         "/api/token/**",
-                        "/error"
+
+                        "/tienda",
+                        "/tienda.html",
+                        "/tienda.js",
+                        "/api/productos/activos",
+
+                        "/checkout",
+                        "/checkout.html",
+                        "/checkout.js",
+                        "/api/clientes/buscar-api",
+                        "/api/pedidos-web/procesar",
+
+                        "/login-cliente",
+                        "/login-cliente.html",
+                        "/restablecer-cliente",
+                        "/restablecer-cliente.html",
+                        "/api/clientes-web/**",
+
+                        "/mis-pedidos",
+                        "/mis-pedidos.html",
+                        "/api/pedidos-web/mis-pedidos"
                 );
     }
 }

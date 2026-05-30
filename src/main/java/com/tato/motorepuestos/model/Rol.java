@@ -25,6 +25,9 @@ public class Rol {
     private boolean permisoTraslados;
     private boolean permisoHistorial;
 
+    private boolean permisoClientes;
+    private boolean permisoWeb;
+
     private boolean permisoComprasIngresar;
     private boolean permisoComprasRegistro;
     private boolean permisoVentasRealizar;
@@ -76,4 +79,10 @@ public class Rol {
 
     public boolean isPermisoVentasRegistro() { return permisoVentasRegistro; }
     public void setPermisoVentasRegistro(boolean permisoVentasRegistro) { this.permisoVentasRegistro = permisoVentasRegistro; }
+
+    public boolean isPermisoClientes() { return permisoClientes; }
+    public void setPermisoClientes(boolean permisoClientes) { this.permisoClientes = permisoClientes; }
+
+    public boolean isPermisoWeb() { return permisoWeb; }
+    public void setPermisoWeb(boolean permisoWeb) { this.permisoWeb = permisoWeb; }
 }

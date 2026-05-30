@@ -55,6 +55,9 @@ public class AuthController {
             session.setAttribute("p_productos",        esAdmin || (rol != null && rol.isPermisoProductos()));
             session.setAttribute("p_categorias",       esAdmin || (rol != null && rol.isPermisoCategorias()));
             session.setAttribute("p_sucursales",       esAdmin || (rol != null && rol.isPermisoSucursales()));
+            session.setAttribute("p_clientes",         esAdmin || (rol != null && rol.isPermisoClientes()));
+            session.setAttribute("p_web",              esAdmin || (rol != null && rol.isPermisoWeb()));
+
             session.setAttribute("p_stocks",           esAdmin || (rol != null && rol.isPermisoStocks()));
             session.setAttribute("p_traslados",        esAdmin || (rol != null && rol.isPermisoTraslados()));
             session.setAttribute("p_historial",        esAdmin || (rol != null && rol.isPermisoHistorial()));
@@ -95,6 +98,10 @@ public class AuthController {
                 permisos.put("permisoProductos",       esAdmin || (rol != null && rol.isPermisoProductos()));
                 permisos.put("permisoCategorias",      esAdmin || (rol != null && rol.isPermisoCategorias()));
                 permisos.put("permisoSucursales",      esAdmin || (rol != null && rol.isPermisoSucursales()));
+
+                permisos.put("permisoClientes",        esAdmin || (rol != null && rol.isPermisoClientes()));
+                permisos.put("permisoWeb",             esAdmin || (rol != null && rol.isPermisoWeb()));
+
                 permisos.put("permisoStocks",          esAdmin || (rol != null && rol.isPermisoStocks()));
                 permisos.put("permisoTraslados",       esAdmin || (rol != null && rol.isPermisoTraslados()));
                 permisos.put("permisoHistorial",       esAdmin || (rol != null && rol.isPermisoHistorial()));
@@ -102,6 +109,7 @@ public class AuthController {
                 permisos.put("permisoComprasRegistro", esAdmin || (rol != null && rol.isPermisoComprasRegistro()));
                 permisos.put("permisoVentasRealizar",  esAdmin || (rol != null && rol.isPermisoVentasRealizar()));
                 permisos.put("permisoVentasRegistro",  esAdmin || (rol != null && rol.isPermisoVentasRegistro()));
+
                 Map<String, Object> userData = new HashMap<>();
                 userData.put("id",           usuario.getId());
                 userData.put("nombre",       usuario.getNombres() + " " + usuario.getApellidos());

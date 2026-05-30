@@ -1,279 +1,305 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestión de Permisos - Motorepuestos Tato</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-  <style>
-    :root { --fondo-app:#f0f9ff;--azul-primario:#0ea5e9;--azul-oscuro:#0369a1;--azul-hover:#38bdf8;--logo-rojo:#e31b23;--logo-naranja:#f97316; }
-    body { background-color:var(--fondo-app); font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; }
-    .navbar-custom { background-color:var(--azul-oscuro); box-shadow:0 4px 6px rgba(0,0,0,0.1); }
-    .navbar-custom .navbar-brand,.navbar-custom .nav-link { color:#fff; font-weight:500; }
-    .navbar-custom .nav-link.active,.navbar-custom .nav-link:hover { color:var(--azul-hover); }
-    .tato-rojo { color:var(--logo-rojo); font-weight:900; margin-right:5px; }
-    .casco-logo { color:var(--logo-naranja); }
-    .table-custom th { background-color:var(--azul-oscuro); color:white; border-bottom:2px solid var(--azul-primario); vertical-align:middle; text-align:center; }
-    .table-custom td { vertical-align:middle; text-align:center; }
-    .table-custom td.text-start { text-align:left; }
-    .table-custom tbody tr:hover { background-color:rgba(14,165,233,0.05); }
-    .rol-inactivo { opacity:0.6; filter:grayscale(80%); background-color:#f8f9fa; }
-    .badge-fraccion { padding:6px 12px; border-radius:6px; font-weight:900; font-size:0.85rem; display:inline-block; min-width:50px; text-align:center; }
-    .frac-full { background-color:#d1fae5; color:#059669; border:1px solid #34d399; }
-    .frac-partial { background-color:#fef3c7; color:#d97706; border:1px solid #fbbf24; }
-    .frac-none { background-color:#fee2e2; color:#e11d48; border:1px solid #f87171; }
-    .seccion-permisos { background:#fff; border:1px solid #dee2e6; border-radius:8px; padding:15px; margin-bottom:15px; }
-    .seccion-titulo { font-size:0.9rem; font-weight:700; color:var(--azul-oscuro); text-transform:uppercase; margin-bottom:15px; border-bottom:1px solid #dee2e6; padding-bottom:8px; }
-    body {
-    animation: fadeIn 0.1s ease-in;
-    }
-    @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to   { opacity: 1; transform: translateY(0); }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Permisos - Motorepuestos Tato</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <style>
+        :root { --fondo-app:#f0f9ff;--azul-primario:#0ea5e9;--azul-oscuro:#0369a1;--azul-hover:#38bdf8;--logo-rojo:#e31b23;--logo-naranja:#f97316; }
+        body { background-color:var(--fondo-app); font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; }
+        .navbar-custom { background-color:var(--azul-oscuro); box-shadow:0 4px 6px rgba(0,0,0,0.1); }
+        .navbar-custom .navbar-brand,.navbar-custom .nav-link { color:#fff; font-weight:500; }
+        .navbar-custom .nav-link.active,.navbar-custom .nav-link:hover { color:var(--azul-hover); }
+        .tato-rojo { color:var(--logo-rojo); font-weight:900; margin-right:5px; }
+        .casco-logo { color:var(--logo-naranja); }
+        .table-custom th { background-color:var(--azul-oscuro); color:white; border-bottom:2px solid var(--azul-primario); vertical-align:middle; text-align:center; font-size: 0.85rem;}
+        .table-custom td { vertical-align:middle; text-align:center; }
+        .table-custom td.text-start { text-align:left; }
+        .table-custom tbody tr:hover { background-color:rgba(14,165,233,0.05); }
+        .rol-inactivo { opacity:0.6; filter:grayscale(80%); background-color:#f8f9fa; }
+        .badge-fraccion { padding:6px 12px; border-radius:6px; font-weight:900; font-size:0.85rem; display:inline-block; min-width:50px; text-align:center; }
+        .frac-full { background-color:#d1fae5; color:#059669; border:1px solid #34d399; }
+        .frac-partial { background-color:#fef3c7; color:#d97706; border:1px solid #fbbf24; }
+        .frac-none { background-color:#fee2e2; color:#e11d48; border:1px solid #f87171; }
+        .seccion-permisos { background:#fff; border:1px solid #dee2e6; border-radius:8px; padding:15px; margin-bottom:15px; }
+        .seccion-titulo { font-size:0.9rem; font-weight:700; color:var(--azul-oscuro); text-transform:uppercase; margin-bottom:15px; border-bottom:1px solid #dee2e6; padding-bottom:8px; }
+        body {
+        animation: fadeIn 0.1s ease-in;
+        }
+        @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to   { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
 <body>
 
 <div id="navbar-container"></div>
 
-<div class="container mt-4 pt-3">
-  <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
-    <h3 style="color:var(--azul-oscuro);">
-      <i class="bi bi-shield-lock-fill me-2 casco-logo"></i>Gestión de <span class="tato-rojo">Permisos</span>
-    </h3>
-    <button class="btn btn-primary" onclick="abrirModalNuevo()">
-      <i class="bi bi-plus-circle me-1"></i> Nuevo Rol
-    </button>
-  </div>
-  <div class="card shadow-sm border-0">
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table table-hover table-custom mb-0">
-          <thead>
-          <tr>
-            <th style="width:150px;">Acciones</th>
-            <th class="text-start">Nombre del Rol</th>
-            <th>Gestiones</th>
-            <th>Stocks</th>
-            <th>Traslados</th>
-            <th>Historial</th>
-            <th>Compras</th>
-            <th>Ventas</th>
-            <th>Estado</th>
-          </tr>
-          </thead>
-          <tbody id="tablaRolesBody"></tbody>
-        </table>
-      </div>
+<div class="container-fluid mt-4 pt-3 px-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
+        <h3 style="color:var(--azul-oscuro);">
+            <i class="bi bi-shield-lock-fill me-2 casco-logo"></i>Gestión de <span class="tato-rojo">Permisos</span>
+        </h3>
+        <button class="btn btn-primary fw-bold" onclick="abrirModalNuevo()">
+            <i class="bi bi-plus-circle me-1"></i> Nuevo Rol
+        </button>
     </div>
-  </div>
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-custom mb-0">
+                    <thead>
+                    <tr>
+                        <th style="width:140px;">Acciones</th>
+                        <th class="text-start">Nombre del Rol</th>
+                        <th>Gestiones</th>
+                        <th>Web / Clientes</th>
+                        <th>Stocks / Almacén</th> <th>Traslados</th>
+                        <th>Historial</th>
+                        <th>Compras</th>
+                        <th>Ventas / Pedidos</th> <th>Estado</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tablaRolesBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- Modal -->
 <div class="modal fade" id="modalRol" tabindex="-1" data-bs-backdrop="static">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-header" style="background-color:var(--azul-oscuro);color:white;">
-        <h5 class="modal-title" id="tituloModal"><i class="bi bi-shield-plus me-2"></i>Registrar Nuevo Rol</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body bg-light">
-        <form id="formRol">
-          <input type="hidden" id="rolId">
-          <div class="mb-4">
-            <label class="form-label fw-bold">Nombre del Rol / Perfil</label>
-            <input type="text" class="form-control" id="nombreRol" placeholder="Ej. Cajero, Almacenero" required>
-          </div>
-          <div class="seccion-permisos">
-            <div class="seccion-titulo"><i class="bi bi-gear me-2"></i>Gestiones</div>
-            <div class="row g-3">
-              <div class="col-md-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pUsuarios"><label class="form-check-label">Usuarios</label></div></div>
-              <div class="col-md-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pRoles"><label class="form-check-label">Permisos (Roles)</label></div></div>
-              <div class="col-md-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pProductos"><label class="form-check-label">Productos</label></div></div>
-              <div class="col-md-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pCategorias"><label class="form-check-label">Categorías</label></div></div>
-              <div class="col-md-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pSucursales"><label class="form-check-label">Sucursales</label></div></div>
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color:var(--azul-oscuro);color:white;">
+                <h5 class="modal-title fw-bold" id="tituloModal"><i class="bi bi-shield-plus me-2"></i>Registrar Nuevo Rol</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-          </div>
-          <div class="seccion-permisos">
-            <div class="seccion-titulo"><i class="bi bi-boxes me-2"></i>Inventario y Auditoría</div>
-            <div class="row g-3">
-              <div class="col-md-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pStocks"><label class="form-check-label">Control de Stocks</label></div></div>
-              <div class="col-md-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pTraslados"><label class="form-check-label">Traslados</label></div></div>
-              <div class="col-md-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pHistorial"><label class="form-check-label text-danger">Historial General</label></div></div>
+            <div class="modal-body bg-light">
+                <form id="formRol">
+                    <input type="hidden" id="rolId">
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Nombre del Rol / Perfil</label>
+                        <input type="text" class="form-control fw-bold" id="nombreRol" placeholder="Ej. Cajero, Almacenero, Admin Web" required>
+                    </div>
+
+                    <div class="seccion-permisos border-secondary" style="border-width: 2px;">
+                        <div class="seccion-titulo text-secondary"><i class="bi bi-gear me-2"></i>Gestiones Base</div>
+                        <div class="row g-3">
+                            <div class="col-md-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pUsuarios"><label class="form-check-label fw-semibold">Usuarios</label></div></div>
+                            <div class="col-md-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pRoles"><label class="form-check-label fw-semibold">Permisos</label></div></div>
+                            <div class="col-md-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pProductos"><label class="form-check-label fw-semibold">Catálogo Productos</label></div></div>
+                            <div class="col-md-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pCategorias"><label class="form-check-label fw-semibold">Categorías</label></div></div>
+                            <div class="col-md-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pSucursales"><label class="form-check-label fw-semibold">Sucursales</label></div></div>
+                        </div>
+                    </div>
+
+                    <div class="seccion-permisos border-primary" style="border-width: 2px;">
+                        <div class="seccion-titulo text-primary"><i class="bi bi-globe me-2"></i>Plataforma Web y CRM</div>
+                        <div class="row g-3">
+                            <div class="col-md-6"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pClientes"><label class="form-check-label fw-semibold">Clientes (Local y Web)</label></div></div>
+                            <div class="col-md-6"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pWeb"><label class="form-check-label text-primary fw-bold">Configuración Tienda Web</label></div></div>
+                        </div>
+                    </div>
+
+                    <div class="seccion-permisos border-warning" style="border-width: 2px;">
+                        <div class="seccion-titulo text-warning" style="color: #d97706 !important;"><i class="bi bi-boxes me-2"></i>Inventario y Auditoría</div>
+                        <div class="row g-3">
+                            <div class="col-md-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pStocks"><label class="form-check-label fw-bold">Stocks y Almacén</label></div></div>
+                            <div class="col-md-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pTraslados"><label class="form-check-label fw-semibold">Traslados</label></div></div>
+                            <div class="col-md-4"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pHistorial"><label class="form-check-label text-danger fw-semibold">Historial General</label></div></div>
+                        </div>
+                    </div>
+
+                    <div class="seccion-permisos border-success" style="border-width: 2px;">
+                        <div class="seccion-titulo text-success"><i class="bi bi-cart-check me-2"></i>Operaciones Comerciales</div>
+                        <div class="row g-3 mb-2">
+                            <div class="col-md-6"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pComprasIngresar"><label class="form-check-label fw-semibold">Ingresar Compra</label></div></div>
+                            <div class="col-md-6"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pComprasRegistro"><label class="form-check-label fw-semibold">Registro de Compras</label></div></div>
+                        </div>
+                        <div class="row g-3 border-top pt-2">
+                            <div class="col-md-6"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pVentasRealizar"><label class="form-check-label text-success fw-bold">Punto de Venta (TPV)</label></div></div>
+                            <div class="col-md-6"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pVentasRegistro"><label class="form-check-label text-success fw-bold">Reg. Ventas y Pedidos Web</label></div></div>
+                        </div>
+                    </div>
+                </form>
             </div>
-          </div>
-          <div class="seccion-permisos">
-            <div class="seccion-titulo"><i class="bi bi-cart-check me-2"></i>Operaciones</div>
-            <div class="row g-3 mb-2">
-              <div class="col-md-6"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pComprasIngresar"><label class="form-check-label">Ingresar Compra</label></div></div>
-              <div class="col-md-6"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pComprasRegistro"><label class="form-check-label">Registro de Compras</label></div></div>
+            <div class="modal-footer bg-light border-top-0">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success fw-bold" onclick="guardarRol()">
+                    <i class="bi bi-save me-1"></i> <span id="textoBtnGuardar">Guardar Rol</span>
+                </button>
             </div>
-            <div class="row g-3 border-top pt-2">
-              <div class="col-md-6"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pVentasRealizar"><label class="form-check-label text-success">Realizar Venta</label></div></div>
-              <div class="col-md-6"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pVentasRegistro"><label class="form-check-label text-success">Registro de Ventas</label></div></div>
-            </div>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-success" onclick="guardarRol()">
-          <i class="bi bi-save me-1"></i> <span id="textoBtnGuardar">Guardar Rol</span>
-        </button>
-      </div>
+        </div>
     </div>
-  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="/navbar.js?v1"></script>
+<script src="/navbar.js?v2"></script>
 <script>
-  let modalRol;
+    let modalRol;
 
-  document.addEventListener('DOMContentLoaded', async () => {
-      await initNavbar();
-      modalRol = new bootstrap.Modal(document.getElementById('modalRol'));
-      cargarRoles();
-  });
+    document.addEventListener('DOMContentLoaded', async () => {
+        await initNavbar();
+        modalRol = new bootstrap.Modal(document.getElementById('modalRol'));
+        cargarRoles();
+    });
 
-  function fracBadge(v, max) {
-      const cls = v === max ? 'frac-full' : v === 0 ? 'frac-none' : 'frac-partial';
-      return `<span class="badge-fraccion ${cls}">${v}/${max}</span>`;
-  }
+    function fracBadge(v, max) {
+        const cls = v === max ? 'frac-full' : v === 0 ? 'frac-none' : 'frac-partial';
+        return `<span class="badge-fraccion ${cls}">${v}/${max}</span>`;
+    }
 
-  async function cargarRoles() {
-      try {
-          const res = await fetch('/api/roles');
-          const roles = await res.json();
-          const tbody = document.getElementById('tablaRolesBody');
-          tbody.innerHTML = '';
-          roles.forEach(r => {
-              const inactivo = !r.activo;
-              const badge = r.activo ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-secondary">Inactivo</span>';
-              let botones = r.activo
-                  ? `<button class="btn btn-outline-primary" onclick="abrirModalEditar(${r.id})"><i class="bi bi-pencil-square"></i></button>
-                     <button class="btn btn-outline-warning" onclick="cambiarEstado(${r.id},'${r.nombre}',false)"><i class="bi bi-pause-circle"></i></button>
-                     <button class="btn btn-outline-danger" onclick="eliminarRol(${r.id},'${r.nombre}')"><i class="bi bi-trash"></i></button>`
-                  : `<button class="btn btn-outline-success" onclick="cambiarEstado(${r.id},'${r.nombre}',true)"><i class="bi bi-play-circle"></i></button>
-                     <button class="btn btn-outline-danger" onclick="eliminarRol(${r.id},'${r.nombre}')"><i class="bi bi-trash"></i></button>`;
-              const gGest = (r.permisoUsuarios?1:0)+(r.permisoRoles?1:0)+(r.permisoProductos?1:0)+(r.permisoCategorias?1:0)+(r.permisoSucursales?1:0);
-              const gComp = (r.permisoComprasIngresar?1:0)+(r.permisoComprasRegistro?1:0);
-              const gVent = (r.permisoVentasRealizar?1:0)+(r.permisoVentasRegistro?1:0);
-              const tr = document.createElement('tr');
-              if (inactivo) tr.className = 'rol-inactivo';
-              tr.innerHTML = `
-                  <td><div class="btn-group btn-group-sm">${botones}</div></td>
-                  <td class="text-start fw-bold text-dark">${r.nombre}</td>
-                  <td>${fracBadge(gGest,5)}</td>
-                  <td>${fracBadge(r.permisoStocks?1:0,1)}</td>
-                  <td>${fracBadge(r.permisoTraslados?1:0,1)}</td>
-                  <td>${fracBadge(r.permisoHistorial?1:0,1)}</td>
-                  <td>${fracBadge(gComp,2)}</td>
-                  <td>${fracBadge(gVent,2)}</td>
-                  <td>${badge}</td>`;
-              tbody.appendChild(tr);
-          });
-      } catch (e) {}
-  }
+    async function cargarRoles() {
+        try {
+            const res = await fetch('/api/roles');
+            const roles = await res.json();
+            const tbody = document.getElementById('tablaRolesBody');
+            tbody.innerHTML = '';
+            roles.forEach(r => {
+                const inactivo = !r.activo;
+                const badge = r.activo ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-secondary">Inactivo</span>';
+                let botones = r.activo
+                    ? `<button class="btn btn-outline-primary" onclick="abrirModalEditar(${r.id})"><i class="bi bi-pencil-square"></i></button>
+                       <button class="btn btn-outline-warning" onclick="cambiarEstado(${r.id},'${r.nombre}',false)"><i class="bi bi-pause-circle"></i></button>
+                       <button class="btn btn-outline-danger" onclick="eliminarRol(${r.id},'${r.nombre}')"><i class="bi bi-trash"></i></button>`
+                    : `<button class="btn btn-outline-success" onclick="cambiarEstado(${r.id},'${r.nombre}',true)"><i class="bi bi-play-circle"></i></button>
+                       <button class="btn btn-outline-danger" onclick="eliminarRol(${r.id},'${r.nombre}')"><i class="bi bi-trash"></i></button>`;
 
-  function abrirModalNuevo() {
-      document.getElementById('formRol').reset();
-      document.getElementById('rolId').value = '';
-      document.getElementById('tituloModal').innerHTML = '<i class="bi bi-shield-plus me-2"></i>Registrar Nuevo Rol';
-      document.getElementById('textoBtnGuardar').innerText = 'Guardar Rol';
-      modalRol.show();
-  }
+                const gGest = (r.permisoUsuarios?1:0)+(r.permisoRoles?1:0)+(r.permisoProductos?1:0)+(r.permisoCategorias?1:0)+(r.permisoSucursales?1:0);
+                const gWeb  = (r.permisoClientes?1:0)+(r.permisoWeb?1:0);
+                const gComp = (r.permisoComprasIngresar?1:0)+(r.permisoComprasRegistro?1:0);
+                const gVent = (r.permisoVentasRealizar?1:0)+(r.permisoVentasRegistro?1:0);
 
-  async function abrirModalEditar(id) {
-      try {
-          const res = await fetch(`/api/roles/${id}`);
-          if (res.ok) {
-              const r = await res.json();
-              document.getElementById('rolId').value = r.id;
-              document.getElementById('nombreRol').value = r.nombre;
-              document.getElementById('pUsuarios').checked = r.permisoUsuarios;
-              document.getElementById('pRoles').checked = r.permisoRoles;
-              document.getElementById('pProductos').checked = r.permisoProductos;
-              document.getElementById('pCategorias').checked = r.permisoCategorias;
-              document.getElementById('pSucursales').checked = r.permisoSucursales;
-              document.getElementById('pStocks').checked = r.permisoStocks;
-              document.getElementById('pTraslados').checked = r.permisoTraslados;
-              document.getElementById('pHistorial').checked = r.permisoHistorial;
-              document.getElementById('pComprasIngresar').checked = r.permisoComprasIngresar;
-              document.getElementById('pComprasRegistro').checked = r.permisoComprasRegistro;
-              document.getElementById('pVentasRealizar').checked = r.permisoVentasRealizar;
-              document.getElementById('pVentasRegistro').checked = r.permisoVentasRegistro;
-              document.getElementById('tituloModal').innerHTML = '<i class="bi bi-pencil-square me-2"></i>Editar Rol';
-              document.getElementById('textoBtnGuardar').innerText = 'Actualizar Rol';
-              modalRol.show();
-          }
-      } catch (e) {}
-  }
+                const tr = document.createElement('tr');
+                if (inactivo) tr.className = 'rol-inactivo';
+                tr.innerHTML = `
+                    <td><div class="btn-group btn-group-sm">${botones}</div></td>
+                    <td class="text-start fw-bold text-dark">${r.nombre}</td>
+                    <td>${fracBadge(gGest,5)}</td>
+                    <td>${fracBadge(gWeb,2)}</td>
+                    <td>${fracBadge(r.permisoStocks?1:0,1)}</td>
+                    <td>${fracBadge(r.permisoTraslados?1:0,1)}</td>
+                    <td>${fracBadge(r.permisoHistorial?1:0,1)}</td>
+                    <td>${fracBadge(gComp,2)}</td>
+                    <td>${fracBadge(gVent,2)}</td>
+                    <td>${badge}</td>`;
+                tbody.appendChild(tr);
+            });
+        } catch (e) {}
+    }
 
-  async function guardarRol() {
-      const id = document.getElementById('rolId').value;
-      const nombre = document.getElementById('nombreRol').value.trim();
-      if (!nombre) { Swal.fire({ icon:'warning', title:'Falta nombre', confirmButtonColor:'#0ea5e9' }); return; }
-      const payload = {
-          nombre,
-          permisoUsuarios:        document.getElementById('pUsuarios').checked,
-          permisoRoles:           document.getElementById('pRoles').checked,
-          permisoProductos:       document.getElementById('pProductos').checked,
-          permisoCategorias:      document.getElementById('pCategorias').checked,
-          permisoSucursales:      document.getElementById('pSucursales').checked,
-          permisoStocks:          document.getElementById('pStocks').checked,
-          permisoTraslados:       document.getElementById('pTraslados').checked,
-          permisoHistorial:       document.getElementById('pHistorial').checked,
-          permisoComprasIngresar: document.getElementById('pComprasIngresar').checked,
-          permisoComprasRegistro: document.getElementById('pComprasRegistro').checked,
-          permisoVentasRealizar:  document.getElementById('pVentasRealizar').checked,
-          permisoVentasRegistro:  document.getElementById('pVentasRegistro').checked,
-      };
-      try {
-          const res = await fetch(id ? `/api/roles/${id}` : '/api/roles', {
-              method: id ? 'PUT' : 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(payload)
-          });
-          if (res.ok) {
-              modalRol.hide();
-              cargarRoles();
-              Swal.fire({ icon:'success', title:'Guardado', showConfirmButton:false, timer:1500 });
-          }
-      } catch (e) {}
-  }
+    function abrirModalNuevo() {
+        document.getElementById('formRol').reset();
+        document.getElementById('rolId').value = '';
+        document.getElementById('tituloModal').innerHTML = '<i class="bi bi-shield-plus me-2"></i>Registrar Nuevo Rol';
+        document.getElementById('textoBtnGuardar').innerText = 'Guardar Rol';
+        modalRol.show();
+    }
 
-  function cambiarEstado(id, nombre, activar) {
-      Swal.fire({
-          title:`¿${activar?'Reactivar':'Desactivar'} rol?`, text:`"${nombre}"`,
-          icon:'info', showCancelButton:true, confirmButtonColor: activar?'#198754':'#f59e0b'
-      }).then(async r => {
-          if (r.isConfirmed) {
-              try {
-                  await fetch(`/api/roles/${id}/estado?activo=${activar}`, { method:'PUT' });
-                  cargarRoles();
-              } catch (e) {}
-          }
-      });
-  }
+    async function abrirModalEditar(id) {
+        try {
+            const res = await fetch(`/api/roles/${id}`);
+            if (res.ok) {
+                const r = await res.json();
+                document.getElementById('rolId').value = r.id;
+                document.getElementById('nombreRol').value = r.nombre;
 
-  function eliminarRol(id, nombre) {
-      Swal.fire({
-          title:'¿Desactivar Rol?', text:`"${nombre}" quedará inactivo.`,
-          icon:'warning', showCancelButton:true, confirmButtonColor:'#e31b23'
-      }).then(async r => {
-          if (r.isConfirmed) {
-              try {
-                  await fetch(`/api/roles/${id}`, { method:'DELETE' });
-                  cargarRoles();
-              } catch (e) {}
-          }
-      });
-  }
+                document.getElementById('pUsuarios').checked = r.permisoUsuarios;
+                document.getElementById('pRoles').checked = r.permisoRoles;
+                document.getElementById('pProductos').checked = r.permisoProductos;
+                document.getElementById('pCategorias').checked = r.permisoCategorias;
+                document.getElementById('pSucursales').checked = r.permisoSucursales;
+
+                document.getElementById('pClientes').checked = !!r.permisoClientes;
+                document.getElementById('pWeb').checked = !!r.permisoWeb;
+
+                document.getElementById('pStocks').checked = r.permisoStocks;
+                document.getElementById('pTraslados').checked = r.permisoTraslados;
+                document.getElementById('pHistorial').checked = r.permisoHistorial;
+
+                document.getElementById('pComprasIngresar').checked = r.permisoComprasIngresar;
+                document.getElementById('pComprasRegistro').checked = r.permisoComprasRegistro;
+                document.getElementById('pVentasRealizar').checked = r.permisoVentasRealizar;
+                document.getElementById('pVentasRegistro').checked = r.permisoVentasRegistro;
+
+                document.getElementById('tituloModal').innerHTML = '<i class="bi bi-pencil-square me-2"></i>Editar Rol';
+                document.getElementById('textoBtnGuardar').innerText = 'Actualizar Rol';
+                modalRol.show();
+            }
+        } catch (e) {}
+    }
+
+    async function guardarRol() {
+        const id = document.getElementById('rolId').value;
+        const nombre = document.getElementById('nombreRol').value.trim();
+        if (!nombre) { Swal.fire({ icon:'warning', title:'Falta nombre', confirmButtonColor:'#0ea5e9' }); return; }
+
+        const payload = {
+            nombre,
+            permisoUsuarios:        document.getElementById('pUsuarios').checked,
+            permisoRoles:           document.getElementById('pRoles').checked,
+            permisoProductos:       document.getElementById('pProductos').checked,
+            permisoCategorias:      document.getElementById('pCategorias').checked,
+            permisoSucursales:      document.getElementById('pSucursales').checked,
+
+            permisoClientes:        document.getElementById('pClientes').checked,
+            permisoWeb:             document.getElementById('pWeb').checked,
+
+            permisoStocks:          document.getElementById('pStocks').checked,
+            permisoTraslados:       document.getElementById('pTraslados').checked,
+            permisoHistorial:       document.getElementById('pHistorial').checked,
+            permisoComprasIngresar: document.getElementById('pComprasIngresar').checked,
+            permisoComprasRegistro: document.getElementById('pComprasRegistro').checked,
+            permisoVentasRealizar:  document.getElementById('pVentasRealizar').checked,
+            permisoVentasRegistro:  document.getElementById('pVentasRegistro').checked,
+        };
+
+        try {
+            const res = await fetch(id ? `/api/roles/${id}` : '/api/roles', {
+                method: id ? 'PUT' : 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                modalRol.hide();
+                cargarRoles();
+                Swal.fire({ icon:'success', title:'Guardado', showConfirmButton:false, timer:1500 });
+            }
+        } catch (e) {}
+    }
+
+    function cambiarEstado(id, nombre, activar) {
+        Swal.fire({
+            title:`¿${activar?'Reactivar':'Desactivar'} rol?`, text:`"${nombre}"`,
+            icon:'info', showCancelButton:true, confirmButtonColor: activar?'#198754':'#f59e0b'
+        }).then(async r => {
+            if (r.isConfirmed) {
+                try {
+                    await fetch(`/api/roles/${id}/estado?activo=${activar}`, { method:'PUT' });
+                    cargarRoles();
+                } catch (e) {}
+            }
+        });
+    }
+
+    function eliminarRol(id, nombre) {
+        Swal.fire({
+            title:'¿Desactivar Rol?', text:`"${nombre}" quedará inactivo.`,
+            icon:'warning', showCancelButton:true, confirmButtonColor:'#e31b23'
+        }).then(async r => {
+            if (r.isConfirmed) {
+                try {
+                    await fetch(`/api/roles/${id}`, { method:'DELETE' });
+                    cargarRoles();
+                } catch (e) {}
+            }
+        });
+    }
 </script>
 </body>
 </html>

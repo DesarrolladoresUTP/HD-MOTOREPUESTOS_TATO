@@ -46,10 +46,10 @@ public class ProductoRestController {
             @RequestParam(value = "descripcion", required = false) String descripcion,
             @RequestParam("categoriaId") Long categoriaId,
             @RequestParam("marca") String marca,
-            @RequestParam(value = "precioCompra", required = false) BigDecimal precioCompra,
+            @RequestParam(value = "precioCompra", required = false, defaultValue = "0") BigDecimal precioCompra,
             @RequestParam("precioVenta") BigDecimal precioVenta,
-            @RequestParam(value = "stock", required = false) Integer stock,
-            @RequestParam("stockMinimo") Integer stockMinimo,
+            @RequestParam(value = "stock", required = false, defaultValue = "0") Integer stock,
+            @RequestParam(value = "stockMinimo", required = false, defaultValue = "5") Integer stockMinimo,
             @RequestParam(value = "imagen", required = false) MultipartFile imagen,
             HttpSession session) {
         try {
@@ -73,10 +73,10 @@ public class ProductoRestController {
             @RequestParam(value = "descripcion", required = false) String descripcion,
             @RequestParam("categoriaId") Long categoriaId,
             @RequestParam("marca") String marca,
-            @RequestParam(value = "precioCompra", required = false) BigDecimal precioCompra,
+            @RequestParam(value = "precioCompra", required = false, defaultValue = "0") BigDecimal precioCompra,
             @RequestParam("precioVenta") BigDecimal precioVenta,
-            @RequestParam(value = "stock", required = false) Integer stock,
-            @RequestParam("stockMinimo") Integer stockMinimo,
+            @RequestParam(value = "stock", required = false, defaultValue = "0") Integer stock,
+            @RequestParam(value = "stockMinimo", required = false, defaultValue = "5") Integer stockMinimo,
             @RequestParam(value = "imagen", required = false) MultipartFile imagen,
             HttpSession session) {
         try {
@@ -112,6 +112,22 @@ public class ProductoRestController {
             Long usuarioId = (Long) session.getAttribute("usuarioId");
             productoService.eliminarLogico(inventarioId, usuarioId, sucursalId);
             return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/activos")
+    public ResponseEntity<?> listarParaTienda(HttpSession session) {
+        try {
+            Long sucursalId = (Long) session.getAttribute("sucursalId");
+
+            if (sucursalId == null) {
+                sucursalId = 1L;
+            }
+
+            List<InventarioSucursal> inventario = productoService.listarPorSucursal(sucursalId);
+            return ResponseEntity.ok(inventario);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
