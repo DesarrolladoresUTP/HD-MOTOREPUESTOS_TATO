@@ -10,7 +10,10 @@ public class PedidoWebDTO {
     private String metodoEntrega;
     private String direccionEntrega;
     private List<ItemCarritoDTO> carrito;
+    private Long sucursalId;
 
+    public Long getSucursalId() { return sucursalId; }
+    public void setSucursalId(Long sucursalId) { this.sucursalId = sucursalId; }
     public String getTipoDocumento() { return tipoDocumento; }
     public void setTipoDocumento(String tipoDocumento) { this.tipoDocumento = tipoDocumento; }
     public String getNumeroDocumento() { return numeroDocumento; }

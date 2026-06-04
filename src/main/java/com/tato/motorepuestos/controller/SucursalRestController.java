@@ -1,6 +1,7 @@
 package com.tato.motorepuestos.controller;
 
 import com.tato.motorepuestos.model.Sucursal;
+import com.tato.motorepuestos.repository.InventarioSucursalRepository;
 import com.tato.motorepuestos.service.SucursalService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +15,8 @@ public class SucursalRestController {
 
     @Autowired
     private SucursalService sucursalService;
+    @Autowired
+    private InventarioSucursalRepository inventarioRepository;
 
     @GetMapping
     public List<Sucursal> listar() {
@@ -62,6 +65,30 @@ public class SucursalRestController {
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/con-stock")
+    public ResponseEntity<?> sucursalesConStock(@RequestBody List<Long> productoIds) {
+        try {
+            List<Sucursal> sucursales = sucursalService.listarActivas();
+            if (productoIds == null || productoIds.isEmpty()) {
+                return ResponseEntity.ok(sucursales);
+            }
+            List<Sucursal> disponibles = sucursales.stream()
+                    .filter(s -> productoIds.stream().allMatch(pid ->
+                            inventarioRepository.findByProductoIdAndSucursalId(pid, s.getId())
+                                    .map(inv -> Boolean.TRUE.equals(inv.getActivo()) && inv.getStock() > 0)
+                                    .orElse(false)
+                    ))
+                    .collect(java.util.stream.Collectors.toList());
+
+            if (disponibles.isEmpty()) {
+                return ResponseEntity.ok(sucursales);
+            }
+            return ResponseEntity.ok(disponibles);
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body("Error interno: " + e.getMessage());
         }
     }
 }

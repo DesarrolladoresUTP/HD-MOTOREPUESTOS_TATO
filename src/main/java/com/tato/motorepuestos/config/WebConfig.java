@@ -30,38 +30,37 @@ public class WebConfig implements WebMvcConfigurer {
                         "/",
                         "/error",
                         "/uploads/**",
-
                         "/login",
                         "/login.html",
                         "/api/auth/login",
                         "/api/sucursales/activas",
-
+                        "/api/sucursales/con-stock",          // ? AÑADIR
                         "/activar-cuenta",
                         "/restablecer-password",
                         "/token-invalido",
                         "/establecer-password.html",
                         "/api/token/**",
-
                         "/tienda",
                         "/tienda.html",
                         "/tienda.js",
                         "/api/productos/activos",
-
                         "/checkout",
                         "/checkout.html",
                         "/checkout.js",
                         "/api/clientes/buscar-api",
                         "/api/pedidos-web/procesar",
-
+                        "/api/pedidos-web/mis-pedidos",
+                        "/api/pedidos-web/*/boleta-pdf",      // ? AÑADIR
+                        "/api/consultas/documento/*",         // ? AÑADIR
                         "/login-cliente",
                         "/login-cliente.html",
                         "/restablecer-cliente",
                         "/restablecer-cliente.html",
                         "/api/clientes-web/**",
-
                         "/mis-pedidos",
                         "/mis-pedidos.html",
-                        "/api/pedidos-web/mis-pedidos"
+                        "/navbar.js",
+                        "/navbar.js*"                         // ? AÑADIR si no está
                 );
     }
 }

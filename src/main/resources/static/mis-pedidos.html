@@ -45,93 +45,168 @@
         </div>
     </div>
 </div>
-<script src="/navbar.js?v9"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="/navbar.js?v12"></script>
 <script>
+    let pedidosCache = [];
+
     document.addEventListener("DOMContentLoaded", async () => {
         const config = JSON.parse(localStorage.getItem('tato_web_config'));
         if (config) {
             document.documentElement.style.setProperty('--tato-primary', config.colorPrimario);
             document.documentElement.style.setProperty('--tato-secondary', config.colorSecundario);
         }
-
         await cargarMisPedidos();
     });
 
+    function generarBarraEstado(estado) {
+        const pasos = ['PENDIENTE', 'EN_PREPARACION', 'ENVIADO', 'ENTREGADO'];
+        const pasoLabels = ['Recibido', 'Preparando', 'En camino', 'Entregado'];
+        if (estado === 'CANCELADO') {
+            return `<div class="mt-2 mb-3">
+                <div class="progress" style="height:6px">
+                    <div class="progress-bar bg-danger" style="width:100%"></div>
+                </div>
+                <small class="text-danger fw-bold">Pedido cancelado</small>
+            </div>`;
+        }
+        let indexActual = pasos.indexOf(estado);
+        if (estado === 'LISTO_RECOJO') indexActual = 2;
+        const porcentaje = indexActual < 0 ? 10 : Math.round(((indexActual + 1) / pasos.length) * 100);
+        return `<div class="mt-2 mb-3">
+            <div class="progress mb-1" style="height:6px; border-radius:3px;">
+                <div class="progress-bar bg-danger" role="progressbar" style="width:${porcentaje}%;"></div>
+            </div>
+            <div class="d-flex justify-content-between">
+                ${pasoLabels.map((label, i) => `
+                    <small class="fw-bold" style="font-size:0.65rem; color:${i <= indexActual ? '#e31b23' : '#adb5bd'}">${label}</small>
+                `).join('')}
+            </div>
+        </div>`;
+    }
+
+    function abrirDetallePedido(id) {
+        const p = pedidosCache.find(x => x.id === id);
+        if (!p) return;
+        const fecha = new Date(p.fechaPedido).toLocaleString('es-PE', {
+            day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
+        });
+        const detallesHTML = p.detalles.map(d => `
+            <tr>
+                <td class="text-start">${d.nombreProducto}</td>
+                <td class="text-center">${d.cantidad}</td>
+                <td class="text-end">S/ ${parseFloat(d.precioUnitario).toFixed(2)}</td>
+                <td class="text-end fw-bold">S/ ${parseFloat(d.subtotal).toFixed(2)}</td>
+            </tr>
+        `).join('');
+        const sucursalInfo = p.sucursalNombre
+            ? `<p class="mb-1"><small class="text-muted">Sucursal: <strong>${p.sucursalNombre}</strong></small></p>`
+            : '';
+        Swal.fire({
+            title: `<strong>Orden #000${p.id}</strong>`,
+            width: 640,
+            html: `
+                <div class="text-start" style="font-size:0.95rem;">
+                    <div class="mb-3 p-3 rounded" style="background:#f8f9fa;">
+                        <p class="mb-1"><small class="text-muted">Fecha: <strong>${fecha}</strong></small></p>
+                        <p class="mb-1"><small class="text-muted">Entrega: <strong>${p.metodoEntrega === 'DELIVERY' ? '🚚 Delivery' : '🏪 Retiro en tienda'}</strong></small></p>
+                        ${sucursalInfo}
+                        ${p.direccionEntrega ? `<p class="mb-0"><small class="text-muted">Dirección: <strong>${p.direccionEntrega}</strong></small></p>` : ''}
+                    </div>
+                    <table class="table table-sm table-bordered">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Producto</th>
+                                <th class="text-center">Cant.</th>
+                                <th class="text-end">P.U.</th>
+                                <th class="text-end">Subtotal</th>
+                            </tr>
+                        </thead>
+                        <tbody>${detallesHTML}</tbody>
+                    </table>
+                    <div class="text-end fw-bold fs-5">Total: <span style="color:#e31b23;">S/ ${parseFloat(p.total).toFixed(2)}</span></div>
+                </div>
+            `,
+            confirmButtonColor: '#e31b23',
+            showDenyButton: true,
+            denyButtonText: '<i class="bi bi-file-earmark-pdf"></i> Descargar Boleta',
+            denyButtonColor: '#198754',
+            confirmButtonText: 'Cerrar',
+            customClass: { htmlContainer: 'text-start' }
+        }).then((result) => {
+            if (result.isDenied) {
+                window.open(`/api/pedidos-web/${p.id}/boleta-pdf`, '_blank');
+            }
+        });
+    }
+
     async function cargarMisPedidos() {
         const contenedor = document.getElementById('contenedorMisPedidos');
-
         try {
             const res = await fetch('/api/pedidos-web/mis-pedidos');
-
             if (res.status === 401) {
-                window.location.href = '/login-cliente.html';
+                window.location.href = '/login-cliente';
                 return;
             }
-
             if (!res.ok) throw new Error("Error al cargar pedidos");
-
             const pedidos = await res.json();
+            pedidosCache = pedidos; // guardar en caché global
             contenedor.innerHTML = '';
-
             if (pedidos.length === 0) {
                 contenedor.innerHTML = `
                     <div class="col-12 text-center py-5">
                         <i class="bi bi-bag-x display-1 text-muted mb-3 d-block"></i>
                         <h4 class="text-muted fw-bold">Aún no tienes pedidos</h4>
                         <p class="text-secondary">Explora nuestra tienda y encuentra los mejores repuestos para tu moto.</p>
-                        <a href="/tienda.html" class="btn btn-danger fw-bold px-4 rounded-pill mt-2">Ir al Catálogo</a>
+                        <a href="/tienda" class="btn btn-danger fw-bold px-4 rounded-pill mt-2">Ir al Catálogo</a>
                     </div>`;
                 return;
             }
-
             pedidos.forEach(p => {
                 const fecha = new Date(p.fechaPedido).toLocaleDateString('es-PE', {
                     day: '2-digit', month: '2-digit', year: 'numeric'
                 });
-
-                let colorEstado = 'bg-warning text-dark';
-                let iconoEstado = 'bi-hourglass-split';
-                let textoEstado = 'Pendiente de Revisión';
-
+                let colorEstado = 'bg-warning text-dark', iconoEstado = 'bi-hourglass-split', textoEstado = 'Pendiente de Revisión';
                 if (p.estado === 'EN_PREPARACION') { colorEstado = 'bg-info text-dark'; iconoEstado = 'bi-box-seam'; textoEstado = 'Empacando tu pedido'; }
-                if (p.estado === 'LISTO_RECOJO') { colorEstado = 'bg-primary text-white'; iconoEstado = 'bi-shop'; textoEstado = '¡Listo para recoger en tienda!'; }
-                if (p.estado === 'ENVIADO') { colorEstado = 'bg-secondary text-white'; iconoEstado = 'bi-truck'; textoEstado = 'En camino (Delivery)'; }
-                if (p.estado === 'ENTREGADO') { colorEstado = 'bg-success text-white'; iconoEstado = 'bi-check-circle-fill'; textoEstado = 'Entregado'; }
-                if (p.estado === 'CANCELADO') { colorEstado = 'bg-danger text-white'; iconoEstado = 'bi-x-circle-fill'; textoEstado = 'Cancelado'; }
+                if (p.estado === 'LISTO_RECOJO')   { colorEstado = 'bg-primary text-white'; iconoEstado = 'bi-shop'; textoEstado = '¡Listo para recoger!'; }
+                if (p.estado === 'ENVIADO')         { colorEstado = 'bg-secondary text-white'; iconoEstado = 'bi-truck'; textoEstado = 'En camino'; }
+                if (p.estado === 'ENTREGADO')       { colorEstado = 'bg-success text-white'; iconoEstado = 'bi-check-circle-fill'; textoEstado = 'Entregado'; }
+                if (p.estado === 'CANCELADO')       { colorEstado = 'bg-danger text-white'; iconoEstado = 'bi-x-circle-fill'; textoEstado = 'Cancelado'; }
 
-                let detallesHTML = p.detalles.map(d => `<div class="detalle-producto mb-1"><i class="bi bi-dot"></i> ${d.cantidad}x ${d.nombreProducto} (S/ ${d.subtotal.toFixed(2)})</div>`).join('');
+                const detallesHTML = p.detalles.map(d =>
+                    `<div class="detalle-producto mb-1"><i class="bi bi-dot"></i> ${d.cantidad}x ${d.nombreProducto} (S/ ${parseFloat(d.subtotal).toFixed(2)})</div>`
+                ).join('');
 
                 contenedor.innerHTML += `
                     <div class="col-12 col-md-6 col-lg-4">
-                        <div class="card pedido-card h-100 p-4">
+                        <div class="card pedido-card h-100 p-4" style="cursor:pointer" onclick="abrirDetallePedido(${p.id})">
                             <div class="d-flex justify-content-between align-items-start mb-3">
                                 <div>
                                     <h5 class="fw-bold mb-0">Orden #000${p.id}</h5>
-                                    <small class="text-muted"><i class="bi bi-calendar3 me-1"></i> ${fecha}</small>
+                                    <small class="text-muted"><i class="bi bi-calendar3 me-1"></i>${fecha}</small>
                                 </div>
                                 <span class="badge bg-light text-dark border">
-                                    ${p.metodoEntrega === 'DELIVERY' ? '<i class="bi bi-truck me-1"></i> Delivery' : '<i class="bi bi-shop me-1"></i> Tienda'}
+                                    ${p.metodoEntrega === 'DELIVERY' ? '<i class="bi bi-truck me-1"></i>Delivery' : '<i class="bi bi-shop me-1"></i>Tienda'}
                                 </span>
                             </div>
-
-                            <div class="mb-3 border-start border-3 border-danger ps-3 py-1">
-                                ${detallesHTML}
-                            </div>
-
+                            <div class="mb-3 border-start border-3 border-danger ps-3 py-1">${detallesHTML}</div>
+                            ${generarBarraEstado(p.estado)}
                             <div class="mt-auto pt-3 border-top d-flex justify-content-between align-items-center">
                                 <div>
                                     <div class="text-muted small fw-bold text-uppercase">Total</div>
-                                    <div class="fs-5 fw-bold text-dark">S/ ${p.total.toFixed(2)}</div>
+                                    <div class="fs-5 fw-bold text-dark">S/ ${parseFloat(p.total).toFixed(2)}</div>
                                 </div>
                                 <span class="estado-badge ${colorEstado}">
-                                    <i class="bi ${iconoEstado} me-1"></i> ${textoEstado}
+                                    <i class="bi ${iconoEstado} me-1"></i>${textoEstado}
                                 </span>
                             </div>
+                            <div class="text-center mt-3">
+                                <small class="text-muted" style="font-size:0.75rem;"><i class="bi bi-eye me-1"></i>Toca para ver detalles</small>
+                            </div>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
-
         } catch (error) {
             contenedor.innerHTML = '<div class="alert alert-danger w-100 text-center fw-bold">Hubo un problema al cargar tus pedidos.</div>';
         }

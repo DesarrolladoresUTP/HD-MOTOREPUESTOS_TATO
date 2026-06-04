@@ -8,8 +8,12 @@ document.addEventListener("DOMContentLoaded", () => {
     actualizarInterfazCarrito();
 
     document.getElementById('btnProcederPago').addEventListener('click', () => {
-        const totalTexto = document.getElementById('totalCarrito').innerText;
-        sessionStorage.setItem('tato_total_pagar', totalTexto);
+        const nombreCliente = localStorage.getItem('tato_cliente_nombre');
+        if (!nombreCliente) {
+            sessionStorage.setItem('tato_login_redirect', '/checkout');
+            window.location.href = '/login-cliente';
+            return;
+        }
         window.location.href = '/checkout';
     });
 });
@@ -29,7 +33,9 @@ function verificarSesionCliente() {
                 <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-2">
                     <li><a class="dropdown-item fw-bold text-dark" href="/mis-pedidos"><i class="bi bi-bag-check me-2"></i>Mis Pedidos</a></li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="/tienda" onclick="cerrarSesionCliente()"><i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión</a></li>
+                    <li><a class="dropdown-item text-danger" href="#" onclick="cerrarSesionCliente(); return false;">
+                        <i class="bi bi-box-arrow-right me-2"></i>Cerrar Sesión
+                    </a></li>
                  </ul>
             </div>
         `;
@@ -45,7 +51,7 @@ async function cerrarSesionCliente() {
         console.error(e);
     }
     localStorage.removeItem('tato_cliente_nombre');
-    window.location.reload();
+    window.location.href = '/tienda';
 }
 
 function cargarConfiguracionWeb() {

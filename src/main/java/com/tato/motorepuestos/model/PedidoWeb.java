@@ -40,10 +40,21 @@ public class PedidoWeb {
     @OneToMany(mappedBy = "pedidoWeb", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<DetallePedidoWeb> detalles = new ArrayList<>();
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "sucursal_retiro_id")
+    @JsonIgnore
+    private Sucursal sucursalRetiro;
+
+    @Column(name = "sucursal_retiro_nombre")
+    private String sucursalNombre;
+
     @PrePersist
     protected void onCreate() {
         this.fechaPedido = LocalDateTime.now();
     }
+
+
+
 
 
     public Long getId() { return id; }
@@ -70,6 +81,11 @@ public class PedidoWeb {
     public void setFechaPedido(LocalDateTime fechaPedido) { this.fechaPedido = fechaPedido; }
     public List<DetallePedidoWeb> getDetalles() { return detalles; }
     public void setDetalles(List<DetallePedidoWeb> detalles) { this.detalles = detalles; }
+
+    public Sucursal getSucursalRetiro() { return sucursalRetiro; }
+    public void setSucursalRetiro(Sucursal sucursalRetiro) { this.sucursalRetiro = sucursalRetiro; }
+    public String getSucursalNombre() { return sucursalNombre; }
+    public void setSucursalNombre(String sucursalNombre) { this.sucursalNombre = sucursalNombre; }
 
     public void addDetalle(DetallePedidoWeb detalle) {
         detalles.add(detalle);

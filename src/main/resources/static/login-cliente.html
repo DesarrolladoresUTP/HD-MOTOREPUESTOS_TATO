@@ -71,28 +71,35 @@
                     <div class="tab-pane fade" id="pills-registro" role="tabpanel">
                         <form id="formRegistroCliente">
                             <div class="row g-3 mb-3">
-                                <div class="col-md-6">
+                                <div class="col-md-5">
                                     <label class="form-label fw-bold small">Tipo Doc.</label>
-                                    <select class="form-select">
+                                    <select class="form-select" id="regTipoDoc" onchange="ajustarDocRegistro()">
                                         <option value="DNI">DNI</option>
                                         <option value="RUC">RUC</option>
                                     </select>
                                 </div>
-                                <div class="col-md-6">
-                                    <label class="form-label fw-bold small">Número</label>
-                                    <input type="text" class="form-control" placeholder="Doc. de Identidad" required>
+                                <div class="col-md-7">
+                                    <label class="form-label fw-bold small">Número de Documento</label>
+                                    <div class="input-group">
+                                        <input type="text" class="form-control" id="regNumDoc"
+                                               placeholder="Ingresa tu DNI" maxlength="8" required
+                                               oninput="this.value=this.value.replace(/\D/g,'')">
+                                        <button class="btn btn-dark fw-bold px-3" type="button" onclick="consultarDocRegistro()">
+                                            <i class="bi bi-search"></i>
+                                        </button>
+                                    </div>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label fw-bold small">Nombre Completo o Razón Social</label>
-                                    <input type="text" class="form-control" required>
+                                    <input type="text" class="form-control" id="regNombre" required>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label fw-bold small">Correo Electrónico (Será tu usuario)</label>
-                                    <input type="email" class="form-control" required>
+                                    <input type="email" class="form-control" id="regEmail" required>
                                 </div>
                                 <div class="col-12">
                                     <label class="form-label fw-bold small">Contraseña Segura</label>
-                                    <input type="password" class="form-control" required>
+                                    <input type="password" class="form-control" id="regPassword" required minlength="6">
                                 </div>
                             </div>
                             <button type="submit" class="btn btn-dark w-100 fw-bold py-2">Crear mi Cuenta</button>
@@ -110,44 +117,36 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
     document.getElementById('formRegistroCliente').addEventListener('submit', async (e) => {
-        e.preventDefault();
-
-        const btn = e.target.querySelector('button[type="submit"]');
-        btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Creando...';
-        btn.disabled = true;
-
-        const datos = {
-            tipoDocumento: e.target.querySelector('select').value,
-            numeroDocumento: e.target.querySelectorAll('input')[0].value.trim(),
-            nombreCompleto: e.target.querySelectorAll('input')[1].value.trim(),
-            email: e.target.querySelectorAll('input')[2].value.trim(),
-            password: e.target.querySelectorAll('input')[3].value
-        };
-
-        try {
-            const response = await fetch('/api/clientes-web/registro', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(datos)
-            });
-
-            if (response.ok) {
-                Swal.fire('¡Bienvenido!', 'Tu cuenta ha sido creada exitosamente. Ahora puedes iniciar sesión.', 'success')
-                    .then(() => {
-                        document.getElementById('pills-login-tab').click();
-                        e.target.reset();
-                    });
-            } else {
-                const errorMsg = await response.text();
-                Swal.fire('Error al registrar', errorMsg, 'error');
-            }
-        } catch (error) {
-            Swal.fire('Error', 'No se pudo conectar con el servidor', 'error');
-        } finally {
-            btn.innerHTML = 'Crear mi Cuenta';
-            btn.disabled = false;
+    e.preventDefault();
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Creando...';
+    btn.disabled = true;
+    const datos = {
+        tipoDocumento: document.getElementById('regTipoDoc').value,
+        numeroDocumento: document.getElementById('regNumDoc').value.trim(),
+        nombreCompleto: document.getElementById('regNombre').value.trim(),
+        email: document.getElementById('regEmail').value.trim(),
+        password: document.getElementById('regPassword').value
+    };
+    try {
+        const response = await fetch('/api/clientes-web/registro', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(datos)
+        });
+        if (response.ok) {
+            Swal.fire('¡Bienvenido!', 'Tu cuenta ha sido creada. Ahora puedes iniciar sesión.', 'success')
+                .then(() => { document.getElementById('pills-login-tab').click(); e.target.reset(); });
+        } else {
+            Swal.fire('Error al registrar', await response.text(), 'error');
         }
-    });
+    } catch {
+        Swal.fire('Error', 'No se pudo conectar con el servidor', 'error');
+    } finally {
+        btn.innerHTML = 'Crear mi Cuenta';
+        btn.disabled = false;
+    }
+});
 
     document.getElementById('formLoginCliente').addEventListener('submit', async (e) => {
         e.preventDefault();
@@ -173,7 +172,9 @@
 
                 localStorage.setItem('tato_cliente_nombre', clienteData.nombreCompleto);
 
-                window.location.href = '/tienda';
+                const destino = sessionStorage.getItem('tato_login_redirect') || '/tienda';
+                sessionStorage.removeItem('tato_login_redirect');
+                window.location.href = destino;
             } else {
                 const errorMsg = await response.text();
                 Swal.fire('Acceso Denegado', errorMsg, 'error');
@@ -186,7 +187,41 @@
         }
     });
 
-z
+    function ajustarDocRegistro() {
+    const tipo = document.getElementById('regTipoDoc').value;
+    const input = document.getElementById('regNumDoc');
+    input.maxLength = tipo === 'DNI' ? 8 : 11;
+    input.placeholder = tipo === 'DNI' ? 'Ingresa tu DNI (8 dígitos)' : 'Ingresa tu RUC (11 dígitos)';
+    input.value = '';
+    document.getElementById('regNombre').value = '';
+}
+
+async function consultarDocRegistro() {
+    const tipo = document.getElementById('regTipoDoc').value;
+    const numero = document.getElementById('regNumDoc').value.trim();
+    const inputNombre = document.getElementById('regNombre');
+    if (!numero || (tipo === 'DNI' && numero.length !== 8) || (tipo === 'RUC' && numero.length !== 11)) {
+        Swal.fire({ icon: 'warning', title: 'Documento inválido', text: `Ingresa un ${tipo} válido.` });
+        return;
+    }
+    inputNombre.value = 'Buscando...';
+    inputNombre.readOnly = true;
+    try {
+        const res = await fetch(`/api/consultas/documento/${numero}`);
+        if (res.ok) {
+            const data = await res.json();
+            inputNombre.value = data.nombre || data.razonSocial || '';
+        } else {
+            throw new Error();
+        }
+    } catch {
+        inputNombre.value = '';
+        Swal.fire({ icon: 'info', title: 'No encontrado', text: 'Puedes ingresar tu nombre manualmente.' });
+    } finally {
+        inputNombre.readOnly = false;
+    }
+}
+
     function recuperarPassword() {
         Swal.fire({
             title: 'Recuperar Contraseña',

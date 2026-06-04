@@ -7,10 +7,12 @@ import com.tato.motorepuestos.model.PedidoWeb;
 import com.tato.motorepuestos.model.UsuarioCliente;
 import com.tato.motorepuestos.repository.InventarioSucursalRepository;
 import com.tato.motorepuestos.repository.PedidoWebRepository;
+import com.tato.motorepuestos.repository.SucursalRepository;
 import com.tato.motorepuestos.repository.UsuarioClienteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import com.tato.motorepuestos.model.Sucursal;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -27,6 +29,9 @@ public class PedidoWebService {
     @Autowired
     private InventarioSucursalRepository inventarioRepository;
 
+    @Autowired
+    private SucursalRepository sucursalRepository;
+
     @Transactional
     public PedidoWeb procesarPedido(PedidoWebDTO dto, Long clienteWebId) throws Exception {
         if (dto.getCarrito() == null || dto.getCarrito().isEmpty()) {
@@ -41,6 +46,13 @@ public class PedidoWebService {
         pedido.setMetodoEntrega(dto.getMetodoEntrega());
         pedido.setDireccionEntrega(dto.getDireccionEntrega());
         pedido.setEstado("PENDIENTE");
+
+        if (dto.getSucursalId() != null) {
+            sucursalRepository.findById(dto.getSucursalId()).ifPresent(suc -> {
+                pedido.setSucursalRetiro(suc);
+                pedido.setSucursalNombre(suc.getNombre());
+            });
+        }
 
         if (clienteWebId != null) {
             UsuarioCliente cliente = usuarioClienteRepository.findById(clienteWebId).orElse(null);
@@ -64,7 +76,8 @@ public class PedidoWebService {
             pedido.addDetalle(detalle);
             total = total.add(subtotal);
 
-            InventarioSucursal inv = inventarioRepository.findByProductoIdAndSucursalId(item.getId(), 1L)
+            Long sucId = dto.getSucursalId() != null ? dto.getSucursalId() : 1L;
+            InventarioSucursal inv = inventarioRepository.findByProductoIdAndSucursalId(item.getId(), sucId)
                     .orElse(null);
             if (inv != null) {
                 inv.setStock(inv.getStock() - item.getCantidad());
@@ -91,5 +104,9 @@ public class PedidoWebService {
                 .orElseThrow(() -> new Exception("Pedido no encontrado."));
         pedido.setEstado(nuevoEstado);
         pedidoRepository.save(pedido);
+    }
+
+    public PedidoWeb obtenerPorId(Long id) {
+        return pedidoRepository.findById(id).orElse(null);
     }
 }

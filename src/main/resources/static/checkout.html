@@ -82,7 +82,11 @@
                         <label class="form-label fw-bold text-secondary small text-uppercase">Teléfono de Contacto</label>
                         <div class="input-group">
                             <span class="input-group-text bg-light border-end-0"><i class="bi bi-telephone text-muted"></i></span>
-                            <input type="text" class="form-control border-start-0 ps-0" id="telefonoCliente" placeholder="Ej: 999 999 999">
+                            <input type="text" class="form-control border-start-0 ps-0"
+                                   id="telefonoCliente"
+                                   placeholder="Ej: 999999999"
+                                   maxlength="9"
+                                   oninput="this.value=this.value.replace(/\D/g,'').slice(0,9)">
                         </div>
                     </div>
 
@@ -101,6 +105,15 @@
                                     <i class="bi bi-truck me-1"></i> Delivery
                                 </label>
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="col-12" id="containerSucursales">
+                        <label class="form-label fw-bold text-secondary small text-uppercase">
+                            <i class="bi bi-shop me-1"></i>Elegir Sucursal de Retiro
+                        </label>
+                        <div id="listaSucursales" class="mt-2">
+                            <!-- se llena dinámicamente -->
                         </div>
                     </div>
 
@@ -146,6 +159,6 @@
     });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="/checkout.js?v8"></script>
+<script src="/checkout.js?v13"></script>
 </body>
 </html>

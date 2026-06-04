@@ -80,4 +80,8 @@ public class UsuarioClienteService {
 
         repository.save(cliente);
     }
+
+    public UsuarioCliente obtenerPorId(Long id) {
+        return repository.findById(id).orElse(null);
+    }
 }

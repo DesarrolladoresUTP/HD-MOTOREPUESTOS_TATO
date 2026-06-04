@@ -72,4 +72,16 @@ public class ClienteWebRestController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    @GetMapping("/me")
+    public ResponseEntity<?> obtenerDatosCliente(HttpSession session) {
+        Long clienteWebId = (Long) session.getAttribute("clienteWebId");
+        if (clienteWebId == null) {
+            return ResponseEntity.status(401).body("No autenticado");
+        }
+        UsuarioCliente cliente = service.obtenerPorId(clienteWebId);
+        if (cliente == null) return ResponseEntity.status(404).body("Cliente no encontrado");
+        cliente.setPassword(null);
+        return ResponseEntity.ok(cliente);
+    }
 }

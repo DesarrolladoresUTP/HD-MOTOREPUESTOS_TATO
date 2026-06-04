@@ -1,9 +1,39 @@
 let carritoCheckout = [];
 let totalGeneral = 0;
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+    await verificarLoginYCargarDatos();
     cargarCarrito();
 });
+
+async function verificarLoginYCargarDatos() {
+    const nombre = localStorage.getItem('tato_cliente_nombre');
+    if (!nombre) {
+        sessionStorage.setItem('tato_login_redirect', '/checkout');
+        window.location.href = '/login-cliente';
+        return;
+    }
+    try {
+        const res = await fetch('/api/clientes-web/me');
+        if (res.status === 401) {
+            localStorage.removeItem('tato_cliente_nombre');
+            sessionStorage.setItem('tato_login_redirect', '/checkout');
+            window.location.href = '/login-cliente';
+            return;
+        }
+        const cliente = await res.json();
+        // Pre-llenar datos del cliente
+        document.getElementById('numDocumento').value = cliente.numeroDocumento;
+        document.getElementById('numDocumento').readOnly = true;
+        document.getElementById('nombreResultado').value = cliente.nombreCompleto;
+        document.getElementById('tipoDocumento').value = cliente.tipoDocumento;
+        document.getElementById('telefonoCliente').value = cliente.telefono || '';
+        // Ocultar botón consultar, ya tenemos los datos
+        document.getElementById('btnValidarDoc').style.display = 'none';
+    } catch(e) {
+        console.error('Error cargando datos del cliente', e);
+    }
+}
 
 function cargarCarrito() {
     carritoCheckout = JSON.parse(localStorage.getItem('tato_carrito')) || [];
@@ -37,6 +67,7 @@ function cargarCarrito() {
     });
 
     totalSpan.innerText = `S/ ${totalGeneral.toFixed(2)}`;
+    if (carritoCheckout.length > 0) cargarSucursalesDisponibles();
 }
 
 function ajustarFormularioDoc() {
@@ -58,12 +89,39 @@ function ajustarFormularioDoc() {
 
 function toggleDireccion() {
     const isDelivery = document.getElementById('entregaDelivery').checked;
-    const container = document.getElementById('containerDireccion');
-    if (isDelivery) {
-        container.style.display = 'block';
-    } else {
-        container.style.display = 'none';
-        document.getElementById('direccionCliente').value = '';
+    document.getElementById('containerDireccion').style.display = isDelivery ? 'block' : 'none';
+    document.getElementById('containerSucursales').style.display = isDelivery ? 'none' : 'block';
+    if (!isDelivery) cargarSucursalesDisponibles();
+    if (isDelivery) document.getElementById('direccionCliente').value = '';
+}
+
+async function cargarSucursalesDisponibles() {
+    const carrito = JSON.parse(localStorage.getItem('tato_carrito')) || [];
+    const productoIds = carrito.map(i => Number(i.id)).filter(id => !isNaN(id) && id > 0);
+    const contenedor = document.getElementById('listaSucursales');
+    contenedor.innerHTML = '<small class="text-muted">Buscando sucursales con stock...</small>';
+    try {
+        const res = await fetch('/api/sucursales/con-stock', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(productoIds)
+        });
+        const sucursales = await res.json();
+        if (sucursales.length === 0) {
+            contenedor.innerHTML = '<div class="alert alert-warning small">No hay sucursales con todos los productos disponibles.</div>';
+            return;
+        }
+        contenedor.innerHTML = sucursales.map(s => `
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="radio" name="sucursalRetiro"
+                       id="suc_${s.id}" value="${s.id}" ${sucursales.length === 1 ? 'checked' : ''}>
+                <label class="form-check-label" for="suc_${s.id}">
+                    <strong>${s.nombre}</strong> — <small class="text-muted">${s.direccion}</small>
+                </label>
+            </div>
+        `).join('');
+    } catch(e) {
+        contenedor.innerHTML = '<div class="alert alert-danger small">Error al cargar sucursales.</div>';
     }
 }
 
@@ -104,6 +162,11 @@ async function consultarDocumentoPeruanos() {
     }
 }
 
+function validarTelefonoPeruano(telefono) {
+    const limpio = telefono.replace(/\s+/g, '');
+    return /^9\d{8}$/.test(limpio);
+}
+
 async function procesarPedidoFinal() {
     const tipoDoc = document.getElementById('tipoDocumento').value;
     const numDoc = document.getElementById('numDocumento').value.trim();
@@ -111,19 +174,46 @@ async function procesarPedidoFinal() {
     const telefono = document.getElementById('telefonoCliente').value.trim();
     const metodoEntrega = document.querySelector('input[name="metodoEntrega"]:checked').value;
     const direccion = document.getElementById('direccionCliente').value.trim();
+    let sucursalId = null;
 
     if (!numDoc || !nombre || !telefono) {
         Swal.fire({ icon: 'warning', title: 'Campos Incompletos', text: 'El documento, nombre y teléfono son obligatorios.' });
         return;
     }
+
+    if (!validarTelefonoPeruano(telefono)) {
+        Swal.fire({
+            icon: 'warning',
+            title: 'Teléfono inválido',
+            text: 'El teléfono debe tener 9 dígitos y empezar con 9.'
+        });
+        return;
+    }
+
     if (metodoEntrega === 'DELIVERY' && !direccion) {
         Swal.fire({ icon: 'warning', title: 'Dirección Requerida', text: 'Has seleccionado Delivery, necesitamos tu dirección de entrega.' });
         return;
     }
 
+    if (metodoEntrega === 'RETIRO_TIENDA') {
+        const sucursalChecked = document.querySelector('input[name="sucursalRetiro"]:checked');
+
+        if (!sucursalChecked) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Falta seleccionar sucursal',
+                text: 'Debes elegir una sucursal para recoger tu pedido.'
+            });
+            return;
+        }
+
+        sucursalId = parseInt(sucursalChecked.value);
+    }
+
     const btn = document.getElementById('btnFinalizarPedido');
     btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Procesando Orden...';
     btn.disabled = true;
+
 
     const payload = {
         tipoDocumento: tipoDoc,
@@ -131,6 +221,7 @@ async function procesarPedidoFinal() {
         nombreCompleto: nombre,
         telefono: telefono,
         metodoEntrega: metodoEntrega,
+        sucursalId: sucursalId,
         direccionEntrega: direccion,
         carrito: carritoCheckout.map(item => ({
             id: item.id,
@@ -141,6 +232,24 @@ async function procesarPedidoFinal() {
     };
 
     try {
+        await Swal.fire({
+            title: 'Abriendo panel de pago...',
+            text: 'Conectando con pasarela de pago externa',
+            allowOutsideClick: false,
+            didOpen: () => {
+                Swal.showLoading();
+            },
+            timer: 2000,
+            showConfirmButton: false
+        });
+
+        await Swal.fire({
+            icon: 'success',
+            title: 'Pago exitoso',
+            text: 'El pago fue aprobado correctamente.',
+            timer: 1800,
+            showConfirmButton: false
+        });
         const response = await fetch('/api/pedidos-web/procesar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
