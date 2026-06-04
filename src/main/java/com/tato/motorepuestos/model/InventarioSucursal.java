@@ -35,4 +35,9 @@ public class InventarioSucursal {
 
     @Column(nullable = false)
     private Boolean activo = true;
+
+    @Column(nullable = false)
+    private Integer unidadesVendidas = 0;
+
+
 }

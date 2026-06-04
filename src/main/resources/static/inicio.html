@@ -3,46 +3,116 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inicio - Motorepuestos Tato</title>
+    <title>Dashboard - Motorepuestos Tato</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
     <style>
-        :root { --fondo-app:#f0f9ff;--azul-primario:#0ea5e9;--azul-oscuro:#0369a1;--azul-hover:#38bdf8;--logo-rojo:#e31b23;--logo-naranja:#f97316; }
-        body { background-color:var(--fondo-app); font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; }
-        .navbar-custom { background-color:var(--azul-oscuro); box-shadow:0 4px 6px rgba(0,0,0,0.1); }
-        .navbar-custom .navbar-brand,.navbar-custom .nav-link { color:#fff; font-weight:500; }
-        .navbar-custom .nav-link:hover,.navbar-custom .nav-link.active { color:var(--azul-hover); }
-        .tato-rojo { color:var(--logo-rojo); font-weight:900; margin-right:5px; }
-        .casco-logo { color:var(--logo-naranja); }
-        .dashboard-placeholder { border:2px dashed #cbd5e1; background-color:transparent; border-radius:15px; padding:4rem 2rem; text-align:center; color:#64748b; transition:all 0.3s ease; }
-        .dashboard-placeholder:hover { border-color:var(--azul-primario); background-color:rgba(255,255,255,0.5); }
-        body {
-        animation: fadeIn 0.1s ease-in;
-        }
-        @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(4px); }
-        to   { opacity: 1; transform: translateY(0); }
-        }
+        :root { --fondo-app: #f0f9ff; --azul-oscuro: #0369a1; --azul-primario: #0ea5e9; --logo-rojo: #e31b23; }
+        body { background-color: var(--fondo-app); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; animation: fadeIn 0.3s; }
+
+        /* Estilos de las Tarjetas KPI */
+        .kpi-card { border: none; border-radius: 12px; transition: transform 0.2s; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .kpi-card:hover { transform: translateY(-5px); box-shadow: 0 8px 15px rgba(0,0,0,0.1); }
+        .kpi-icon { width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; }
+
+        .chart-container { background: white; border-radius: 12px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); height: 100%; }
+
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
     </style>
 </head>
 <body>
 
 <div id="navbar-container"></div>
 
-<div class="container mt-5 pt-3">
-    <div class="row mb-4">
-        <div class="col-12">
-            <h2 class="fw-bold" style="color:var(--azul-oscuro);">Resumen General</h2>
-            <p class="text-muted">Bienvenido al sistema. Aquí podrás monitorear el rendimiento de tu negocio.</p>
+<div class="container-fluid mt-4 px-4 pt-3 mb-5">
+    <h3 style="color: var(--azul-oscuro);" class="mb-1">
+        <i class="bi bi-speedometer2 me-2" style="color: #f97316;"></i>Resumen <span style="color: var(--logo-rojo); font-weight: 900;">General</span>
+    </h3>
+    <p class="text-muted mb-4">Bienvenido al sistema. Aquí podrás monitorear el rendimiento de tu negocio.</p>
+
+    <div class="row g-3 mb-4">
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card kpi-card h-100 p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted small fw-bold mb-1 text-uppercase">Ingresos Web (Aprox)</p>
+                        <h3 class="fw-bold text-dark mb-0" id="kpiIngresos">S/ 0.00</h3>
+                    </div>
+                    <div class="kpi-icon bg-success bg-opacity-10 text-success"><i class="bi bi-currency-dollar"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card kpi-card h-100 p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted small fw-bold mb-1 text-uppercase">Pedidos Web Pendientes</p>
+                        <h3 class="fw-bold text-dark mb-0" id="kpiPedidos">0</h3>
+                    </div>
+                    <div class="kpi-icon bg-warning bg-opacity-10 text-warning"><i class="bi bi-bell-fill"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card kpi-card h-100 p-3 border-bottom border-danger border-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted small fw-bold mb-1 text-uppercase">Alertas de Stock</p>
+                        <h3 class="fw-bold text-danger mb-0" id="kpiBajoStock">0</h3>
+                    </div>
+                    <div class="kpi-icon bg-danger bg-opacity-10 text-danger"><i class="bi bi-exclamation-triangle-fill"></i></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-12 col-sm-6 col-xl-3">
+            <div class="card kpi-card h-100 p-3">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <p class="text-muted small fw-bold mb-1 text-uppercase">Total Productos</p>
+                        <h3 class="fw-bold text-dark mb-0" id="kpiProductos">0</h3>
+                    </div>
+                    <div class="kpi-icon bg-primary bg-opacity-10 text-primary"><i class="bi bi-box-seam-fill"></i></div>
+                </div>
+            </div>
         </div>
     </div>
-    <div class="row mt-2">
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-4">
+            <div class="chart-container">
+                <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-star-fill text-warning me-2"></i>Top 5 Más Vendidos</h6>
+                <canvas id="chartTopVendidos" style="max-height: 250px;"></canvas>
+            </div>
+        </div>
+
+        <div class="col-12 col-lg-8">
+            <div class="chart-container">
+                <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-bar-chart-fill me-2"></i>Estado de Órdenes Web</h6>
+                <canvas id="chartPedidos" style="max-height: 250px;"></canvas>
+            </div>
+        </div>
+
         <div class="col-12">
-            <div class="dashboard-placeholder">
-                <i class="bi bi-bar-chart-line" style="font-size:4rem;color:#94a3b8;"></i>
-                <h3 class="mt-3" style="color:#475569;">Métricas y Gráficos Próximamente</h3>
-                <p class="mb-0">Este espacio está listo para albergar el análisis de ventas y reportes financieros.</p>
+            <div class="card border-0 shadow-sm" style="border-radius: 12px;">
+                <div class="card-header bg-white border-bottom-0 pt-4 pb-0">
+                    <h6 class="fw-bold text-danger"><i class="bi bi-exclamation-octagon-fill me-2"></i>Productos con Stock Crítico (Top 5)</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                            <tr>
+                                <th>Repuesto / Producto</th>
+                                <th class="text-center">Stock Actual</th>
+                                <th class="text-center">Stock Mínimo</th>
+                                <th class="text-center">Estado</th>
+                            </tr>
+                            </thead>
+                            <tbody id="tablaAlertasBody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -50,30 +120,8 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="/navbar.js?v1"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', async () => {
-        await initNavbar();
-        verificarBajoStock();
-    });
-
-    async function verificarBajoStock() {
-        try {
-            const res = await fetch('/api/productos/bajo-stock');
-            if (res.ok) {
-                const lista = await res.json();
-                if (lista.length > 0) {
-                    Swal.fire({
-                        toast:true, position:'bottom-end', icon:'warning',
-                        title:'¡Alerta de Stock!',
-                        text:`Tienes ${lista.length} producto(s) con stock bajo.`,
-                        showConfirmButton:true, confirmButtonText:'Revisar',
-                        confirmButtonColor:'#f97316', timer:8000
-                    }).then(r => { if (r.isConfirmed) window.location.href = '/stocks'; });
-                }
-            }
-        } catch (e) {}
-    }
-</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="/navbar.js"></script>
+<script src="/inicio.js"></script>
 </body>
 </html>

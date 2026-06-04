@@ -5,12 +5,17 @@ const RUTA_PERMISO = {
     '/categorias':       p => p.permisoCategorias,
     '/sucursales':       p => p.permisoSucursales,
     '/stocks':           p => p.permisoStocks,
+    '/almacen':          p => p.permisoStocks,
     '/traslados':        p => p.permisoTraslados,
     '/historial':        p => p.permisoHistorial,
     '/compras':          p => p.permisoComprasIngresar,
     '/registro_compras': p => p.permisoComprasRegistro,
     '/venta':            p => p.permisoVentasRealizar,
     '/registro_ventas':  p => p.permisoVentasRegistro,
+    '/pedidos':          p => p.permisoVentasRegistro,
+    '/clientes':         p => p.permisoClientes,
+    '/clientes-web':     p => p.permisoClientes,
+    '/gestion-web':      p => p.permisoWeb,
 };
 
 let _permisosGlobal = null;
@@ -47,12 +52,24 @@ function _aplicarPermisos(p) {
     if (!p.permisoProductos)  _ocultarEnlace('/productos');
     if (!p.permisoCategorias) _ocultarEnlace('/categorias');
     if (!p.permisoSucursales) _ocultarEnlace('/sucursales');
+
+    if (!p.permisoClientes) {
+        _ocultarEnlace('/clientes');
+        _ocultarEnlace('/clientes-web');
+    }
+
+    if (!p.permisoWeb) _ocultarEnlace('/gestion-web');
+
     if (!p.permisoUsuarios && !p.permisoRoles && !p.permisoProductos
-        && !p.permisoCategorias && !p.permisoSucursales) {
+        && !p.permisoCategorias && !p.permisoSucursales
+        && !p.permisoClientes && !p.permisoWeb) {
         _ocultarDropdownSiVacio('a[href="/usuarios"]');
     }
 
-    if (!p.permisoStocks)    _ocultarEnlace('/stocks');
+    if (!p.permisoStocks) {
+        _ocultarEnlace('/stocks');
+        _ocultarEnlace('/almacen');
+    }
     if (!p.permisoTraslados) _ocultarEnlace('/traslados');
     if (!p.permisoHistorial) _ocultarEnlace('/historial');
 
@@ -78,11 +95,9 @@ function _marcarActivo() {
             if (linkPath === path) {
                 a.classList.add('active');
 
-
                 const dropdown = a.closest('.nav-item.dropdown');
                 if (dropdown) {
                     const toggle = dropdown.querySelector('.nav-link.dropdown-toggle');
-
                     if (toggle && !dropdown.querySelector('#textoNombreNav')) {
                         toggle.classList.add('active');
                     }

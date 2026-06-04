@@ -16,7 +16,7 @@ public class RolRestController {
     private RolService rolService;
 
     @GetMapping
-    public List<Rol> listar() {
+    public List<Rol> listarTodos() {
         return rolService.listarTodos();
     }
 
@@ -26,51 +26,46 @@ public class RolRestController {
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Rol> obtener(@PathVariable Long id) {
+    public ResponseEntity<Rol> obtenerPorId(@PathVariable Long id) {
         Rol rol = rolService.obtenerPorId(id);
-        if (rol != null) {
-            return ResponseEntity.ok(rol);
+        if (rol == null) {
+            return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(rol);
     }
 
     @PostMapping
-    public ResponseEntity<Rol> crear(@RequestBody Rol rol) {
-        rol.setActivo(true);
-        return ResponseEntity.ok(rolService.guardarRol(rol));
+    public ResponseEntity<?> guardarRol(@RequestBody Rol rol) {
+        try {
+            Rol guardado = rolService.guardarRol(rol);
+            return ResponseEntity.ok(guardado);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Rol> actualizar(@PathVariable Long id, @RequestBody Rol detalles) {
-        Rol rolExistente = rolService.obtenerPorId(id);
-        if (rolExistente != null) {
-            rolExistente.setNombre(detalles.getNombre());
-            rolExistente.setPermisoUsuarios(detalles.getPermisoUsuarios());
-            rolExistente.setPermisoRoles(detalles.getPermisoRoles());
-            rolExistente.setPermisoProductos(detalles.getPermisoProductos());
-            rolExistente.setPermisoCategorias(detalles.getPermisoCategorias());
-            rolExistente.setPermisoSucursales(detalles.getPermisoSucursales());
-            rolExistente.setPermisoStocks(detalles.getPermisoStocks());
-            rolExistente.setPermisoTraslados(detalles.getPermisoTraslados());
-            rolExistente.setPermisoHistorial(detalles.getPermisoHistorial());
-            rolExistente.setPermisoComprasIngresar(detalles.getPermisoComprasIngresar());
-            rolExistente.setPermisoComprasRegistro(detalles.getPermisoComprasRegistro());
-            rolExistente.setPermisoVentasRealizar(detalles.getPermisoVentasRealizar());
-            rolExistente.setPermisoVentasRegistro(detalles.getPermisoVentasRegistro());
-
-            return ResponseEntity.ok(rolService.guardarRol(rolExistente));
+    public ResponseEntity<?> actualizarRol(@PathVariable Long id, @RequestBody Rol rol) {
+        try {
+            Rol actualizado = rolService.actualizarRol(id, rol);
+            return ResponseEntity.ok(actualizado);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         }
-        return ResponseEntity.notFound().build();
     }
 
     @PutMapping("/{id}/estado")
     public ResponseEntity<?> cambiarEstado(@PathVariable Long id, @RequestParam boolean activo) {
-        rolService.cambiarEstado(id, activo);
-        return ResponseEntity.ok().build();
+        try {
+            rolService.cambiarEstado(id, activo);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> eliminar(@PathVariable Long id) {
+    public ResponseEntity<?> eliminarRol(@PathVariable Long id) {
         try {
             rolService.eliminarLogico(id);
             return ResponseEntity.ok().build();

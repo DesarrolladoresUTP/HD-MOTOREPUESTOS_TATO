@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Punto de Venta - Motorepuestos Tato</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <style>
+        :root { --fondo-app:#f0f9ff;--azul-primario:#0ea5e9;--azul-oscuro:#0369a1;--logo-rojo:#e31b23; }
+        body { background-color:var(--fondo-app); font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:0.9rem; }
+        .navbar-custom { background-color:var(--azul-oscuro); box-shadow:0 4px 6px rgba(0,0,0,0.1); }
+        .navbar-custom .navbar-brand,.navbar-custom .nav-link { color:#fff; font-weight:500; font-size:1rem; }
+        .navbar-custom .nav-link.active,.navbar-custom .nav-link:hover { color:#38bdf8; }
+        .tato-rojo { color:var(--logo-rojo); font-weight:900; margin-right:5px; }
+        .panel-erp { background-color:white; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.05); border-top:4px solid var(--azul-primario); padding:20px; margin-bottom:20px; }
+        .form-label { font-weight:bold; color:#475569; margin-bottom:0.2rem; font-size:0.85rem; }
+        .table-erp th { background-color:var(--azul-primario); color:white; font-weight:500; font-size:0.85rem; padding:10px; }
+        .table-erp td { vertical-align:middle; padding:8px; font-weight:bold; }
+        .caja-escaneo { background-color:#e0f2fe; border:2px dashed var(--azul-primario); padding:15px; border-radius:8px; display:flex; align-items:center; gap:10px; }
+        .input-scan { font-size:1.2rem; font-weight:bold; letter-spacing:2px; text-align:center; border:2px solid var(--azul-oscuro)!important; }
+        .totales-caja { background-color:#f8fafc; border:1px solid #e2e8f0; border-radius:6px; padding:15px; }
+        .totales-fila { display:flex; justify-content:space-between; margin-bottom:8px; font-weight:bold; color:#334155; }
+        .totales-fila.gran-total { font-size:1.5rem; color:var(--logo-rojo); border-top:2px solid #cbd5e1; padding-top:8px; margin-bottom:0; }
+        body {
+        animation: fadeIn 0.1s ease-in;
+        }
+        @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to   { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+
+<div id="navbar-container"></div>
+
+<div class="container-fluid px-4">
+    <div class="row mb-3 align-items-end">
+        <div class="col-md-5">
+            <h4 style="color:var(--azul-oscuro);margin:0;">
+                <i class="bi bi-cart-check-fill me-2 text-secondary"></i>Punto de <span class="tato-rojo">Venta (POS)</span>
+            </h4>
+        </div>
+        <div class="col-md-7 text-end">
+            <button class="btn btn-lg btn-outline-primary fw-bold px-3 me-2 shadow-sm" onclick="enviarProforma()">
+                <i class="bi bi-envelope-paper me-1"></i> Enviar Pre-Cuenta
+            </button>
+            <button class="btn btn-lg btn-success fw-bold px-4 shadow-sm" onclick="procesarVenta()">
+                <i class="bi bi-cash-coin me-2"></i> Procesar Venta
+            </button>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-3">
+            <div class="panel-erp mb-3">
+                <h6 class="fw-bold border-bottom pb-2 text-secondary"><i class="bi bi-receipt"></i> Comprobante Inicial</h6>
+                <div class="mb-2">
+                    <label class="form-label">Tipo de Documento</label>
+                    <select class="form-select form-select-sm bg-light fw-bold text-primary" disabled>
+                        <option>Nota de Venta (Interno)</option>
+                    </select>
+                </div>
+                <small class="text-muted fst-italic">Podrá emitir Factura o Boleta desde "Registro de Ventas".</small>
+                <div class="mt-3">
+                    <label class="form-label">Método de Pago</label>
+                    <select class="form-select form-select-sm" id="metodoPago">
+                        <option value="Efectivo">Efectivo</option>
+                        <option value="Yape/Plin">Yape / Plin</option>
+                        <option value="Tarjeta">Tarjeta de Crédito/Débito</option>
+                    </select>
+                </div>
+            </div>
+            <div class="panel-erp">
+                <h6 class="fw-bold border-bottom pb-2 text-secondary"><i class="bi bi-person-vcard"></i> Datos del Cliente</h6>
+                <div class="mb-2">
+                    <label class="form-label">DNI / RUC</label>
+                    <div class="input-group input-group-sm">
+                        <input type="text" class="form-control" id="documentoCliente" placeholder="Buscar documento...">
+                        <button class="btn btn-outline-primary" onclick="consultarCliente()"><i class="bi bi-search"></i></button>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Nombre / Razón Social</label>
+                    <input type="text" class="form-control form-control-sm" id="nombreCliente" placeholder="Consumidor Final">
+                </div>
+                <div class="mb-2">
+                    <label class="form-label">Correo <small class="text-muted">(Opcional)</small></label>
+                    <input type="email" class="form-control form-control-sm" id="correoCliente">
+                </div>
+                <input type="hidden" id="clienteIdSeleccionado">
+            </div>
+        </div>
+
+        <div class="col-lg-9">
+            <div class="caja-escaneo shadow-sm mb-3">
+                <div class="flex-grow-1">
+                    <label class="form-label text-primary"><i class="bi bi-upc-scan me-1"></i> Escaneo Rápido</label>
+                    <input type="text" class="form-control form-control-lg input-scan" id="inputScan"
+                           placeholder="Escanee código o presione Enter..." autocomplete="off">
+                </div>
+                <div class="text-center px-3"><span class="text-muted fw-bold">O</span></div>
+                <div>
+                    <label class="form-label text-secondary d-block"><i class="bi bi-camera me-1"></i> Escaneo Visual</label>
+                    <button class="btn btn-outline-primary py-2 px-3" onclick="abrirCamara()">
+                        <i class="bi bi-qr-code-scan me-2"></i> Usar Cámara
+                    </button>
+                </div>
+            </div>
+
+            <div class="panel-erp p-0 overflow-hidden mb-3">
+                <div class="d-flex justify-content-between align-items-center p-2 bg-light border-bottom">
+                    <h6 class="mb-0 ms-2 fw-bold text-secondary"><i class="bi bi-cart3 me-2"></i>Carrito</h6>
+                    <button class="btn btn-sm btn-secondary" onclick="abrirModalBuscador()">
+                        <i class="bi bi-search me-1"></i> Búsqueda Manual (F4)
+                    </button>
+                </div>
+                <div class="table-responsive" style="min-height:250px;">
+                    <table class="table table-erp mb-0">
+                        <thead>
+                        <tr>
+                            <th style="width:120px;">CÓDIGO</th>
+                            <th>PRODUCTO</th>
+                            <th class="text-center" style="width:120px;">CANTIDAD</th>
+                            <th class="text-center" style="width:120px;">P. UNITARIO</th>
+                            <th class="text-end" style="width:120px;">IMPORTE</th>
+                            <th style="width:50px;"></th>
+                        </tr>
+                        </thead>
+                        <tbody id="tablaVenta">
+                        <tr><td colspan="6" class="text-center text-muted py-5">Escanee un producto o use la búsqueda manual.</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="row justify-content-end">
+                <div class="col-md-5 col-lg-4">
+                    <div class="totales-caja shadow-sm">
+                        <div class="totales-fila"><span>Subtotal:</span><span id="lblSubtotal">S/ 0.00</span></div>
+                        <div class="totales-fila"><span>IGV (18%):</span><span id="lblIgv">S/ 0.00</span></div>
+                        <div class="totales-fila gran-total"><span>TOTAL:</span><span id="lblTotal">S/ 0.00</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalCamara" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header text-white" style="background-color:var(--azul-oscuro);">
+                <h5 class="modal-title"><i class="bi bi-camera-video me-2"></i>Lector QR/Barras</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" onclick="cerrarCamara()"></button>
+            </div>
+            <div class="modal-body p-0">
+                <div id="reader" style="width:100%;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalBuscador" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color:var(--azul-primario);color:white;">
+                <h5 class="modal-title"><i class="bi bi-search me-2"></i>Buscar Producto en Catálogo</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light">
+                <input type="text" id="inputBusqueda" class="form-control mb-3"
+                       placeholder="Escriba el nombre o código..." onkeyup="filtrarCatalogo()">
+                <div class="list-group shadow-sm" id="listaCatalogo" style="max-height:400px;overflow-y:auto;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script src="/navbar.js?v2"></script>
+<script>
+    let inventarioCatalogo = [];
+    let carritoVenta = [];
+    let modalBuscador, modalCamaraObj, html5QrcodeScanner;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await initNavbar();
+        cargarCatalogo();
+        modalBuscador   = new bootstrap.Modal(document.getElementById('modalBuscador'));
+        modalCamaraObj  = new bootstrap.Modal(document.getElementById('modalCamara'));
+        document.getElementById('inputScan').focus();
+    });
+
+    document.addEventListener('keydown', e => {
+        if (e.key === 'F4') { e.preventDefault(); abrirModalBuscador(); }
+    });
+
+    document.getElementById('inputScan').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            e.preventDefault();
+            const cod = this.value.trim();
+            if (cod) buscarPorCodigo(cod);
+            this.value = '';
+        }
+    });
+
+    async function cargarCatalogo() {
+        try {
+            const res = await fetch('/api/productos');
+            inventarioCatalogo = await res.json();
+        } catch (e) {}
+    }
+
+    async function consultarCliente() {
+        const doc = document.getElementById('documentoCliente').value.trim();
+        if (doc.length !== 8 && doc.length !== 11) {
+            Swal.fire({ toast:true, position:'top-end', icon:'warning', title:'Ingrese DNI o RUC válido', showConfirmButton:false, timer:2000 });
+            return;
+        }
+
+        Swal.fire({ title:'Buscando...', allowOutsideClick:false, didOpen:()=>Swal.showLoading() });
+
+        try {
+            const resLocal = await fetch(`/api/clientes/buscar?documento=${doc}`);
+            if (resLocal.ok) {
+                const cliente = await resLocal.json();
+                document.getElementById('nombreCliente').value = cliente.razonSocialNombre;
+                document.getElementById('clienteIdSeleccionado').value = cliente.id;
+                Swal.close();
+                Swal.fire({ toast:true, position:'top-end', icon:'success', title:'Cliente encontrado en sistema', showConfirmButton:false, timer:1500 });
+                return;
+            }
+        } catch (e) {}
+
+        try {
+            const resApi = await fetch(`/api/consultas/documento/${doc}`);
+            const text = await resApi.text();
+            if (!resApi.ok) throw new Error();
+            let data = {};
+            try { data = JSON.parse(text); } catch(e) {}
+            let nombre = data.razonSocial || data.nombre || data.razon_social || data.nombre_o_razon_social || data.nombre_completo;
+            if (!nombre && data.datos) {
+                nombre = data.datos.razon_social || data.datos.nombre_completo || data.datos.nombre;
+                if (!nombre && data.datos.nombres) {
+                    nombre = `${data.datos.nombres} ${data.datos.ape_paterno||''} ${data.datos.ape_materno||''}`;
+                }
+            }
+            if (!nombre && data.nombres) {
+                nombre = `${data.nombres} ${data.ape_paterno||''} ${data.ape_materno||''}`;
+            }
+            if (nombre && nombre.trim()) {
+                nombre = nombre.replace(/\s+/g,' ').trim();
+                document.getElementById('nombreCliente').value = nombre;
+                document.getElementById('clienteIdSeleccionado').value = '';
+                Swal.close();
+                try {
+                    await fetch('/api/clientes', {
+                        method:'POST',
+                        headers:{'Content-Type':'application/json'},
+                        body: JSON.stringify({
+                            numeroDocumento: doc,
+                            tipoDocumento: doc.length === 8 ? 'DNI' : 'RUC',
+                            razonSocialNombre: nombre
+                        })
+                    });
+                } catch (_) {}
+            } else {
+                Swal.fire({ icon:'info', title:'No encontrado', text:'Ingrese el nombre manualmente.' });
+            }
+        } catch (e) {
+            Swal.fire({ toast:true, position:'top-end', icon:'info', title:'No hallado. Ingrese manualmente.', showConfirmButton:false, timer:2500 });
+        }
+    }
+
+    function buscarPorCodigo(codigo) {
+        const inv = inventarioCatalogo.find(i => i.producto.codigoInterno.toLowerCase() === codigo.toLowerCase() && i.activo);
+        if (!inv) {
+            Swal.fire({ toast:true, position:'top-end', icon:'error', title:'Producto no encontrado', showConfirmButton:false, timer:2000 });
+            return;
+        }
+        if (inv.stock <= 0) {
+            Swal.fire({ icon:'warning', title:'¡Agotado!', text:`${inv.producto.nombre} no tiene stock.`, confirmButtonColor:'#f59e0b' });
+            return;
+        }
+        agregarAlCarrito(inv);
+        Swal.fire({ toast:true, position:'top-end', icon:'success', title:'¡Agregado!', showConfirmButton:false, timer:1000 });
+    }
+
+    function abrirModalBuscador() {
+        document.getElementById('inputBusqueda').value = '';
+        renderizarCatalogo(inventarioCatalogo);
+        modalBuscador.show();
+        setTimeout(() => document.getElementById('inputBusqueda').focus(), 500);
+    }
+
+    function renderizarCatalogo(lista) {
+        const cont = document.getElementById('listaCatalogo');
+        cont.innerHTML = '';
+        lista.forEach(inv => {
+            if (!inv.activo) return;
+            const tieneStock = inv.stock > 0;
+            const btn = document.createElement('button');
+            btn.className = `list-group-item list-group-item-action d-flex justify-content-between align-items-center border-bottom ${tieneStock?'':'bg-light'}`;
+            btn.innerHTML = `
+                <div>
+                    <strong style="color:${tieneStock?'var(--azul-oscuro)':'#94a3b8'};">${inv.producto.nombre}</strong><br>
+                    <small class="${tieneStock?'text-muted':'text-danger'}">
+                        ${inv.producto.codigoInterno} |
+                        <span class="${tieneStock?'text-success':'text-danger'} fw-bold">Stock: ${inv.stock}</span> |
+                        S/ ${inv.precioVenta.toFixed(2)}
+                    </small>
+                </div>
+                <i class="bi ${tieneStock?'bi-plus-circle-fill text-primary':'bi-x-circle-fill text-danger'} fs-4"></i>`;
+            if (tieneStock) {
+                btn.onclick = () => { agregarAlCarrito(inv); modalBuscador.hide(); };
+            } else {
+                btn.onclick = () => Swal.fire({ toast:true, position:'top-end', icon:'error', title:'Sin stock', showConfirmButton:false, timer:1500 });
+            }
+            cont.appendChild(btn);
+        });
+    }
+
+    function filtrarCatalogo() {
+        const txt = document.getElementById('inputBusqueda').value.toLowerCase();
+        renderizarCatalogo(inventarioCatalogo.filter(inv =>
+            inv.producto.nombre.toLowerCase().includes(txt) ||
+            inv.producto.codigoInterno.toLowerCase().includes(txt)
+        ));
+    }
+
+    function agregarAlCarrito(inv) {
+        if (inv.stock <= 0) return;
+        const existe = carritoVenta.find(i => i.inventarioId === inv.id);
+        if (existe) {
+            if (existe.cantidad + 1 > inv.stock) {
+                Swal.fire({ toast:true, position:'top-end', icon:'warning', title:'Stock máximo alcanzado', showConfirmButton:false, timer:1500 });
+                return;
+            }
+            existe.cantidad++;
+            existe.importe = existe.cantidad * existe.precioUnitario;
+        } else {
+            carritoVenta.push({
+                inventarioId: inv.id,
+                productoId: inv.producto.id,
+                nombre: inv.producto.nombre,
+                codigo: inv.producto.codigoInterno,
+                precioUnitario: inv.precioVenta,
+                cantidad: 1,
+                importe: inv.precioVenta,
+                stockMax: inv.stock
+            });
+        }
+        actualizarTabla();
+        document.getElementById('inputScan').focus();
+    }
+
+    function actualizarTabla() {
+        const tbody = document.getElementById('tablaVenta');
+        tbody.innerHTML = '';
+        if (carritoVenta.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-5">Escanee un producto o use la búsqueda manual.</td></tr>';
+            calcularTotales(); return;
+        }
+        carritoVenta.forEach((item, i) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="text-secondary">${item.codigo}</td>
+                <td style="color:var(--azul-oscuro);">${item.nombre}</td>
+                <td class="text-center">
+                    <div class="input-group input-group-sm w-75 mx-auto">
+                        <button class="btn btn-outline-secondary" onclick="ajustar(${i},-1)">-</button>
+                        <input type="text" class="form-control text-center fw-bold" value="${item.cantidad}" readonly>
+                        <button class="btn btn-outline-secondary" onclick="ajustar(${i},1)">+</button>
+                    </div>
+                </td>
+                <td class="text-center text-success">S/ ${item.precioUnitario.toFixed(2)}</td>
+                <td class="text-end text-primary fs-6">S/ ${item.importe.toFixed(2)}</td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-danger border-0" onclick="quitarItem(${i})">
+                        <i class="bi bi-trash-fill"></i>
+                    </button>
+                </td>`;
+            tbody.appendChild(tr);
+        });
+        calcularTotales();
+    }
+
+    function ajustar(i, d) {
+        const item = carritoVenta[i];
+        const nueva = item.cantidad + d;
+        if (nueva < 1) return;
+        if (nueva > item.stockMax) {
+            Swal.fire({ toast:true, position:'top-end', icon:'warning', title:'Sin más stock', showConfirmButton:false, timer:1500 });
+            return;
+        }
+        item.cantidad = nueva;
+        item.importe  = nueva * item.precioUnitario;
+        actualizarTabla();
+        document.getElementById('inputScan').focus();
+    }
+
+    function quitarItem(i) {
+        carritoVenta.splice(i, 1);
+        actualizarTabla();
+        document.getElementById('inputScan').focus();
+    }
+
+    let gSubtotal = 0, gIgv = 0, gTotal = 0;
+    function calcularTotales() {
+        gTotal    = carritoVenta.reduce((s, i) => s + i.importe, 0);
+        gSubtotal = gTotal / 1.18;
+        gIgv      = gTotal - gSubtotal;
+        document.getElementById('lblSubtotal').innerText = `S/ ${gSubtotal.toFixed(2)}`;
+        document.getElementById('lblIgv').innerText      = `S/ ${gIgv.toFixed(2)}`;
+        document.getElementById('lblTotal').innerText    = `S/ ${gTotal.toFixed(2)}`;
+    }
+
+    function recolectarPayload() {
+        const doc = document.getElementById('documentoCliente').value.trim() || '00000000';
+        return {
+            tipoComprobante: 'Nota de Venta',
+            serie: 'T001',
+            numeroComprobante: 'PROFORMA',
+            documentoCliente: doc,
+            metodoPago: document.getElementById('metodoPago').value,
+            correoCliente: document.getElementById('correoCliente').value.trim(),
+            subtotal: gSubtotal,
+            igv: gIgv,
+            total: gTotal,
+            items: carritoVenta.map(i => ({
+                inventarioId: i.inventarioId,
+                cantidad: i.cantidad,
+                precioUnitario: i.precioUnitario,
+                importe: i.importe,
+                codigo: i.codigo,
+                nombre: i.nombre
+            }))
+        };
+    }
+
+    async function enviarProforma() {
+        if (carritoVenta.length === 0) {
+            Swal.fire({ icon:'warning', title:'Carrito Vacío', confirmButtonColor:'#f59e0b' }); return;
+        }
+        const correo = document.getElementById('correoCliente').value.trim();
+        if (!correo) {
+            Swal.fire({ icon:'warning', title:'Correo faltante', text:'Ingrese el correo del cliente.', confirmButtonColor:'#f59e0b' }); return;
+        }
+        const payload = recolectarPayload();
+        payload.nombreCliente = document.getElementById('nombreCliente').value.trim() || 'Público General';
+        Swal.fire({ title:'Enviando correo...', allowOutsideClick:false, didOpen:()=>Swal.showLoading() });
+        try {
+            const res = await fetch('/api/ventas/proforma', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+            if (res.ok) Swal.fire({ icon:'success', title:'¡Enviado!', confirmButtonColor:'#198754' });
+            else Swal.fire({ icon:'error', title:'Error', text: await res.text() });
+        } catch (e) {}
+    }
+
+    async function procesarVenta() {
+        if (carritoVenta.length === 0) {
+            Swal.fire({ icon:'warning', title:'Carrito Vacío', confirmButtonColor:'#f59e0b' }); return;
+        }
+        const payload = recolectarPayload();
+        Swal.fire({
+            title:`Procesar Venta de S/ ${gTotal.toFixed(2)}`,
+            text:'Se registrará como Nota de Venta Interna.',
+            icon:'question', showCancelButton:true,
+            confirmButtonColor:'#198754', confirmButtonText:'Sí, procesar'
+        }).then(async r => {
+            if (r.isConfirmed) {
+                Swal.fire({ title:'Procesando...', allowOutsideClick:false, didOpen:()=>Swal.showLoading() });
+                try {
+                    const res = await fetch('/api/ventas', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+                    if (res.ok) {
+                        Swal.fire({ icon:'success', title:'¡Venta Exitosa!', confirmButtonColor:'#198754' }).then(()=>location.reload());
+                    } else {
+                        Swal.fire({ icon:'error', title:'Error', text: await res.text() });
+                    }
+                } catch (e) {}
+            }
+        });
+    }
+
+    function abrirCamara() {
+        modalCamaraObj.show();
+        html5QrcodeScanner = new Html5QrcodeScanner('reader', { fps:10, qrbox:{width:250,height:250} }, false);
+        html5QrcodeScanner.render(decoded => { cerrarCamara(); buscarPorCodigo(decoded); });
+    }
+    function cerrarCamara() {
+        if (html5QrcodeScanner) html5QrcodeScanner.clear();
+        modalCamaraObj.hide();
+        document.getElementById('inputScan').focus();
+    }
+</script>
+</body>
+</html>

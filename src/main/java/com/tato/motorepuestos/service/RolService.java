@@ -26,7 +26,37 @@ public class RolService {
     }
 
     public Rol guardarRol(Rol rol) {
+        if (rol.getId() == null) {
+            rol.setActivo(true);
+        }
         return rolRepository.save(rol);
+    }
+
+    public Rol actualizarRol(Long id, Rol detallesNuevos) {
+        Rol rolExistente = rolRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Rol no encontrado"));
+
+        rolExistente.setNombre(detallesNuevos.getNombre());
+
+        rolExistente.setPermisoUsuarios(detallesNuevos.isPermisoUsuarios());
+        rolExistente.setPermisoRoles(detallesNuevos.isPermisoRoles());
+        rolExistente.setPermisoProductos(detallesNuevos.isPermisoProductos());
+        rolExistente.setPermisoCategorias(detallesNuevos.isPermisoCategorias());
+        rolExistente.setPermisoSucursales(detallesNuevos.isPermisoSucursales());
+
+        rolExistente.setPermisoClientes(detallesNuevos.isPermisoClientes());
+        rolExistente.setPermisoWeb(detallesNuevos.isPermisoWeb());
+
+        rolExistente.setPermisoStocks(detallesNuevos.isPermisoStocks());
+        rolExistente.setPermisoTraslados(detallesNuevos.isPermisoTraslados());
+        rolExistente.setPermisoHistorial(detallesNuevos.isPermisoHistorial());
+
+        rolExistente.setPermisoComprasIngresar(detallesNuevos.isPermisoComprasIngresar());
+        rolExistente.setPermisoComprasRegistro(detallesNuevos.isPermisoComprasRegistro());
+        rolExistente.setPermisoVentasRealizar(detallesNuevos.isPermisoVentasRealizar());
+        rolExistente.setPermisoVentasRegistro(detallesNuevos.isPermisoVentasRegistro());
+
+        return rolRepository.save(rolExistente);
     }
 
     public void cambiarEstado(Long id, boolean estado) {

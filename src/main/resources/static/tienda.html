@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda | Motorepuestos Tato</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        /* Variables dinámicas conectadas a tu Config Web */
+        :root {
+            --tato-primary: #e31b23;
+            --tato-secondary: #212529;
+        }
+        .bg-tato-dark { background-color: var(--tato-secondary) !important; }
+        .text-tato-red { color: var(--tato-primary) !important; }
+        .btn-tato-red { background-color: var(--tato-primary); color: white; border: none; }
+        .btn-tato-red:hover { opacity: 0.9; color: white; }
+        .bg-tato-red { background-color: var(--tato-primary) !important; }
+
+        .card-producto { transition: all 0.3s ease; border: 1px solid #eee; border-radius: 10px; overflow: hidden; }
+        .card-producto:hover { transform: translateY(-5px); box-shadow: 0 10px 20px rgba(0,0,0, 0.10); border-color: var(--tato-primary); }
+        .hero-banner { background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=1200') center/cover; height: 250px; }
+    </style>
+</head>
+<body class="bg-light d-flex flex-column min-vh-100">
+
+<nav class="navbar navbar-expand-lg navbar-dark bg-tato-dark sticky-top shadow-sm py-3">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center fw-bold" href="/tienda">
+            <i class="bi bi-person-helmet fs-3 me-2 text-tato-red"></i>
+            <span class="text-tato-red me-1">TATO</span> <span class="fw-light text-white">MOTOREPUESTOS</span>
+        </a>
+        <div class="d-flex align-items-center">
+            <button class="btn btn-outline-light position-relative me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#carritoOffcanvas">
+                <i class="bi bi-cart3 fs-5"></i>
+                <span id="contadorCarrito" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-tato-red">0</span>
+            </button>
+
+            <div id="authClienteContainer">
+                <a href="/login-cliente" class="btn btn-tato-red btn-sm fw-bold px-3">Ingresar</a>
+            </div>
+
+        </div>
+    </div>
+</nav>
+
+<div class="hero-banner d-flex align-items-center justify-content-center text-center text-white mb-4">
+    <div>
+        <h1 class="fw-bold display-5 mb-2" id="frontTitulo">Cargando...</h1>
+        <p class="lead mb-0" id="frontSubtitulo"></p>
+    </div>
+</div>
+
+<div class="container my-4 flex-grow-1">
+    <div class="card border-0 shadow-sm mb-4 p-3 rounded-4">
+        <div class="row g-2 align-items-center">
+            <div class="col-md-5">
+                <div class="input-group">
+                    <span class="input-group-text bg-white border-end-0"><i class="bi bi-search text-muted"></i></span>
+                    <input type="text" class="form-control border-start-0 ps-0" id="filtroNombre" placeholder="Buscar repuesto..." onkeyup="aplicarFiltros()">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <select class="form-select" id="filtroCategoria" onchange="aplicarFiltros()">
+                    <option value="TODAS">Todas las Categorías</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select class="form-select" id="filtroOrden" onchange="aplicarFiltros()">
+                    <option value="RELEVANTE">Más Relevantes</option>
+                    <option value="MENOR_PRECIO">Menor a Mayor Precio</option>
+                    <option value="MAYOR_PRECIO">Mayor a Menor Precio</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4" id="contenedorProductos">
+        <div class="col-12 text-center my-5"><div class="spinner-border text-tato-red"></div></div>
+    </div>
+</div>
+
+<footer class="bg-tato-dark text-white text-center py-4 mt-auto">
+    <div class="container">
+        <h5 class="fw-bold mb-3 text-tato-red">Síguenos y Contáctanos</h5>
+        <div class="d-flex justify-content-center gap-3 fs-3">
+            <a href="#" id="btnFrontFb" class="text-white d-none" target="_blank"><i class="bi bi-facebook"></i></a>
+            <a href="#" id="btnFrontIg" class="text-white d-none" target="_blank"><i class="bi bi-instagram"></i></a>
+            <a href="#" id="btnFrontWa" class="text-white d-none" target="_blank"><i class="bi bi-whatsapp"></i></a>
+        </div>
+        <p class="mt-3 mb-0 small text-muted">&copy; 2026 Motorepuestos Tato. Todos los derechos reservados.</p>
+    </div>
+</footer>
+
+<div class="offcanvas offcanvas-end" tabindex="-1" id="carritoOffcanvas">
+    <div class="offcanvas-header border-bottom bg-tato-dark text-white">
+        <h5 class="offcanvas-title fw-bold"><i class="bi bi-cart-check text-tato-red me-2"></i>Tu Carrito</h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+    </div>
+    <div class="offcanvas-body d-flex flex-column bg-light">
+        <div id="itemsCarrito" class="flex-grow-1 overflow-auto"></div>
+        <div class="border-top pt-3 mt-auto bg-white p-3 rounded shadow-sm">
+            <div class="d-flex justify-content-between fw-bold fs-5 mb-3">
+                <span>Total:</span>
+                <span id="totalCarrito" class="text-tato-red">S/ 0.00</span>
+            </div>
+            <button class="btn btn-tato-red w-100 fw-bold py-2" id="btnProcederPago">Proceder al Pago</button>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="/tienda.js?v12"></script>
+</body>
+</html>
