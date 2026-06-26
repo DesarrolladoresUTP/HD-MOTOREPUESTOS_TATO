@@ -101,7 +101,9 @@
                         </div>
                         <div class="col-md-8">
                             <label class="form-label fw-bold small">Número de Documento</label>
-                            <input type="text" class="form-control font-monospace" id="cliNumDoc" required>
+                            <input type="text" id="numDocumento" class="form-control"
+                                   placeholder="Ej: 74308925"
+                                   oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);">
                         </div>
                         <div class="col-12">
                             <label class="form-label fw-bold small">Razón Social o Nombre Completo</label>
@@ -118,7 +120,9 @@
                             <label class="form-label fw-bold small text-secondary">Teléfono (Opcional)</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-white"><i class="bi bi-telephone"></i></span>
-                                <input type="text" class="form-control" id="cliTelefono">
+                                <input type="text" id="telefonoCliente" class="form-control"
+                                       placeholder="Opcional"
+                                       oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 9);">
                             </div>
                         </div>
                     </div>

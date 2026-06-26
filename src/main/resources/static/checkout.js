@@ -22,13 +22,11 @@ async function verificarLoginYCargarDatos() {
             return;
         }
         const cliente = await res.json();
-        // Pre-llenar datos del cliente
         document.getElementById('numDocumento').value = cliente.numeroDocumento;
         document.getElementById('numDocumento').readOnly = true;
         document.getElementById('nombreResultado').value = cliente.nombreCompleto;
         document.getElementById('tipoDocumento').value = cliente.tipoDocumento;
         document.getElementById('telefonoCliente').value = cliente.telefono || '';
-        // Ocultar botón consultar, ya tenemos los datos
         document.getElementById('btnValidarDoc').style.display = 'none';
     } catch(e) {
         console.error('Error cargando datos del cliente', e);
@@ -197,7 +195,6 @@ async function procesarPedidoFinal() {
 
     if (metodoEntrega === 'RETIRO_TIENDA') {
         const sucursalChecked = document.querySelector('input[name="sucursalRetiro"]:checked');
-
         if (!sucursalChecked) {
             Swal.fire({
                 icon: 'warning',
@@ -206,14 +203,12 @@ async function procesarPedidoFinal() {
             });
             return;
         }
-
         sucursalId = parseInt(sucursalChecked.value);
     }
 
     const btn = document.getElementById('btnFinalizarPedido');
     btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Procesando Orden...';
     btn.disabled = true;
-
 
     const payload = {
         tipoDocumento: tipoDoc,
@@ -232,24 +227,15 @@ async function procesarPedidoFinal() {
     };
 
     try {
-        await Swal.fire({
-            title: 'Abriendo panel de pago...',
-            text: 'Conectando con pasarela de pago externa',
+        Swal.fire({
+            title: 'Procesando pedido...',
+            text: 'Verificando stock y pasarela de pago...',
             allowOutsideClick: false,
             didOpen: () => {
                 Swal.showLoading();
-            },
-            timer: 2000,
-            showConfirmButton: false
+            }
         });
 
-        await Swal.fire({
-            icon: 'success',
-            title: 'Pago exitoso',
-            text: 'El pago fue aprobado correctamente.',
-            timer: 1800,
-            showConfirmButton: false
-        });
         const response = await fetch('/api/pedidos-web/procesar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -273,7 +259,12 @@ async function procesarPedidoFinal() {
 
         } else {
             const err = await response.text();
-            Swal.fire('Error al procesar', err, 'error');
+            Swal.fire({
+                icon: 'error',
+                title: 'No se pudo completar la compra',
+                text: err,
+                confirmButtonColor: '#e31b23'
+            });
             btn.innerHTML = '<i class="bi bi-shield-lock fs-5 me-2"></i> Confirmar Pedido Seguro';
             btn.disabled = false;
         }

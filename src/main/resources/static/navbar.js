@@ -12,10 +12,13 @@ const RUTA_PERMISO = {
     '/registro_compras': p => p.permisoComprasRegistro,
     '/venta':            p => p.permisoVentasRealizar,
     '/registro_ventas':  p => p.permisoVentasRegistro,
+    '/registro_cotizaciones':  p => p.permisoVentasRegistro,
     '/pedidos':          p => p.permisoVentasRegistro,
     '/clientes':         p => p.permisoClientes,
+    '/reporte_ventas':   p => p.permisoVentasRegistro,
     '/clientes-web':     p => p.permisoClientes,
     '/gestion-web':      p => p.permisoWeb,
+    '/caja':             p => p.permisoVentasRealizar,
 };
 
 let _permisosGlobal = null;
@@ -46,6 +49,7 @@ function _ocultarDropdownSiVacio(selector) {
 }
 
 function _aplicarPermisos(p) {
+    if (!p.permisoVentasRealizar) _ocultarEnlace('/caja');
 
     if (!p.permisoUsuarios)   _ocultarEnlace('/usuarios');
     if (!p.permisoRoles)      _ocultarEnlace('/permisos');
@@ -81,6 +85,8 @@ function _aplicarPermisos(p) {
 
     if (!p.permisoVentasRealizar) _ocultarEnlace('/venta');
     if (!p.permisoVentasRegistro) _ocultarEnlace('/registro_ventas');
+    if (!p.permisoVentasRegistro) _ocultarEnlace('/registro_cotizaciones');
+    if (!p.permisoVentasRegistro) _ocultarEnlace('/reporte_ventas');
     if (!p.permisoVentasRealizar && !p.permisoVentasRegistro) {
         _ocultarDropdownSiVacio('a[href="/venta"]');
     }

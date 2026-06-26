@@ -117,5 +117,12 @@ public class VistasController {
     @GetMapping("/mis-pedidos")
     public String mostrarMisPedidos() {return "forward:/mis-pedidos.html";}
 
+    @GetMapping("/registro_cotizaciones")
+    public String vistaRegistroCotizaciones() {return "forward:/registro_cotizaciones.html";
+    }
+    @GetMapping("/reporte_ventas")
+    public String vistaReporteVentas() {return "reporte_ventas.html";}
 
+    @GetMapping("/caja")
+    public String vistaCaja() {return "gestion_caja.html";}
 }
