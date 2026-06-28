@@ -5,6 +5,7 @@ import com.tato.motorepuestos.model.DetalleVenta;
 import com.tato.motorepuestos.model.Venta;
 import com.tato.motorepuestos.repository.ClienteRepository;
 import com.tato.motorepuestos.repository.VentaRepository;
+import com.tato.motorepuestos.service.CajaService;
 import com.tato.motorepuestos.service.EmailService;
 import com.tato.motorepuestos.service.HistorialService;
 import com.tato.motorepuestos.service.PdfService;
@@ -23,23 +24,13 @@ import java.util.Map;
 @RequestMapping("/api/ventas")
 public class VentaRestController {
 
-    @Autowired
-    private VentaService ventaService;
-
-    @Autowired
-    private VentaRepository ventaRepository;
-
-    @Autowired
-    private ClienteRepository clienteRepository;
-
-    @Autowired
-    private PdfService pdfService;
-
-    @Autowired
-    private EmailService emailService;
-
-    @Autowired
-    private HistorialService historialService;
+    @Autowired private VentaService ventaService;
+    @Autowired private VentaRepository ventaRepository;
+    @Autowired private ClienteRepository clienteRepository;
+    @Autowired private PdfService pdfService;
+    @Autowired private EmailService emailService;
+    @Autowired private HistorialService historialService;
+    @Autowired private CajaService cajaService;
 
     @GetMapping
     public List<Venta> listar(HttpSession session) {
@@ -54,9 +45,7 @@ public class VentaRestController {
         String ultimo = ventaRepository.findUltimoCorrelativo(tipo, serie);
         int siguiente = 1;
         if (ultimo != null && !ultimo.isEmpty()) {
-            try {
-                siguiente = Integer.parseInt(ultimo) + 1;
-            } catch (Exception e) { }
+            try { siguiente = Integer.parseInt(ultimo) + 1; } catch (Exception e) {}
         }
         return ResponseEntity.ok(String.format("%08d", siguiente));
     }
@@ -66,11 +55,32 @@ public class VentaRestController {
                                             HttpSession session) {
         Long usuarioId  = (Long) session.getAttribute("usuarioId");
         Long sucursalId = (Long) session.getAttribute("sucursalId");
+
+        // Validar que haya una caja activa para este usuario
+        if (cajaService.obtenerCajaActiva(usuarioId, sucursalId) == null) {
+            return ResponseEntity.badRequest().body("CAJA_CERRADA");
+        }
+
         try {
+            String docCliente = payload.getOrDefault("documentoCliente", "00000000").toString().trim();
+            String nomCliente = payload.getOrDefault("nombreCliente", "Público General").toString().trim();
+
+            if (!docCliente.isEmpty() && !docCliente.equals("00000000")) {
+                clienteRepository.findByNumeroDocumento(docCliente).orElseGet(() -> {
+                    Cliente nuevo = new Cliente();
+                    nuevo.setNumeroDocumento(docCliente);
+                    nuevo.setRazonSocialNombre(nomCliente.isEmpty() ? "Sin nombre" : nomCliente.toUpperCase());
+                    nuevo.setTipoDocumento(docCliente.length() == 8 ? "DNI" : "RUC");
+                    nuevo.setActivo(false);
+                    return clienteRepository.save(nuevo);
+                });
+            }
+
             payload.put("tipoComprobante", "Nota de Venta");
             payload.put("serie", "T001");
             payload.put("numeroComprobante",
                     String.format("%08d", System.currentTimeMillis() % 100000000));
+
             ventaService.registrarVenta(payload, usuarioId, sucursalId);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
@@ -82,12 +92,9 @@ public class VentaRestController {
     public ResponseEntity<?> enviarProforma(@RequestBody Map<String, Object> payload) {
         try {
             String correo = payload.get("correoCliente").toString();
-            System.out.println("ITEMS RECIBIDOS: " + payload.get("items"));
-
             Object nombreObj = payload.get("nombreCliente");
             String nombreCliente = (nombreObj != null && !nombreObj.toString().trim().isEmpty())
                     ? nombreObj.toString().trim() : "Público General";
-
             Object docObj = payload.get("documentoCliente");
             String docCliente = (docObj != null && !docObj.toString().trim().isEmpty())
                     ? docObj.toString().trim() : "00000000";
@@ -119,7 +126,6 @@ public class VentaRestController {
 
             String docCliente    = payload.get("documentoCliente");
             String nombreCliente = payload.get("nombreCliente");
-
             if (docCliente != null && !docCliente.trim().isEmpty()) {
                 Cliente clienteActualizado = clienteRepository
                         .findByNumeroDocumento(docCliente.trim())
@@ -134,7 +140,6 @@ public class VentaRestController {
                         });
                 venta.setCliente(clienteActualizado);
             }
-
             ventaRepository.save(venta);
 
             Cliente c = venta.getCliente();
@@ -143,7 +148,6 @@ public class VentaRestController {
                     + " | Cliente: " + (c != null ? c.getRazonSocialNombre() : "Público General");
             historialService.registrarAccion("Ventas", "Emisión de Comprobante",
                     desc, venta.getUsuario().getId(), venta.getSucursal().getId());
-
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -157,13 +161,11 @@ public class VentaRestController {
             Thread.sleep(1500);
             venta.setEstadoSunat("ACEPTADO");
             ventaRepository.save(venta);
-
             String desc = "Envío a SUNAT Aceptado | "
                     + venta.getTipoComprobante() + " "
                     + venta.getSerie() + "-" + venta.getNumeroComprobante();
             historialService.registrarAccion("Ventas", "Envío a SUNAT",
                     desc, venta.getUsuario().getId(), venta.getSucursal().getId());
-
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -175,7 +177,6 @@ public class VentaRestController {
                                                      @RequestBody Map<String, Object> payload) {
         try {
             Venta venta = ventaRepository.findById(id).orElseThrow();
-
             String correo = null;
             Object correoObj = payload.get("correoCliente");
             if (correoObj != null && !correoObj.toString().trim().isEmpty()) {
@@ -184,14 +185,11 @@ public class VentaRestController {
                     && !venta.getCorreoCliente().trim().isEmpty()) {
                 correo = venta.getCorreoCliente().trim();
             }
-
             if (correo == null) {
-                return ResponseEntity.badRequest()
-                        .body("Debe proporcionar un correo válido.");
+                return ResponseEntity.badRequest().body("Debe proporcionar un correo válido.");
             }
 
             Cliente cliente = venta.getCliente();
-
             Map<String, Object> pdfPayload = new HashMap<>();
             pdfPayload.put("tipoComprobante",   venta.getTipoComprobante());
             pdfPayload.put("serie",             venta.getSerie());
@@ -217,23 +215,18 @@ public class VentaRestController {
 
             byte[] pdfBytes = pdfService.generarComprobantePdf(pdfPayload, false);
             byte[] xmlBytes = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                    + "<Invoice><Data>Documento Electronico SUNAT"
-                    + " Motorepuestos Tato</Data></Invoice>").getBytes();
+                    + "<Invoice><Data>Documento Electronico SUNAT Motorepuestos Tato</Data></Invoice>").getBytes();
             byte[] cdrBytes = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                    + "<ApplicationResponse><Response>Aceptado</Response>"
-                    + "</ApplicationResponse>").getBytes();
+                    + "<ApplicationResponse><Response>Aceptado</Response></ApplicationResponse>").getBytes();
 
             String docNombre = venta.getSerie() + "-" + venta.getNumeroComprobante();
             String cuerpo = "<h3>¡Gracias por su compra en Motorepuestos Tato!</h3>"
-                    + "<p>Adjuntamos su comprobante electrónico oficial"
-                    + " (PDF, XML y constancia CDR).</p>";
-
+                    + "<p>Adjuntamos su comprobante electrónico oficial (PDF, XML y constancia CDR).</p>";
             emailService.enviarCorreoConArchivos(correo,
                     "Comprobante Electrónico " + docNombre, cuerpo,
                     pdfBytes, docNombre + ".pdf",
                     xmlBytes, docNombre + ".xml",
                     cdrBytes, "CDR-" + docNombre + ".xml");
-
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -253,7 +246,6 @@ public class VentaRestController {
                     "Se anuló la venta " + venta.getSerie()
                             + "-" + venta.getNumeroComprobante(),
                     usuarioId, sucursalId);
-
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -265,7 +257,6 @@ public class VentaRestController {
         try {
             Venta venta = ventaRepository.findById(id).orElseThrow();
             Cliente c = venta.getCliente();
-
             Map<String, Object> pdfPayload = new HashMap<>();
             pdfPayload.put("tipoComprobante",   venta.getTipoComprobante());
             pdfPayload.put("serie",             venta.getSerie());
@@ -288,14 +279,47 @@ public class VentaRestController {
             pdfPayload.put("items", itemsList);
 
             byte[] pdfBytes = pdfService.generarComprobantePdf(pdfPayload, false);
-
             return ResponseEntity.ok()
                     .header("Content-Type", "application/pdf")
-                    .header("Content-Disposition", "inline; filename=\"" +
-                            venta.getSerie() + "-" + venta.getNumeroComprobante() + ".pdf\"")
+                    .header("Content-Disposition", "inline; filename=\""
+                            + venta.getSerie() + "-" + venta.getNumeroComprobante() + ".pdf\"")
                     .body(pdfBytes);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
+    }
+
+    @GetMapping("/caja-activa")
+    public ResponseEntity<?> ventasDeCajaActiva(HttpSession session) {
+        Long usuarioId  = (Long) session.getAttribute("usuarioId");
+        Long sucursalId = (Long) session.getAttribute("sucursalId");
+        if (usuarioId == null) return ResponseEntity.status(401).build();
+
+        com.tato.motorepuestos.model.Caja caja = cajaService.obtenerCajaActiva(usuarioId, sucursalId);
+        if (caja == null) return ResponseEntity.ok(List.of());
+
+        List<Venta> ventas = ventaRepository.findBySucursalIdOrderByFechaDesc(sucursalId)
+                .stream()
+                .filter(v -> v.getUsuario().getId().equals(usuarioId))
+                .filter(v -> !v.getFecha().isBefore(caja.getFechaApertura()))
+                .collect(java.util.stream.Collectors.toList());
+
+        List<Map<String, Object>> resultado = ventas.stream().map(v -> {
+            Map<String, Object> m = new java.util.LinkedHashMap<>();
+            m.put("id", v.getId());
+            m.put("numeroComprobante", v.getSerie() + "-" + v.getNumeroComprobante());
+            m.put("fecha", v.getFecha().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm")));
+            m.put("cliente", v.getCliente() != null ? v.getCliente().getRazonSocialNombre() : "Público General");
+            m.put("metodoPago", v.getMetodoPago());
+            m.put("total", v.getTotal());
+            m.put("estadoVenta", v.getEstadoVenta());
+            m.put("estadoSunat", v.getEstadoSunat());
+            m.put("productos", v.getDetalles().stream().map(d ->
+                    d.getCantidad() + "x " + d.getProducto().getNombre()
+            ).collect(java.util.stream.Collectors.joining(", ")));
+            return m;
+        }).collect(java.util.stream.Collectors.toList());
+
+        return ResponseEntity.ok(resultado);
     }
 }

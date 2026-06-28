@@ -6,38 +6,13 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-@Table(name = "turnos_caja")
+@Table(name = "cajas")
 @Data
-public class TurnoCaja {
+public class Caja {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false)
-    private LocalDateTime fechaApertura;
-
-    private LocalDateTime fechaCierre;
-
-    @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal montoInicial;
-
-    @Column(precision = 10, scale = 2)
-    private BigDecimal ingresosEfectivo = BigDecimal.ZERO;
-
-    @Column(precision = 10, scale = 2)
-    private BigDecimal montoFinalCalculado = BigDecimal.ZERO;
-
-    @Column(precision = 10, scale = 2)
-    private BigDecimal montoFinalReal;
-
-    @Column(precision = 10, scale = 2)
-    private BigDecimal diferencia;
-
-    @Column(nullable = false)
-    private String estado = "ABIERTA";
-
-    private String observaciones;
 
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "usuario_id", nullable = false)
@@ -46,4 +21,27 @@ public class TurnoCaja {
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "sucursal_id", nullable = false)
     private Sucursal sucursal;
+
+    @Column(nullable = false)
+    private LocalDateTime fechaApertura;
+
+    private LocalDateTime fechaCierre;
+
+    @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal montoInicial = BigDecimal.ZERO;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal montoEsperado;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal montoReal;
+
+    @Column(precision = 10, scale = 2)
+    private BigDecimal diferencia;
+
+    @Column(length = 500)
+    private String observaciones;
+
+    @Column(nullable = false, length = 20)
+    private String estado = "ABIERTA";
 }

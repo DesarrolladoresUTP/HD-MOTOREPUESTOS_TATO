@@ -3,57 +3,338 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gestión de Caja - Motorepuestos Tato</title>
+    <title>Gestión de Cajas - Motorepuestos Tato</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
     <style>
-        :root { --fondo-app:#f0f9ff;--azul-primario:#0ea5e9;--azul-oscuro:#0369a1;--logo-rojo:#e31b23; }
-        body { background-color:var(--fondo-app); font-family:'Segoe UI',sans-serif; animation: fadeIn 0.2s ease-in; }
-        .panel-caja { background: white; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); padding: 30px; text-align: center; }
-        .icon-huge { font-size: 4rem; margin-bottom: 15px; }
-        .table-custom th { background-color:var(--azul-oscuro); color:white; border-bottom:2px solid var(--azul-primario); }
+        :root {
+            --fondo-app: #f0f9ff;
+            --azul-primario: #0ea5e9;
+            --azul-oscuro: #0369a1;
+            --logo-rojo: #e31b23;
+            --verde: #16a34a;
+            --rojo: #dc2626;
+        }
+        body {
+            background-color: var(--fondo-app);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 0.88rem;
+            animation: fadeIn 0.15s ease-in;
+        }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        .page-header {
+            background: white;
+            border-bottom: 3px solid var(--azul-primario);
+            padding: 18px 28px 14px;
+            margin-bottom: 24px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+        }
+        .page-header h4 { margin: 0; color: var(--azul-oscuro); font-weight: 800; }
+
+        /* Sección Resumen de Trabajador (arriba, independiente) */
+        .resumen-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            padding: 20px 24px;
+            margin-bottom: 22px;
+            border-left: 4px solid var(--azul-oscuro);
+        }
+        .resumen-card .titulo-seccion {
+            font-weight: 800;
+            color: var(--azul-oscuro);
+            font-size: 1rem;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* Filtros de tabla (abajo, independiente) */
+        .filtros-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            padding: 18px 24px;
+            margin-bottom: 20px;
+            border-left: 4px solid var(--azul-primario);
+        }
+        .filtros-card .titulo-seccion {
+            font-weight: 700;
+            color: #0ea5e9;
+            font-size: 0.88rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        /* Tabla */
+        .tabla-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+        .tabla-card .card-header-custom {
+            background: var(--azul-oscuro);
+            color: white;
+            padding: 14px 20px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .table-caja th {
+            background-color: #e0f2fe;
+            color: var(--azul-oscuro);
+            font-weight: 700;
+            font-size: 0.82rem;
+            padding: 10px 12px;
+            white-space: nowrap;
+        }
+        .table-caja td {
+            padding: 9px 12px;
+            vertical-align: middle;
+            font-size: 0.85rem;
+        }
+        .table-caja tbody tr:hover { background-color: #f0f9ff; }
+        /* Badges */
+        .badge-abierta { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; font-weight: 700; padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; }
+        .badge-cerrada { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; font-weight: 600; padding: 3px 10px; border-radius: 20px; font-size: 0.78rem; }
+        .badge-anulada { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; font-weight: 700; padding: 2px 8px; border-radius: 20px; font-size: 0.72rem; }
+        .badge-registrada { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; font-weight: 700; padding: 2px 8px; border-radius: 20px; font-size: 0.72rem; }
+        /* Diferencia colores */
+        .dif-neg { color: var(--rojo); font-weight: 700; }
+        .dif-pos { color: var(--verde); font-weight: 700; }
+        .dif-zer { color: #475569; font-weight: 600; }
+        /* Botones de accion en fila */
+        .btn-accion-fila {
+            width: 32px; height: 32px;
+            display: inline-flex; align-items: center; justify-content: center;
+            border-radius: 6px;
+            border: 1px solid transparent;
+            transition: all .15s;
+        }
+        .btn-ver-fila { background: #e0f2fe; color: #0369a1; }
+        .btn-ver-fila:hover { background: #0369a1; color: white; }
+        .btn-pdf-fila { background: #fee2e2; color: #b91c1c; }
+        .btn-pdf-fila:hover { background: #b91c1c; color: white; }
+        /* Modal resumen / detalle */
+        .resumen-stat {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 14px 16px;
+            text-align: center;
+        }
+        .resumen-stat .valor { font-size: 1.3rem; font-weight: 800; }
+        .resumen-stat .etiq { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+        /* Tabla resumen modal */
+        .table-resumen th { background: #0369a1; color: white; font-size: 0.8rem; padding: 8px; }
+        .table-resumen td { font-size: 0.82rem; padding: 7px 10px; vertical-align: middle; }
+        /* Tarjeta de venta dentro del modal de detalle */
+        .venta-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            overflow: hidden;
+        }
+        .venta-card.anulada { border-color: #fecaca; }
+        .venta-card .venta-header {
+            background: #f0f9ff;
+            padding: 8px 14px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px 18px;
+            align-items: center;
+            font-size: 0.82rem;
+        }
+        .venta-card.anulada .venta-header { background: #fef2f2; }
+        .venta-card .venta-body { padding: 8px 14px; }
+        .venta-card .producto-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            padding: 3px 0;
+            border-bottom: 1px dashed #e2e8f0;
+        }
+        .venta-card .producto-row:last-child { border-bottom: none; }
+        /* Sin resultados */
+        .empty-state { text-align: center; padding: 60px 20px; color: #94a3b8; }
+        .empty-state i { font-size: 3rem; margin-bottom: 12px; }
+        .spinner-mini { width: 1rem; height: 1rem; }
     </style>
 </head>
 <body>
-
 <div id="navbar-container"></div>
+<!-- Encabezado de página -->
+<div class="page-header">
+    <div class="d-flex align-items-center gap-3">
+        <i class="bi bi-cash-register fs-4 text-primary"></i>
+        <div>
+            <h4>Gestión de <span style="color:var(--logo-rojo);">Cajas</span></h4>
+            <small class="text-muted">Panel exclusivo para administradores · Historial y resúmenes de caja por trabajador</small>
+        </div>
+    </div>
+</div>
+<div class="container-fluid px-4 pb-5">
 
-<div class="container mt-4 pt-3 mb-5">
-    <h3 style="color:var(--azul-oscuro);" class="mb-4">
-        <i class="bi bi-cash-register me-2 text-primary"></i>Gestión de <span style="color:var(--logo-rojo); font-weight:900;">Caja</span>
-    </h3>
-
-    <div class="row mb-5">
-        <div class="col-md-6 mx-auto" id="panelAccionCaja">
-            <div class="panel-caja border-top border-4 border-secondary">
-                <i class="bi bi-arrow-repeat icon-huge text-secondary spin"></i>
-                <h4 class="fw-bold">Cargando estado...</h4>
+    <!-- ══════════ RESUMEN DE TRABAJADOR ══════════ -->
+    <div class="resumen-card">
+        <div class="titulo-seccion">
+            <i class="bi bi-bar-chart-line-fill"></i> Resumen de Trabajador
+            <small class="text-muted fw-normal ms-1" style="font-size:0.78rem;">Genera un reporte detallado por trabajador, sucursal y rango de fechas</small>
+        </div>
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-bold text-secondary">Trabajador</label>
+                <select class="form-select form-select-sm" id="resumenUsuario">
+                    <option value="">Seleccionar trabajador</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label fw-bold text-secondary">Sucursal</label>
+                <select class="form-select form-select-sm" id="resumenSucursal">
+                    <option value="">Todas las sucursales</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold text-secondary">Desde</label>
+                <input type="date" class="form-control form-control-sm" id="resumenDesde">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold text-secondary">Hasta</label>
+                <input type="date" class="form-control form-control-sm" id="resumenHasta">
+            </div>
+            <div class="col-md-2">
+                <button class="btn fw-bold w-100" style="background:#0369a1;color:white;" onclick="generarResumen()">
+                    <i class="bi bi-bar-chart me-1"></i> Ver Resumen
+                </button>
             </div>
         </div>
     </div>
 
-    <div class="card shadow-sm border-0">
-        <div class="card-header bg-white py-3">
-            <h5 class="mb-0 fw-bold text-secondary"><i class="bi bi-clock-history me-2"></i>Historial de Turnos</h5>
+    <!-- ══════════ FILTROS DE TABLA ══════════ -->
+    <div class="filtros-card">
+        <div class="titulo-seccion"><i class="bi bi-funnel-fill"></i> Filtros de Búsqueda</div>
+        <div class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label fw-bold text-secondary">Trabajador</label>
+                <select class="form-select form-select-sm" id="filtroUsuario" onchange="buscarCajas()">
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold text-secondary">Sucursal</label>
+                <select class="form-select form-select-sm" id="filtroSucursal" onchange="buscarCajas()">
+                    <option value="">Todas</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold text-secondary">Estado</label>
+                <select class="form-select form-select-sm" id="filtroEstado" onchange="buscarCajas()">
+                    <option value="">Todos</option>
+                    <option value="ABIERTA">Abierta</option>
+                    <option value="CERRADA">Cerrada</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold text-secondary">Desde</label>
+                <input type="date" class="form-control form-control-sm" id="filtroDesde" oninput="buscarCajasDebounced()">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label fw-bold text-secondary">Hasta</label>
+                <input type="date" class="form-control form-control-sm" id="filtroHasta" oninput="buscarCajasDebounced()">
+            </div>
+            <div class="col-md-1">
+                <button class="btn btn-outline-secondary btn-sm w-100" onclick="limpiarFiltros()" title="Limpiar filtros">
+                    <i class="bi bi-x-lg"></i>
+                </button>
+            </div>
         </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-custom mb-0 align-middle text-center">
-                    <thead>
-                    <tr>
-                        <th>Estado</th>
-                        <th>Apertura</th>
-                        <th>Cierre</th>
-                        <th>Monto Inicial</th>
-                        <th>Ventas Efectivo</th>
-                        <th>Real Contado</th>
-                        <th>Diferencia</th>
-                    </tr>
-                    </thead>
-                    <tbody id="tablaHistorialBody"></tbody>
-                </table>
+    </div>
+
+    <!-- Tabla de cajas -->
+    <div class="tabla-card">
+        <div class="card-header-custom">
+            <span><i class="bi bi-table me-2"></i>Registro de Cajas</span>
+            <span id="contadorResultados" class="badge bg-white text-primary fw-bold">—</span>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-caja mb-0">
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Estado</th>
+                    <th>Trabajador</th>
+                    <th>Sucursal</th>
+                    <th>Apertura</th>
+                    <th>Cierre</th>
+                    <th class="text-end">Inicial (S/)</th>
+                    <th class="text-end">Esperado (S/)</th>
+                    <th class="text-end">Real (S/)</th>
+                    <th class="text-end">Diferencia</th>
+                    <th>Observaciones</th>
+                    <th class="text-center">Acciones</th>
+                </tr>
+                </thead>
+                <tbody id="tablaCajasBody">
+                <tr>
+                    <td colspan="12">
+                        <div class="empty-state">
+                            <i class="bi bi-hourglass-split d-block"></i>
+                            Cargando cajas...
+                        </div>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ MODAL RESUMEN POR TRABAJADOR ══════════ -->
+<div class="modal fade" id="modalResumen" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header fw-bold" style="background:#0369a1;color:white;">
+                <h5 class="modal-title"><i class="bi bi-bar-chart-fill me-2"></i>Resumen de Gestión de Caja</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4 py-3" id="modalResumenBody">
+
+            </div>
+            <div class="modal-footer border-0 px-4 pb-4">
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button class="btn fw-bold px-4" style="background:#e31b23;color:white;" id="btnDescargarPdf">
+                    <i class="bi bi-file-earmark-pdf me-2"></i>Abrir PDF
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ══════════ MODAL DETALLE DE CAJA INDIVIDUAL ══════════ -->
+<div class="modal fade" id="modalDetalleCaja" tabindex="-1">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header fw-bold" style="background:#0369a1;color:white;">
+                <h5 class="modal-title"><i class="bi bi-eye-fill me-2"></i>Detalle de Caja <span id="detalleCajaIdTitulo"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body px-4 py-3" id="modalDetalleBody">
+
+            </div>
+            <div class="modal-footer border-0 px-4 pb-4">
+                <button class="btn btn-outline-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button class="btn fw-bold px-4" style="background:#e31b23;color:white;" id="btnPdfDetalleCaja">
+                    <i class="bi bi-file-earmark-pdf me-2"></i>Abrir PDF de esta caja
+                </button>
             </div>
         </div>
     </div>
@@ -61,128 +342,398 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="/navbar.js"></script>
+<script src="/navbar.js?v2"></script>
 <script>
+    let modalResumen, modalDetalleCaja;
+    let resumenActual = null;
+    let cajaDetalleActualId = null;
+    let debounceTimer = null;
+
     document.addEventListener('DOMContentLoaded', async () => {
         await initNavbar();
-        verificarEstadoCaja();
-        cargarHistorial();
+        modalResumen = new bootstrap.Modal(document.getElementById('modalResumen'));
+        modalDetalleCaja = new bootstrap.Modal(document.getElementById('modalDetalleCaja'));
+        await cargarSelectores();
+        // Cargar todo al entrar (sin filtros) - tiempo real desde el inicio
+        buscarCajas();
     });
 
-    async function verificarEstadoCaja() {
+    // ── SELECTORES ────────────────────────────────────────────────
+    async function cargarSelectores() {
         try {
-            const res = await fetch('/api/caja/estado');
-            const caja = await res.json();
-            const panel = document.getElementById('panelAccionCaja');
-
-            if (caja.estado === 'CERRADA') {
-                panel.innerHTML = `
-                    <div class="panel-caja border-top border-4 border-danger">
-                        <i class="bi bi-lock-fill icon-huge text-danger"></i>
-                        <h3 class="fw-bold text-dark mb-1">Caja Cerrada</h3>
-                        <p class="text-muted mb-4">Aperture la caja para empezar a cobrar.</p>
-                        <div class="input-group input-group-lg mb-3 mx-auto" style="max-width: 300px;">
-                            <span class="input-group-text bg-light fw-bold">S/</span>
-                            <input type="number" id="inputMontoInicial" class="form-control text-center fw-bold" placeholder="Sencillo Inicial" min="0" step="0.10">
-                        </div>
-                        <button class="btn btn-lg btn-success fw-bold w-100" style="max-width: 300px;" onclick="abrirCaja()">
-                            <i class="bi bi-unlock-fill me-2"></i> Abrir Caja
-                        </button>
-                    </div>`;
-            } else {
-                panel.innerHTML = `
-                    <div class="panel-caja border-top border-4 border-success">
-                        <i class="bi bi-unlock-fill icon-huge text-success"></i>
-                        <h3 class="fw-bold text-dark mb-1">Caja Abierta</h3>
-                        <p class="text-success fw-bold mb-4">Operando desde: ${new Date(caja.fechaApertura).toLocaleString('es-PE')}</p>
-
-                        <div class="bg-light p-3 rounded mb-4 text-start">
-                            <div class="d-flex justify-content-between mb-2"><span>Sencillo Inicial:</span> <strong class="fs-5">S/ ${caja.montoInicial.toFixed(2)}</strong></div>
-                            <div class="d-flex justify-content-between text-muted"><small>No olvide contar el efectivo físico antes de cerrar.</small></div>
-                        </div>
-
-                        <button class="btn btn-lg btn-danger fw-bold w-100" style="max-width: 300px;" onclick="modalCerrarCaja()">
-                            <i class="bi bi-lock-fill me-2"></i> Cerrar Caja
-                        </button>
-                    </div>`;
-            }
-        } catch (e) {
-            Swal.fire('Error', 'No se pudo conectar con el servidor', 'error');
-        }
-    }
-
-    async function abrirCaja() {
-        const monto = document.getElementById('inputMontoInicial').value;
-        if (!monto || monto < 0) { Swal.fire('Atención', 'Ingrese un monto inicial válido.', 'warning'); return; }
-
-        Swal.fire({ title: 'Abriendo...', didOpen: () => Swal.showLoading() });
-        try {
-            const res = await fetch('/api/caja/abrir', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ montoInicial: monto }) });
-            if (res.ok) { Swal.fire('¡Éxito!', 'Caja aperturada correctamente.', 'success'); verificarEstadoCaja(); cargarHistorial(); }
-            else Swal.fire('Error', await res.text(), 'error');
-        } catch (e) {}
-    }
-
-    async function modalCerrarCaja() {
-        const { value: formValues } = await Swal.fire({
-            title: 'Cerrar Turno de Caja',
-            html: `
-                <label class="form-label fw-bold mt-2">Dinero Físico Contado (Efectivo)</label>
-                <input id="swal-monto" type="number" class="form-control form-control-lg text-center fw-bold mb-3" placeholder="S/ 0.00" min="0" step="0.10">
-                <label class="form-label fw-bold">Observaciones (Opcional)</label>
-                <textarea id="swal-obs" class="form-control" rows="2" placeholder="Ej: Faltan 5 soles por error de vuelto"></textarea>
-            `,
-            focusConfirm: false,
-            showCancelButton: true,
-            confirmButtonColor: '#e31b23',
-            confirmButtonText: 'Cerrar Definitivamente',
-            preConfirm: () => {
-                return { monto: document.getElementById('swal-monto').value, obs: document.getElementById('swal-obs').value }
-            }
-        });
-
-        if (formValues) {
-            if (!formValues.monto || formValues.monto < 0) { Swal.fire('Atención', 'Ingrese el monto físico contado.', 'warning'); return; }
-
-            try {
-                const res = await fetch('/api/caja/cerrar', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ montoReal: formValues.monto, observaciones: formValues.obs }) });
-                if (res.ok) { Swal.fire('Caja Cerrada', 'El turno ha finalizado.', 'success'); verificarEstadoCaja(); cargarHistorial(); }
-                else Swal.fire('Error', await res.text(), 'error');
-            } catch (e) {}
-        }
-    }
-
-    async function cargarHistorial() {
-        try {
-            const res = await fetch('/api/caja/historial');
-            const data = await res.json();
-            const tbody = document.getElementById('tablaHistorialBody');
-            tbody.innerHTML = '';
-
-            data.forEach(c => {
-                const badge = c.estado === 'ABIERTA' ? '<span class="badge bg-success">ABIERTA</span>' : '<span class="badge bg-secondary">CERRADA</span>';
-                const cierre = c.fechaCierre ? new Date(c.fechaCierre).toLocaleString('es-PE') : '---';
-
-                let difHtml = '---';
-                if (c.estado === 'CERRADA') {
-                    if (c.diferencia == 0) difHtml = '<span class="badge bg-success text-white">S/ 0.00 (Cuadre Exacto)</span>';
-                    else if (c.diferencia > 0) difHtml = `<span class="badge bg-primary text-white">S/ +${c.diferencia.toFixed(2)} (Sobra)</span>`;
-                    else difHtml = `<span class="badge bg-danger text-white">S/ ${c.diferencia.toFixed(2)} (Falta)</span>`;
-                }
-
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${badge}</td>
-                        <td class="text-muted">${new Date(c.fechaApertura).toLocaleString('es-PE')}</td>
-                        <td class="text-muted">${cierre}</td>
-                        <td class="fw-bold">S/ ${c.montoInicial.toFixed(2)}</td>
-                        <td class="fw-bold text-success">S/ ${c.ingresosEfectivo ? c.ingresosEfectivo.toFixed(2) : '0.00'}</td>
-                        <td class="fw-bold text-primary">S/ ${c.montoFinalReal ? c.montoFinalReal.toFixed(2) : '---'}</td>
-                        <td>${difHtml}</td>
-                    </tr>
-                `;
+            // Usuarios
+            const resU = await fetch('/api/admin/cajas/usuarios');
+            const usuarios = await resU.json();
+            ['filtroUsuario', 'resumenUsuario'].forEach(selId => {
+                const sel = document.getElementById(selId);
+                usuarios.forEach(u => {
+                    const opt = document.createElement('option');
+                    opt.value = u.id;
+                    opt.textContent = u.nombre;
+                    sel.appendChild(opt);
+                });
             });
-        } catch (e) {}
+            // Sucursales
+            const resS = await fetch('/api/sucursales');
+            const sucursales = await resS.json();
+            ['filtroSucursal', 'resumenSucursal'].forEach(selId => {
+                const sel = document.getElementById(selId);
+                sucursales.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = s.nombre;
+                    sel.appendChild(opt);
+                });
+            });
+        } catch (e) {
+            console.error('Error cargando selectores', e);
+        }
+    }
+
+    // ── BÚSQUEDA / FILTROS ───────────────────────────
+    function buscarCajasDebounced() {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(buscarCajas, 400);
+    }
+
+    async function buscarCajas() {
+        const usuarioId  = document.getElementById('filtroUsuario').value;
+        const sucursalId = document.getElementById('filtroSucursal').value;
+        const estado     = document.getElementById('filtroEstado').value;
+        const desde      = document.getElementById('filtroDesde').value;
+        const hasta      = document.getElementById('filtroHasta').value;
+        const params = new URLSearchParams();
+        if (usuarioId)  params.append('usuarioId',  usuarioId);
+        if (sucursalId) params.append('sucursalId', sucursalId);
+        if (estado)     params.append('estado',     estado);
+        if (desde)      params.append('desde',      desde);
+        if (hasta)      params.append('hasta',      hasta);
+        try {
+            const res  = await fetch('/api/admin/cajas?' + params.toString());
+            const data = await res.json();
+            renderTabla(data);
+        } catch (e) {
+            Swal.fire({ icon: 'error', title: 'Error de red', text: 'No se pudo conectar.' });
+        }
+    }
+
+    function limpiarFiltros() {
+        ['filtroUsuario','filtroSucursal','filtroEstado','filtroDesde','filtroHasta'].forEach(id => {
+            document.getElementById(id).value = '';
+        });
+        buscarCajas();
+    }
+
+    // ── RENDERIZAR TABLA ──────────────────────────────────────────
+    function renderTabla(cajas) {
+        const tbody = document.getElementById('tablaCajasBody');
+        document.getElementById('contadorResultados').textContent = cajas.length + ' resultado' + (cajas.length !== 1 ? 's' : '');
+        tbody.innerHTML = '';
+        if (cajas.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="12">
+                <div class="empty-state"><i class="bi bi-inbox d-block"></i>No se encontraron cajas con los filtros aplicados.</div>
+            </td></tr>`;
+            return;
+        }
+        cajas.forEach(c => {
+            const badgeEstado = c.estado === 'ABIERTA'
+                ? `<span class="badge-abierta"><i class="bi bi-circle-fill me-1" style="font-size:0.45rem;vertical-align:middle;"></i>ABIERTA</span>`
+                : `<span class="badge-cerrada">CERRADA</span>`;
+            const dif = parseFloat(c.diferencia ?? 0);
+            let difHtml = '—';
+            if (c.estado === 'CERRADA') {
+                const cls = dif < 0 ? 'dif-neg' : (dif > 0 ? 'dif-pos' : 'dif-zer');
+                difHtml = `<span class="${cls}">${dif >= 0 ? '+' : ''}S/ ${dif.toFixed(2)}</span>`;
+            }
+            const obs = c.observaciones ? `<span title="${c.observaciones}" class="text-muted" style="max-width:140px;display:inline-block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${c.observaciones}</span>` : '—';
+            tbody.innerHTML += `
+            <tr>
+                <td class="text-secondary">${c.id}</td>
+                <td>${badgeEstado}</td>
+                <td class="fw-semibold">${c.usuarioNombre}</td>
+                <td class="text-muted">${c.sucursalNombre}</td>
+                <td class="text-muted">${c.fechaApertura}</td>
+                <td class="text-muted">${c.fechaCierre}</td>
+                <td class="text-end">S/ ${fmt(c.montoInicial)}</td>
+                <td class="text-end text-primary">${c.estado === 'CERRADA' ? 'S/ ' + fmt(c.montoEsperado) : '—'}</td>
+                <td class="text-end fw-bold">${c.estado === 'CERRADA' ? 'S/ ' + fmt(c.montoReal) : '—'}</td>
+                <td class="text-end">${difHtml}</td>
+                <td>${obs}</td>
+                <td class="text-center">
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button class="btn-accion-fila btn-ver-fila" title="Ver detalle" onclick="verDetalleCaja(${c.id})">
+                            <i class="bi bi-eye-fill"></i>
+                        </button>
+                        <button class="btn-accion-fila btn-pdf-fila" title="Abrir PDF" onclick="abrirPdfCaja(${c.id})">
+                            <i class="bi bi-file-earmark-pdf-fill"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>`;
+        });
+    }
+
+    // ── PDF de caja individual ─────────────────────
+    function abrirPdfCaja(id) {
+        window.open('/api/admin/cajas/' + id + '/pdf', '_blank');
+    }
+
+    // ── DETALLE DE CAJA INDIVIDUAL ───────────
+    async function verDetalleCaja(id) {
+        cajaDetalleActualId = id;
+        document.getElementById('detalleCajaIdTitulo').textContent = '#' + id;
+        document.getElementById('modalDetalleBody').innerHTML = `
+            <div class="text-center py-5 text-muted">
+                <div class="spinner-border text-primary mb-2" role="status"></div>
+                <div>Cargando detalle de la caja...</div>
+            </div>`;
+        modalDetalleCaja.show();
+        try {
+            const res = await fetch('/api/admin/cajas/' + id + '/detalle');
+            if (!res.ok) throw new Error('No se pudo obtener el detalle');
+            const data = await res.json();
+            renderModalDetalle(data);
+        } catch (e) {
+            document.getElementById('modalDetalleBody').innerHTML = `
+                <div class="alert alert-danger">No se pudo cargar el detalle de esta caja.</div>`;
+        }
+    }
+
+    function renderModalDetalle(d) {
+        const dif = parseFloat(d.diferencia ?? 0);
+        const difClass = dif < 0 ? 'text-danger' : (dif > 0 ? 'text-success' : 'text-secondary');
+        const difSign  = dif >= 0 ? '+' : '';
+        const badgeEstado = d.estado === 'ABIERTA'
+            ? `<span class="badge-abierta">ABIERTA</span>`
+            : `<span class="badge-cerrada">CERRADA</span>`;
+
+        let ventasHtml = '';
+        (d.ventas || []).forEach(v => {
+            const anulada = (v.estadoVenta || '').toUpperCase() === 'ANULADA';
+            const badgeVenta = anulada
+                ? `<span class="badge-anulada">ANULADA</span>`
+                : `<span class="badge-registrada">${v.estadoVenta}</span>`;
+            let productosHtml = (v.productos || []).map(p => `
+                <div class="producto-row">
+                    <span>${p.cantidad}x ${p.nombre} <span class="text-muted">(${p.codigo})</span></span>
+                    <span class="fw-semibold">S/ ${fmt(p.subtotal)}</span>
+                </div>
+            `).join('') || '<div class="text-muted small">Sin productos registrados.</div>';
+
+            ventasHtml += `
+            <div class="venta-card ${anulada ? 'anulada' : ''}">
+                <div class="venta-header">
+                    <span class="fw-bold">${v.tipoComprobante} ${v.numeroComprobante}</span>
+                    <span class="text-muted">${v.fecha}</span>
+                    <span><i class="bi bi-person me-1"></i>${v.cliente}</span>
+                    <span><i class="bi bi-credit-card me-1"></i>${v.metodoPago}</span>
+                    <span class="fw-bold">S/ ${fmt(v.total)}</span>
+                    ${badgeVenta}
+                    <span class="text-muted small">SUNAT: ${v.estadoSunat}</span>
+                </div>
+                <div class="venta-body">${productosHtml}</div>
+            </div>`;
+        });
+        if (!ventasHtml) {
+            ventasHtml = `<div class="text-center text-muted py-4">No se registraron ventas durante esta caja.</div>`;
+        }
+
+        document.getElementById('modalDetalleBody').innerHTML = `
+            <div class="mb-4 p-3 rounded" style="background:#f0f9ff;border-left:4px solid #0369a1;">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-2">
+                    <div>
+                        <div class="fw-bold fs-6" style="color:#0369a1;"><i class="bi bi-person-badge me-2"></i>${d.usuarioNombre}</div>
+                        <small class="text-muted"><i class="bi bi-shop me-1"></i>${d.sucursalNombre}</small>
+                    </div>
+                    ${badgeEstado}
+                </div>
+                <small class="text-muted d-block mt-2">
+                    Apertura: ${d.fechaApertura} &nbsp;·&nbsp; Cierre: ${d.fechaCierre}
+                </small>
+                ${d.observaciones ? `<small class="text-muted d-block mt-1"><i class="bi bi-chat-left-text me-1"></i>${d.observaciones}</small>` : ''}
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="resumen-stat">
+                        <div class="valor text-secondary">S/ ${fmt(d.montoInicial)}</div>
+                        <div class="etiq">Monto inicial</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="resumen-stat">
+                        <div class="valor text-primary">${d.estado === 'CERRADA' ? 'S/ ' + fmt(d.montoEsperado) : '—'}</div>
+                        <div class="etiq">Monto esperado</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="resumen-stat">
+                        <div class="valor" style="color:#0369a1;">${d.estado === 'CERRADA' ? 'S/ ' + fmt(d.montoReal) : '—'}</div>
+                        <div class="etiq">Monto real</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="resumen-stat">
+                        <div class="valor ${difClass}">${d.estado === 'CERRADA' ? difSign + 'S/ ' + Math.abs(dif).toFixed(2) : '—'}</div>
+                        <div class="etiq">Diferencia</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="resumen-stat">
+                        <div class="valor text-success">${d.cantVentas ?? 0}</div>
+                        <div class="etiq">Ventas válidas</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="resumen-stat">
+                        <div class="valor text-danger">${d.cantAnuladas ?? 0}</div>
+                        <div class="etiq">Ventas anuladas</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="resumen-stat">
+                        <div class="valor text-primary">S/ ${fmt(d.totalVendido)}</div>
+                        <div class="etiq">Total vendido</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="resumen-stat">
+                        <div class="valor" style="color:#0369a1;">S/ ${fmt(d.totalEfectivo)}</div>
+                        <div class="etiq">Total efectivo</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="fw-bold mb-2" style="color:#0369a1;"><i class="bi bi-receipt me-2"></i>Ventas realizadas durante esta caja</div>
+            ${ventasHtml}
+        `;
+        document.getElementById('btnPdfDetalleCaja').onclick = () => abrirPdfCaja(cajaDetalleActualId);
+    }
+
+    // ── RESUMEN POR USUARIO ─────────────────────────
+    async function generarResumen() {
+        const usuarioId  = document.getElementById('resumenUsuario').value;
+        const sucursalId = document.getElementById('resumenSucursal').value;
+        const desde      = document.getElementById('resumenDesde').value;
+        const hasta      = document.getElementById('resumenHasta').value;
+        if (!usuarioId) {
+            Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'Selecciona un trabajador', showConfirmButton: false, timer: 2000 });
+            return;
+        }
+        const params = new URLSearchParams({ usuarioId });
+        if (sucursalId) params.append('sucursalId', sucursalId);
+        if (desde) params.append('desde', desde);
+        if (hasta) params.append('hasta', hasta);
+        Swal.fire({ title: 'Generando resumen...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+        try {
+            const res  = await fetch('/api/admin/cajas/resumen?' + params.toString());
+            const data = await res.json();
+            Swal.close();
+            resumenActual = { usuarioId, sucursalId, desde, hasta };
+            renderModalResumen(data);
+            modalResumen.show();
+        } catch (e) {
+            Swal.fire({ icon: 'error', title: 'Error al generar resumen' });
+        }
+    }
+
+    function renderModalResumen(data) {
+        const difTotal = parseFloat(data.difTotal ?? 0);
+        const difClass = difTotal < 0 ? 'text-danger' : (difTotal > 0 ? 'text-success' : 'text-secondary');
+        const difSign  = difTotal >= 0 ? '+' : '';
+        let filasTabla = '';
+        (data.cajas || []).forEach(c => {
+            const dif = parseFloat(c.diferencia ?? 0);
+            const difHtml = c.estado === 'CERRADA'
+                ? `<span class="${dif < 0 ? 'text-danger fw-bold' : (dif > 0 ? 'text-success fw-bold' : '')}">${dif >= 0 ? '+' : ''}S/ ${dif.toFixed(2)}</span>`
+                : '—';
+            const obs = c.observaciones ? `<span class="text-muted">${c.observaciones}</span>` : '';
+            filasTabla += `
+            <tr>
+                <td>${c.estado === 'ABIERTA' ? '<span class="badge-abierta">ABIERTA</span>' : '<span class="badge-cerrada">CERRADA</span>'}</td>
+                <td class="text-muted">${c.sucursalNombre}</td>
+                <td class="text-muted">${c.fechaApertura}</td>
+                <td class="text-muted">${c.fechaCierre}</td>
+                <td class="text-end">S/ ${fmt(c.montoInicial)}</td>
+                <td class="text-end text-primary">${c.estado === 'CERRADA' ? 'S/ ' + fmt(c.montoEsperado) : '—'}</td>
+                <td class="text-end fw-bold">${c.estado === 'CERRADA' ? 'S/ ' + fmt(c.montoReal) : '—'}</td>
+                <td class="text-end">${difHtml}</td>
+                <td>${obs}</td>
+            </tr>`;
+        });
+        document.getElementById('modalResumenBody').innerHTML = `
+            <!-- Info trabajador -->
+            <div class="mb-4 p-3 rounded" style="background:#f0f9ff;border-left:4px solid #0369a1;">
+                <div class="fw-bold fs-6" style="color:#0369a1;"><i class="bi bi-person-badge me-2"></i>${data.nombreUsuario}</div>
+                <small class="text-muted">Período: ${data.rangoFechas} &nbsp;·&nbsp; Sucursal: <strong>${data.sucursal}</strong> &nbsp;·&nbsp; ${data.totalCajas} caja(s) cerrada(s)</small>
+            </div>
+            <!-- Stats -->
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="resumen-stat">
+                        <div class="valor text-secondary">S/ ${fmt(data.sumInicial)}</div>
+                        <div class="etiq">Total inicial acumulado</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="resumen-stat">
+                        <div class="valor text-primary">S/ ${fmt(data.sumEsperado)}</div>
+                        <div class="etiq">Total esperado acumulado</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="resumen-stat">
+                        <div class="valor" style="color:#0369a1;">S/ ${fmt(data.sumReal)}</div>
+                        <div class="etiq">Total real contado</div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="resumen-stat">
+                        <div class="valor ${difClass}">${difSign}S/ ${Math.abs(difTotal).toFixed(2)}</div>
+                        <div class="etiq">Diferencia total</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Tabla de cajas individuales -->
+            <div class="table-responsive">
+                <table class="table table-resumen table-hover mb-0 border rounded">
+                    <thead>
+                    <tr>
+                        <th>Estado</th><th>Sucursal</th><th>Apertura</th><th>Cierre</th>
+                        <th class="text-end">Inicial</th><th class="text-end">Esperado</th>
+                        <th class="text-end">Real</th><th class="text-end">Diferencia</th>
+                        <th>Observaciones</th>
+                    </tr>
+                    </thead>
+                    <tbody>${filasTabla || '<tr><td colspan="9" class="text-center text-muted py-4">No hay cajas cerradas en este período.</td></tr>'}</tbody>
+                </table>
+            </div>
+            ${difTotal < 0 ? `
+            <div class="alert alert-danger d-flex align-items-center gap-2 mt-3 mb-0">
+                <i class="bi bi-exclamation-triangle-fill fs-5"></i>
+                <span>Este trabajador tiene una diferencia negativa acumulada de <strong>S/ ${Math.abs(difTotal).toFixed(2)}</strong>. Revisa las cajas con faltante.</span>
+            </div>` : ''}
+        `;
+        document.getElementById('btnDescargarPdf').onclick = abrirPdfResumen;
+    }
+
+    function abrirPdfResumen() {
+        if (!resumenActual) return;
+        const { usuarioId, sucursalId, desde, hasta } = resumenActual;
+        const params = new URLSearchParams({ usuarioId });
+        if (sucursalId) params.append('sucursalId', sucursalId);
+        if (desde) params.append('desde', desde);
+        if (hasta) params.append('hasta', hasta);
+        window.open('/api/admin/cajas/resumen/pdf?' + params.toString(), '_blank');
+    }
+
+    // ── UTILS ──────────────────────────────────────────────────────
+    function fmt(v) {
+        if (v == null) return '0.00';
+        return parseFloat(v).toFixed(2);
     }
 </script>
 </body>

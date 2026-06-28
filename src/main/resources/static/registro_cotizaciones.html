@@ -14,6 +14,8 @@
         .table-custom th { background-color:var(--azul-oscuro); color:white; border-bottom:2px solid var(--azul-primario); }
         .table-custom tbody tr:hover { background-color:rgba(14,165,233,0.05); }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        /* Aseguramos que el SweetAlert siempre quede por encima de cualquier modal de Bootstrap */
+        .swal2-container { z-index: 11000 !important; }
     </style>
 </head>
 <body>
@@ -46,7 +48,9 @@
                     </tr>
                     </thead>
                     <tbody id="tablaCotiBody">
-                    <tr><td colspan="7" class="text-center py-4">Cargando cotizaciones...</td></tr>
+                    <tr>
+                        <td colspan="7" class="text-center py-4">Cargando cotizaciones...</td>
+                    </tr>
                     </tbody>
                 </table>
             </div>
@@ -58,7 +62,8 @@
     <div class="modal-dialog modal-lg">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title fw-bold"><i class="bi bi-receipt me-2"></i>Detalle de Cotización <span id="detCodigo" class="text-warning"></span></h5>
+                <h5 class="modal-title fw-bold"><i class="bi bi-receipt me-2"></i>Detalle de Cotización <span
+                        id="detCodigo" class="text-warning"></span></h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body bg-light">
@@ -66,11 +71,19 @@
                 <div class="card border-0 shadow-sm mb-3">
                     <div class="card-body p-3 bg-white rounded">
                         <div class="row g-2 text-dark" style="font-size: 0.95rem;">
-                            <div class="col-md-6"><i class="bi bi-person-badge text-primary me-2"></i><strong>Cliente:</strong> <span id="detCliente"></span></div>
-                            <div class="col-md-6"><i class="bi bi-card-text text-primary me-2"></i><strong>DNI/RUC:</strong> <span id="detDoc"></span></div>
-                            <div class="col-md-6"><i class="bi bi-calendar-event text-primary me-2"></i><strong>F. Emisión:</strong> <span id="detFEmision"></span></div>
-                            <div class="col-md-6"><i class="bi bi-calendar-x text-danger me-2"></i><strong>F. Vencimiento:</strong> <span id="detFVence"></span></div>
-                            <div class="col-md-12"><i class="bi bi-info-circle text-primary me-2"></i><strong>Estado:</strong> <span id="detEstado"></span></div>
+                            <div class="col-md-6"><i
+                                    class="bi bi-person-badge text-primary me-2"></i><strong>Cliente:</strong> <span
+                                    id="detCliente"></span></div>
+                            <div class="col-md-6"><i
+                                    class="bi bi-card-text text-primary me-2"></i><strong>DNI/RUC:</strong> <span
+                                    id="detDoc"></span></div>
+                            <div class="col-md-6"><i class="bi bi-calendar-event text-primary me-2"></i><strong>F.
+                                Emisión:</strong> <span id="detFEmision"></span></div>
+                            <div class="col-md-6"><i class="bi bi-calendar-x text-danger me-2"></i><strong>F.
+                                Vencimiento:</strong> <span id="detFVence"></span></div>
+                            <div class="col-md-12"><i
+                                    class="bi bi-info-circle text-primary me-2"></i><strong>Estado:</strong> <span
+                                    id="detEstado"></span></div>
                         </div>
                     </div>
                 </div>
@@ -223,7 +236,6 @@
         const fEmision = new Date(cotizacionActual.fechaEmision).toLocaleDateString('es-PE');
         const fVence = new Date(cotizacionActual.fechaVencimiento).toLocaleDateString('es-PE');
 
-        // Calcular Subtotal e IGV para el formato formal
         const subtotal = (cotizacionActual.total / 1.18).toFixed(2);
         const igv = (cotizacionActual.total - subtotal).toFixed(2);
 
@@ -346,34 +358,63 @@
     }
 
     async function preguntarCorreo() {
-        if (!cotizacionActual) return;
+    if (!cotizacionActual) return;
 
-        const { value: email } = await Swal.fire({
-            title: 'Enviar Cotización',
-            text: `Se enviará la proforma ${cotizacionActual.codigo} al cliente.`,
-            input: 'email',
-            inputLabel: 'Correo Electrónico',
-            inputPlaceholder: 'ejemplo@gmail.com',
-            showCancelButton: true,
-            confirmButtonColor: '#e31b23',
-            confirmButtonText: 'Enviar <i class="bi bi-send"></i>',
-            cancelButtonText: 'Cancelar'
-        });
+    const codigoActual = cotizacionActual.codigo;
 
-        if (email) {
-            Swal.fire({ title: 'Enviando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
-            try {
-                const res = await fetch(`/api/cotizaciones/${cotizacionActual.codigo}/enviar?correo=${email}`, { method: 'POST' });
-                if (res.ok) {
-                    Swal.fire('¡Enviado!', `La cotización fue enviada a ${email}.`, 'success');
-                } else {
-                    Swal.fire('Error', await res.text(), 'error');
-                }
-            } catch (e) {
-                Swal.fire('Error', 'Fallo de conexión.', 'error');
-            }
+    modalCoti.hide();
+    await new Promise(resolve => {
+        document.getElementById('modalDetalleCoti')
+            .addEventListener('hidden.bs.modal', resolve, { once: true });
+    });
+
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    document.body.classList.remove('modal-open');
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('padding-right');
+
+    const { value: email, isConfirmed } = await Swal.fire({
+        title: 'Enviar Cotización',
+        text: `Se enviará la proforma ${codigoActual} al cliente.`,
+        input: 'email',
+        inputLabel: 'Correo Electrónico',
+        inputPlaceholder: 'ejemplo@gmail.com',
+        showCancelButton: true,
+        confirmButtonColor: '#e31b23',
+        confirmButtonText: 'Enviar',
+        cancelButtonText: 'Cancelar',
+        didOpen: () => {
+            // Forzamos el foco en el input del SweetAlert
+            setTimeout(() => {
+                const input = Swal.getInput();
+                if (input) input.focus();
+            }, 100);
         }
+    });
+
+    if (!isConfirmed || !email) {
+        modalCoti.show();
+        return;
     }
+
+    Swal.fire({ title: 'Enviando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    try {
+        const res = await fetch(
+            `/api/cotizaciones/${codigoActual}/enviar?correo=${encodeURIComponent(email)}`,
+            { method: 'POST' }
+        );
+        if (res.ok) {
+            await Swal.fire('¡Enviado!', `La cotización fue enviada a ${email}.`, 'success');
+        } else {
+            await Swal.fire('Error', await res.text(), 'error');
+        }
+    } catch (e) {
+        await Swal.fire('Error', 'Fallo de conexión.', 'error');
+    }
+
+    modalCoti.show();
+}
 </script>
 </body>
 </html>
