@@ -7,6 +7,7 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <style>
         :root {
             --fondo-app: #f0f9ff;
@@ -22,8 +23,6 @@
         .table-custom tbody tr:hover { background-color: rgba(14,165,233,0.05); }
         .status-badge { font-weight: bold; padding: 0.5rem 0.8rem; border-radius: 30px; font-size: 0.85rem; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-
-        /* Botones de fase rápida */
         .btn-fase {
             border-radius: 30px;
             font-size: 0.82rem;
@@ -33,8 +32,6 @@
         }
         .btn-fase:hover { transform: scale(1.03); }
         .btn-fase:active { transform: scale(0.97); }
-
-        /* Timeline de estados en modal detalle */
         .estado-timeline { display: flex; align-items: center; gap: 0; flex-wrap: wrap; margin-top: 0.5rem; }
         .estado-nodo {
             display: flex; flex-direction: column; align-items: center;
@@ -56,15 +53,11 @@
         .estado-nodo.cancelado .etiqueta { color: #dc3545; }
         .estado-linea { flex: 1; height: 2px; background: #dee2e6; min-width: 10px; align-self: flex-start; margin-top: 13px; }
         .estado-linea.completada { background: #198754; }
-
-        /* Aviso tipo pedido en modal estado */
         .tipo-entrega-badge {
             display: inline-flex; align-items: center; gap: 6px;
             font-size: 0.85rem; font-weight: bold;
             padding: 0.4rem 1rem; border-radius: 30px;
         }
-
-        /* Panel de estado actual */
         .estado-actual-panel {
             border-left: 4px solid;
             padding: 0.6rem 1rem;
@@ -112,9 +105,6 @@
     </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
-     MODAL 1: Solo Detalle (lectura)
-══════════════════════════════════════════════════════════ -->
 <div class="modal fade" id="modalDetallePedido" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content border-0 shadow">
@@ -126,7 +116,6 @@
             </div>
             <div class="modal-body bg-light p-4">
 
-                <!-- Info cliente + logística -->
                 <div class="row g-3 mb-4">
                     <div class="col-md-6">
                         <div class="card border-0 shadow-sm p-3 bg-white h-100">
@@ -145,13 +134,16 @@
                     </div>
                 </div>
 
-                <!-- Timeline de estado visual -->
+                <div id="contenedorMapaPedido" class="mb-4" style="display: none;">
+                    <h6 class="fw-bold text-secondary mb-2"><i class="bi bi-geo-fill text-danger me-1"></i> Punto de Recojo</h6>
+                    <div id="mapaPedido" style="height: 250px; width: 100%; border-radius: 10px;" class="border shadow-sm"></div>
+                </div>
+
                 <div class="card border-0 shadow-sm p-3 bg-white mb-4">
                     <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-arrow-right-circle me-1"></i> Progreso del Pedido</h6>
                     <div class="estado-timeline" id="timelineEstado"></div>
                 </div>
 
-                <!-- Productos -->
                 <h6 class="fw-bold text-dark mb-3"><i class="bi bi-cart-check me-1"></i> Repuestos Solicitados</h6>
                 <div class="table-responsive mb-0 shadow-sm rounded-3 bg-white">
                     <table class="table table-bordered mb-0 align-middle text-center small">
@@ -180,9 +172,6 @@
     </div>
 </div>
 
-<!-- ══════════════════════════════════════════════════════════
-     MODAL 2: Gestión de Estado
-══════════════════════════════════════════════════════════ -->
 <div class="modal fade" id="modalGestionEstado" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-md">
         <div class="modal-content border-0 shadow">
@@ -194,7 +183,6 @@
             </div>
             <div class="modal-body p-4">
 
-                <!-- Badge tipo entrega + estado actual -->
                 <div class="d-flex align-items-center gap-3 mb-4 flex-wrap">
                     <span id="gstTipoBadge" class="tipo-entrega-badge"></span>
                     <div id="gstEstadoActualPanel" class="estado-actual-panel flex-grow-1">
@@ -203,16 +191,13 @@
                     </div>
                 </div>
 
-                <!-- Fases rápidas -->
                 <div class="mb-4">
                     <p class="fw-bold text-dark mb-2 small"></i> Avance rápido de fase:</p>
                     <div id="gstFasesRapidas" class="d-flex flex-wrap gap-2"></div>
                 </div>
 
-                <!-- Separador -->
                 <hr class="my-3">
 
-                <!-- Select manual -->
                 <div class="mb-3">
                     <label class="form-label fw-bold small text-dark mb-2">O selecciona un estado manualmente:</label>
                     <select class="form-select fw-bold" id="gstSelectEstado"></select>
@@ -224,7 +209,6 @@
 
                 <hr class="my-3">
 
-                <!-- Botón cancelar pedido -->
                 <button type="button" class="btn btn-outline-danger w-100 fw-bold" onclick="confirmarCancelarPedido()">
                     <i class="bi bi-x-circle me-1"></i> Cancelar este Pedido
                 </button>
@@ -238,13 +222,15 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="/navbar.js?v2"></script>
 <script>
     let modalDetalle, modalGestion;
     let pedidosGlobal = [];
     let idPedidoSeleccionado = null;
+    let pedidoMap = null;
+    let pedidoMarker = null;
 
-    /* ─── Flujo de estados según tipo de entrega ─── */
     const FLUJO_DELIVERY = ['PENDIENTE', 'EN_PREPARACION', 'ENVIADO', 'ENTREGADO'];
     const FLUJO_RECOJO   = ['PENDIENTE', 'EN_PREPARACION', 'LISTO_RECOJO', 'ENTREGADO'];
 
@@ -328,7 +314,6 @@
         }
     }
 
-    /* ─── Modal 1: Solo detalle ─── */
     function verDetallesPedido(id) {
         const p = pedidosGlobal.find(item => item.id === id);
         if (!p) return;
@@ -344,7 +329,30 @@
                 : (p.sucursalNombre ? `Sucursal: ${p.sucursalNombre}` : 'Retira en local');
         document.getElementById('detTotal').innerText = `S/ ${p.total.toFixed(2)}`;
 
-        // Timeline
+        const mapContainer = document.getElementById('contenedorMapaPedido');
+        if (p.metodoEntrega !== 'DELIVERY') {
+            mapContainer.style.display = 'block';
+            const lat = p.sucursalLatitud || -6.70111;
+            const lng = p.sucursalLongitud || -79.90611;
+            const nombreSucursal = p.sucursalNombre || 'Motorepuestos Tato';
+
+            if (!pedidoMap) {
+                pedidoMap = L.map('mapaPedido').setView([lat, lng], 16);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(pedidoMap);
+                pedidoMarker = L.marker([lat, lng]).addTo(pedidoMap);
+            } else {
+                pedidoMap.setView([lat, lng], 16);
+                pedidoMarker.setLatLng([lat, lng]);
+            }
+            pedidoMarker.bindPopup(`<b>${nombreSucursal}</b>`).openPopup();
+
+            setTimeout(() => {
+                pedidoMap.invalidateSize();
+            }, 300);
+        } else {
+            mapContainer.style.display = 'none';
+        }
+
         const flujo = p.estado === 'CANCELADO'
             ? ['CANCELADO']
             : (p.metodoEntrega === 'DELIVERY' ? FLUJO_DELIVERY : FLUJO_RECOJO);
@@ -352,7 +360,6 @@
         const timeline = document.getElementById('timelineEstado');
         timeline.innerHTML = '';
         flujo.forEach((est, i) => {
-            const esCancelado = est === 'CANCELADO';
             let clase = '';
             if (p.estado === 'CANCELADO') clase = 'cancelado';
             else if (i < idxActual) clase = 'completado';
@@ -372,7 +379,6 @@
             timeline.appendChild(nodo);
         });
 
-        // Items
         const tbodyItems = document.getElementById('itemsPedidoModalBody');
         tbodyItems.innerHTML = '';
         p.detalles.forEach(d => {
@@ -388,16 +394,13 @@
         modalDetalle.show();
     }
 
-    /* ─── Modal 2: Gestión de estado ─── */
     function abrirGestionEstado(id) {
         const p = pedidosGlobal.find(item => item.id === id);
         if (!p) return;
         idPedidoSeleccionado = p.id;
 
-        // Número pedido
         document.getElementById('gstNumPedido').innerText = `#000${p.id}`;
 
-        // Badge tipo entrega
         const badge = document.getElementById('gstTipoBadge');
         if (p.metodoEntrega === 'DELIVERY') {
             badge.className = 'tipo-entrega-badge bg-danger bg-opacity-10 text-danger border border-danger';
@@ -407,7 +410,6 @@
             badge.innerHTML = '<i class="bi bi-shop me-1"></i> RETIRO EN TIENDA';
         }
 
-        // Estado actual panel
         const panel = document.getElementById('gstEstadoActualPanel');
         const textoEstado = document.getElementById('gstEstadoActualTexto');
         textoEstado.innerText = ESTADO_LABEL[p.estado] || p.estado;
@@ -415,11 +417,9 @@
         panel.style.borderLeftColor = colores[p.estado] || '#0369a1';
         textoEstado.style.color = colores[p.estado] || '#0369a1';
 
-        // Flujo disponible según tipo (sin CANCELADO en los rápidos)
         const flujo = p.metodoEntrega === 'DELIVERY' ? FLUJO_DELIVERY : FLUJO_RECOJO;
         const idxActual = flujo.indexOf(p.estado);
 
-        // Botones de fase rápida (solo el siguiente disponible)
         const fasesDiv = document.getElementById('gstFasesRapidas');
         fasesDiv.innerHTML = '';
         if (idxActual >= 0 && idxActual < flujo.length - 1) {
@@ -430,7 +430,6 @@
             btnSig.onclick = () => aplicarEstadoRapido(siguiente);
             fasesDiv.appendChild(btnSig);
 
-            // Si hay más fases (saltar)
             if (idxActual < flujo.length - 2) {
                 const ultima = flujo[flujo.length - 1];
                 const btnUlt = document.createElement('button');
@@ -443,7 +442,6 @@
             fasesDiv.innerHTML = '<span class="text-success fw-bold small"><i class="bi bi-check-circle-fill me-1"></i>Este pedido ya está en su estado final.</span>';
         }
 
-        // Select manual solo con estados válidos del flujo (sin cancelado, eso va aparte)
         const select = document.getElementById('gstSelectEstado');
         select.innerHTML = '';
         const opcionesValidas = flujo;

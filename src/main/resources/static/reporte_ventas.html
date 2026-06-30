@@ -94,6 +94,7 @@
                 <table class="table table-hover table-custom mb-0 align-middle text-center">
                     <thead>
                     <tr>
+                        <th style="width: 60px;">Acción</th>
                         <th>Origen</th>
                         <th>N° Comprobante / Orden</th>
                         <th>Fecha y Hora</th>
@@ -103,9 +104,68 @@
                     </tr>
                     </thead>
                     <tbody id="tablaReporteBody">
-                    <tr><td colspan="6" class="text-center py-4">Cargando reporte...</td></tr>
+                    <tr><td colspan="7" class="text-center py-4">Cargando reporte...</td></tr>
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalDetalleGlobal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header" style="background-color: #0369a1; color: white;">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-receipt me-2"></i>Detalle de Transacción <span id="mdlGlobalCodigo" class="text-warning"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light p-4">
+                <div class="row mb-3 g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100 border-start border-4 border-primary">
+                            <small class="text-muted fw-bold d-block mb-1">CLIENTE</small>
+                            <span id="mdlGlobalCliente" class="fw-bold text-dark fs-6"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100 text-center">
+                            <small class="text-muted fw-bold d-block mb-1">FECHA</small>
+                            <span id="mdlGlobalFecha" class="fw-semibold"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100 text-center">
+                            <small class="text-muted fw-bold d-block mb-1">ESTADO</small>
+                            <span id="mdlGlobalEstado"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-cart-check me-2"></i>Artículos Vendidos</h6>
+                <div class="table-responsive shadow-sm rounded border bg-white">
+                    <table class="table table-hover mb-0 align-middle text-center small">
+                        <thead class="table-light">
+                        <tr>
+                            <th class="text-start ps-3">Producto</th>
+                            <th>Cant.</th>
+                            <th>P. Unitario</th>
+                            <th>Subtotal</th>
+                        </tr>
+                        </thead>
+                        <tbody id="mdlGlobalTablaItems"></tbody>
+                        <tfoot>
+                        <tr class="table-warning fw-bold fs-6">
+                            <td colspan="3" class="text-end pe-3">Monto Total:</td>
+                            <td id="mdlGlobalTotal" class="text-danger">S/ 0.00</td>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">Cerrar Resumen</button>
             </div>
         </div>
     </div>
@@ -115,9 +175,11 @@
 <script src="/navbar.js"></script>
 <script>
     let dataGlobal = [];
+    let modalGlobalObj;
 
     document.addEventListener('DOMContentLoaded', async () => {
         await initNavbar();
+        modalGlobalObj = new bootstrap.Modal(document.getElementById('modalDetalleGlobal'));
         cargarDatos();
     });
 
@@ -125,12 +187,10 @@
         try {
             const res = await fetch('/api/reportes/ventas-globales');
             dataGlobal = await res.json();
-
             dataGlobal.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
-
             aplicarFiltros();
         } catch (e) {
-            document.getElementById('tablaReporteBody').innerHTML = '<tr><td colspan="6" class="text-danger">Error cargando el reporte.</td></tr>';
+            document.getElementById('tablaReporteBody').innerHTML = '<tr><td colspan="7" class="text-danger">Error cargando el reporte.</td></tr>';
         }
     }
 
@@ -142,16 +202,13 @@
 
         let filtrados = dataGlobal.filter(item => {
             if (fCanal !== 'TODOS' && item.origen !== fCanal) return false;
-
             const txt = (item.codigo + " " + item.cliente).toLowerCase();
             if (fCodigo && !txt.includes(fCodigo)) return false;
-
             if (item.fecha) {
-                const fechaItem = item.fecha.substring(0, 10); // extraemos solo YYYY-MM-DD
+                const fechaItem = item.fecha.substring(0, 10);
                 if (fDesde && fechaItem < fDesde) return false;
                 if (fHasta && fechaItem > fHasta) return false;
             }
-
             return true;
         });
 
@@ -167,7 +224,7 @@
         let sumaWeb = 0;
 
         if (lista.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No se encontraron ventas con esos filtros.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No se encontraron ventas con esos filtros.</td></tr>';
         } else {
             lista.forEach(v => {
                 sumaGlobal += v.total;
@@ -179,9 +236,11 @@
                     : '<span class="badge bg-success"><i class="bi bi-shop me-1"></i>Local</span>';
 
                 const fechaFormateada = v.fecha ? new Date(v.fecha).toLocaleString('es-PE') : '---';
+                const btnVer = `<button class="btn btn-sm btn-outline-info shadow-sm" onclick="verDetalleEnReporte('${v.origen}', ${v.idOriginal}, '${v.codigo}')" title="Ver Detalle"><i class="bi bi-eye-fill"></i></button>`;
 
                 tbody.innerHTML += `
                     <tr>
+                        <td>${btnVer}</td>
                         <td>${origenBadge}</td>
                         <td class="fw-bold text-dark">${v.codigo}</td>
                         <td class="text-muted">${fechaFormateada}</td>
@@ -204,6 +263,63 @@
         document.getElementById('filtroCanal').value = 'TODOS';
         document.getElementById('filtroCodigo').value = '';
         aplicarFiltros();
+    }
+
+    async function verDetalleEnReporte(origen, idOriginal, codigoTexto) {
+        document.getElementById('mdlGlobalCodigo').innerText = codigoTexto;
+        document.getElementById('mdlGlobalCliente').innerText = 'Cargando...';
+        document.getElementById('mdlGlobalTablaItems').innerHTML = '<tr><td colspan="4" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Buscando productos...</td></tr>';
+
+        modalGlobalObj.show();
+
+        try {
+            const url = origen === 'LOCAL' ? `/api/ventas/${idOriginal}` : `/api/pedidos-web/${idOriginal}`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('Error al consultar');
+
+            const data = await res.json();
+
+            const nombreCli = data.cliente ? data.cliente.razonSocialNombre : (data.nombreCompleto || 'Público General');
+            document.getElementById('mdlGlobalCliente').innerText = nombreCli;
+
+            const fechaDoc = new Date(data.fecha || data.fechaPedido).toLocaleDateString('es-PE', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+            document.getElementById('mdlGlobalFecha').innerText = fechaDoc;
+
+            const estado = data.estado || data.estadoVenta || 'COMPLETADO';
+            const color = (estado === 'ANULADA' || estado === 'CANCELADO') ? 'bg-danger' : 'bg-success';
+            document.getElementById('mdlGlobalEstado').innerHTML = `<span class="badge ${color}">${estado}</span>`;
+
+            const lista = data.detalles || data.items || [];
+            let htmlItems = '';
+            let sumaTotal = 0;
+
+            if (lista.length === 0) {
+                htmlItems = '<tr><td colspan="4" class="text-muted">No se encontraron productos.</td></tr>';
+            } else {
+                lista.forEach(item => {
+                    const nombre = item.producto ? item.producto.nombre : (item.nombreProducto || 'Artículo');
+                    const cant = item.cantidad || 1;
+                    const precio = parseFloat(item.precioUnitario || item.precio || 0);
+                    const sub = parseFloat(item.subtotal || item.importe || (cant * precio));
+                    sumaTotal += sub;
+
+                    htmlItems += `
+                        <tr>
+                            <td class="text-start ps-3 fw-bold text-secondary">${nombre}</td>
+                            <td class="fw-bold">${cant}</td>
+                            <td>S/ ${precio.toFixed(2)}</td>
+                            <td class="fw-bold text-dark">S/ ${sub.toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            document.getElementById('mdlGlobalTablaItems').innerHTML = htmlItems;
+            document.getElementById('mdlGlobalTotal').innerText = `S/ ${(parseFloat(data.total) || sumaTotal).toFixed(2)}`;
+
+        } catch (e) {
+            document.getElementById('mdlGlobalTablaItems').innerHTML = '<tr><td colspan="4" class="text-danger py-4">Error de conexión al obtener los detalles.</td></tr>';
+        }
     }
 </script>
 </body>

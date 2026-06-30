@@ -5,11 +5,7 @@ import com.tato.motorepuestos.model.DetalleVenta;
 import com.tato.motorepuestos.model.Venta;
 import com.tato.motorepuestos.repository.ClienteRepository;
 import com.tato.motorepuestos.repository.VentaRepository;
-import com.tato.motorepuestos.service.CajaService;
-import com.tato.motorepuestos.service.EmailService;
-import com.tato.motorepuestos.service.HistorialService;
-import com.tato.motorepuestos.service.PdfService;
-import com.tato.motorepuestos.service.VentaService;
+import com.tato.motorepuestos.service.*;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +23,7 @@ public class VentaRestController {
     @Autowired private VentaService ventaService;
     @Autowired private VentaRepository ventaRepository;
     @Autowired private ClienteRepository clienteRepository;
+    @Autowired private VentaPdfService ventaPdfService;
     @Autowired private PdfService pdfService;
     @Autowired private EmailService emailService;
     @Autowired private HistorialService historialService;
@@ -173,60 +170,21 @@ public class VentaRestController {
     }
 
     @PostMapping("/{id}/enviar-cliente")
-    public ResponseEntity<?> enviarDocumentosCliente(@PathVariable Long id,
-                                                     @RequestBody Map<String, Object> payload) {
+    public ResponseEntity<?> enviarDocumentosCliente(@PathVariable Long id, @RequestBody Map<String, Object> payload) {
         try {
             Venta venta = ventaRepository.findById(id).orElseThrow();
-            String correo = null;
-            Object correoObj = payload.get("correoCliente");
-            if (correoObj != null && !correoObj.toString().trim().isEmpty()) {
-                correo = correoObj.toString().trim();
-            } else if (venta.getCorreoCliente() != null
-                    && !venta.getCorreoCliente().trim().isEmpty()) {
-                correo = venta.getCorreoCliente().trim();
-            }
-            if (correo == null) {
-                return ResponseEntity.badRequest().body("Debe proporcionar un correo válido.");
-            }
+            String correo = (payload.get("correoCliente") != null) ? payload.get("correoCliente").toString().trim() : venta.getCorreoCliente();
 
-            Cliente cliente = venta.getCliente();
-            Map<String, Object> pdfPayload = new HashMap<>();
-            pdfPayload.put("tipoComprobante",   venta.getTipoComprobante());
-            pdfPayload.put("serie",             venta.getSerie());
-            pdfPayload.put("numeroComprobante", venta.getNumeroComprobante());
-            pdfPayload.put("documentoCliente",
-                    cliente != null ? cliente.getNumeroDocumento() : "00000000");
-            pdfPayload.put("nombreCliente",
-                    cliente != null ? cliente.getRazonSocialNombre() : "Público General");
-            pdfPayload.put("metodoPago", venta.getMetodoPago());
-            pdfPayload.put("total",      venta.getTotal());
+            if (correo == null || correo.isEmpty()) return ResponseEntity.badRequest().body("Debe proporcionar un correo.");
 
-            List<Map<String, Object>> itemsList = new ArrayList<>();
-            for (DetalleVenta det : venta.getDetalles()) {
-                Map<String, Object> map = new HashMap<>();
-                map.put("codigo",         det.getProducto().getCodigoInterno());
-                map.put("nombre",         det.getProducto().getNombre());
-                map.put("cantidad",       det.getCantidad());
-                map.put("precioUnitario", det.getPrecioUnitario());
-                map.put("importe",        det.getSubtotal());
-                itemsList.add(map);
-            }
-            pdfPayload.put("items", itemsList);
-
-            byte[] pdfBytes = pdfService.generarComprobantePdf(pdfPayload, false);
-            byte[] xmlBytes = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                    + "<Invoice><Data>Documento Electronico SUNAT Motorepuestos Tato</Data></Invoice>").getBytes();
-            byte[] cdrBytes = ("<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
-                    + "<ApplicationResponse><Response>Aceptado</Response></ApplicationResponse>").getBytes();
+            // USAMOS EL NUEVO SERVICIO PARA EL PDF
+            byte[] pdfBytes = ventaPdfService.generarPdfVenta(venta);
 
             String docNombre = venta.getSerie() + "-" + venta.getNumeroComprobante();
-            String cuerpo = "<h3>¡Gracias por su compra en Motorepuestos Tato!</h3>"
-                    + "<p>Adjuntamos su comprobante electrónico oficial (PDF, XML y constancia CDR).</p>";
-            emailService.enviarCorreoConArchivos(correo,
-                    "Comprobante Electrónico " + docNombre, cuerpo,
-                    pdfBytes, docNombre + ".pdf",
-                    xmlBytes, docNombre + ".xml",
-                    cdrBytes, "CDR-" + docNombre + ".xml");
+            String cuerpo = "<h3>¡Gracias por su compra en Motorepuestos Tato!</h3><p>Adjuntamos su comprobante electrónico.</p>";
+
+            emailService.enviarCorreoConArchivos(correo, "Comprobante " + docNombre, cuerpo,
+                    pdfBytes, docNombre + ".pdf", null, null, null, null);
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -256,36 +214,18 @@ public class VentaRestController {
     public ResponseEntity<?> descargarPdf(@PathVariable Long id) {
         try {
             Venta venta = ventaRepository.findById(id).orElseThrow();
-            Cliente c = venta.getCliente();
-            Map<String, Object> pdfPayload = new HashMap<>();
-            pdfPayload.put("tipoComprobante",   venta.getTipoComprobante());
-            pdfPayload.put("serie",             venta.getSerie());
-            pdfPayload.put("numeroComprobante", venta.getNumeroComprobante());
-            pdfPayload.put("documentoCliente",  c != null ? c.getNumeroDocumento() : "00000000");
-            pdfPayload.put("nombreCliente",     c != null ? c.getRazonSocialNombre() : "Público General");
-            pdfPayload.put("metodoPago",        venta.getMetodoPago());
-            pdfPayload.put("total",             venta.getTotal());
 
-            List<Map<String, Object>> itemsList = new ArrayList<>();
-            for (DetalleVenta det : venta.getDetalles()) {
-                Map<String, Object> map = new HashMap<>();
-                map.put("codigo",         det.getProducto().getCodigoInterno());
-                map.put("nombre",         det.getProducto().getNombre());
-                map.put("cantidad",       det.getCantidad());
-                map.put("precioUnitario", det.getPrecioUnitario());
-                map.put("importe",        det.getSubtotal());
-                itemsList.add(map);
-            }
-            pdfPayload.put("items", itemsList);
+            // AQUÍ ESTÁ LA CLAVE: Llamamos al servicio con el diseño profesional
+            byte[] pdfBytes = ventaPdfService.generarPdfVenta(venta);
 
-            byte[] pdfBytes = pdfService.generarComprobantePdf(pdfPayload, false);
+            String nombreArchivo = (venta.getSerie() != null ? venta.getSerie() + "-" + venta.getNumeroComprobante() : "Venta-" + venta.getId()) + ".pdf";
+
             return ResponseEntity.ok()
                     .header("Content-Type", "application/pdf")
-                    .header("Content-Disposition", "inline; filename=\""
-                            + venta.getSerie() + "-" + venta.getNumeroComprobante() + ".pdf\"")
+                    .header("Content-Disposition", "inline; filename=\"" + nombreArchivo + "\"")
                     .body(pdfBytes);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().body("Error: " + e.getMessage());
         }
     }
 

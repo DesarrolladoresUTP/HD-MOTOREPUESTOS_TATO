@@ -35,7 +35,21 @@ public class ReporteRestController {
                 Map<String, Object> map = new HashMap<>();
                 map.put("origen", "LOCAL");
 
-                map.put("codigo", v.getNumeroComprobante() != null ? v.getNumeroComprobante() : "V-" + v.getId());
+                map.put("idOriginal", v.getId());
+
+                String codigoFinal = "V-" + v.getId();
+
+                if ("SIN EMITIR".equalsIgnoreCase(v.getEstadoSunat())) {
+                    codigoFinal = "TICKET PENDIENTE (" + v.getNumeroComprobante() + ")";
+                }
+                else if (v.getSerie() != null && v.getNumeroComprobante() != null) {
+                    codigoFinal = v.getSerie() + "-" + v.getNumeroComprobante();
+                }
+                else if (v.getNumeroComprobante() != null) {
+                    codigoFinal = v.getNumeroComprobante();
+                }
+
+                map.put("codigo", codigoFinal);
 
                 map.put("fecha", v.getFecha() != null ? v.getFecha().toString() : "");
 
@@ -55,7 +69,11 @@ public class ReporteRestController {
             for (PedidoWeb p : pedidos) {
                 Map<String, Object> map = new HashMap<>();
                 map.put("origen", "WEB");
-                map.put("codigo", "WEB-" + p.getId());
+
+                map.put("idOriginal", p.getId());
+
+                map.put("codigo", "WEB-" + String.format("%04d", p.getId()));
+
                 map.put("fecha", p.getFechaPedido() != null ? p.getFechaPedido().toString() : "");
                 map.put("cliente", p.getNombreCompleto() != null ? p.getNombreCompleto() : "Cliente Web");
                 map.put("total", p.getTotal());
