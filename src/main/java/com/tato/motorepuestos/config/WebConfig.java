@@ -34,7 +34,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "/login.html",
                         "/api/auth/login",
                         "/api/sucursales/activas",
-                        "/api/sucursales/con-stock",          // ? AÑADIR
+                        "/api/sucursales/con-stock",
                         "/activar-cuenta",
                         "/restablecer-password",
                         "/token-invalido",
@@ -50,8 +50,8 @@ public class WebConfig implements WebMvcConfigurer {
                         "/api/clientes/buscar-api",
                         "/api/pedidos-web/procesar",
                         "/api/pedidos-web/mis-pedidos",
-                        "/api/pedidos-web/*/boleta-pdf",      // ? AÑADIR
-                        "/api/consultas/documento/*",         // ? AÑADIR
+                        "/api/pedidos-web/*/boleta-pdf",
+                        "/api/consultas/documento/*",
                         "/login-cliente",
                         "/login-cliente.html",
                         "/restablecer-cliente",
@@ -60,7 +60,7 @@ public class WebConfig implements WebMvcConfigurer {
                         "/mis-pedidos",
                         "/mis-pedidos.html",
                         "/navbar.js",
-                        "/navbar.js*"                         // ? AÑADIR si no está
+                        "/navbar.js*"
                 );
     }
 }

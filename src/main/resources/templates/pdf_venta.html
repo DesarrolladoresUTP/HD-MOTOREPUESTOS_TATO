@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/>
+    <title>Comprobante Electrónico</title>
+    <style>
+        @page { size: A4; margin: 40px; }
+        body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; color: #333; font-size: 11px; margin: 0; }
+        .header-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; }
+        .logo-section { width: 55%; vertical-align: top; }
+        .company-title { font-size: 24px; font-weight: bold; color: #0369a1; margin: 0; }
+        .company-title span { color: #e31b23; }
+        .company-subtitle { font-size: 11px; font-weight: 800; color: #e31b23; margin: 2px 0 8px 0; letter-spacing: 0.5px; }
+        .company-details { font-size: 10px; color: #475569; line-height: 1.5; }
+        .document-box { width: 45%; border: 2px solid #0369a1; border-radius: 8px; text-align: center; padding: 15px; background-color: #f0f9ff; }
+        .document-ruc { font-size: 16px; font-weight: bold; color: #1e293b; margin-bottom: 5px; }
+        .document-title { font-size: 14px; font-weight: bold; color: #0369a1; text-transform: uppercase; margin-bottom: 5px; }
+        .document-number { font-size: 18px; font-weight: bold; color: #e31b23; }
+        .info-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; border: 1px solid #cbd5e1; }
+        .info-header { background-color: #0369a1; color: #ffffff; font-weight: bold; padding: 6px 12px; font-size: 11px; text-transform: uppercase; }
+        .info-body td { padding: 8px 12px; font-size: 10px; border-bottom: 1px solid #e2e8f0; }
+        .info-label { font-weight: bold; color: #475569; width: 15%; }
+        .items-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .items-table th { background-color: #0369a1; color: #ffffff; font-weight: bold; text-align: center; padding: 10px; font-size: 10px; text-transform: uppercase; }
+        .items-table td { padding: 10px; font-size: 10px; border-bottom: 1px solid #e2e8f0; text-align: center; }
+        .items-table .text-start { text-align: left; }
+        .items-table .text-end { text-align: right; }
+        .items-table tr:nth-child(even) { background-color: #f8fafc; }
+        .totals-container { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        .totals-label { width: 80%; text-align: right; padding: 6px 12px; font-size: 11px; font-weight: bold; color: #475569; }
+        .totals-value { width: 20%; text-align: right; padding: 6px 12px; font-size: 11px; font-weight: bold; color: #1e293b; border: 1px solid #e2e8f0; }
+        .totals-grand { font-size: 14px; color: #e31b23; background-color: #fee2e2; border-color: #fca5a5; }
+        .footer { margin-top: 40px; text-align: center; font-size: 9px; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 15px; }
+    </style>
+</head>
+<body>
+
+<table class="header-table">
+    <tr>
+        <td class="logo-section">
+            <div class="company-title">MOTOREPUESTOS <span>TATO</span></div>
+            <div class="company-subtitle">EL AMIGO DE TU MOTOCICLETA</div>
+            <div class="company-details">
+                Av. Augusto B. Leguía N° 1234 - Chiclayo<br/>
+                Teléfono: (074) 456789 | Celular: 987 654 321<br/>
+                ventas@motorepuestostato.com
+            </div>
+        </td>
+        <td class="document-box">
+            <div class="document-ruc">R.U.C. 10459876541</div>
+            <div class="document-title" th:text="${venta.tipoComprobante}">BOLETA DE VENTA</div>
+            <div class="document-title" style="font-size:10px; color:#64748b;">ELECTRÓNICA</div>
+            <div class="document-number" th:text="${venta.serie != null ? venta.serie + '-' + venta.numeroComprobante : 'TICKET-' + venta.id}">B001-00000001</div>
+        </td>
+    </tr>
+</table>
+
+<table class="info-table">
+    <tr><td colspan="4" class="info-header">Datos del Cliente y Transacción</td></tr>
+    <tr class="info-body">
+        <td class="info-label">Señor(es):</td>
+        <td style="width: 50%; font-weight: bold; color: #0f172a;" th:text="${clienteNombre}">PÚBLICO GENERAL</td>
+        <td class="info-label">Fecha Emisión:</td>
+        <td th:text="${#temporals.format(venta.fecha, 'dd/MM/yyyy HH:mm')}">30/06/2026</td>
+    </tr>
+    <tr class="info-body">
+        <td class="info-label" th:text="${tipoDoc + ':'}">DNI:</td>
+        <td th:text="${clienteDoc}">00000000</td>
+        <td class="info-label">Moneda:</td>
+        <td>Soles (S/)</td>
+    </tr>
+    <tr class="info-body">
+        <td class="info-label">Forma Pago:</td>
+        <td th:text="${venta.metodoPago}">EFECTIVO</td>
+        <td class="info-label">Vendedor:</td>
+        <td th:text="${venta.usuario != null ? venta.usuario.nombres : 'SISTEMA'}">ADMINISTRADOR</td>
+    </tr>
+</table>
+
+<table class="items-table">
+    <thead>
+    <tr>
+        <th style="width: 15%;">Código</th>
+        <th class="text-start" style="width: 50%;">Descripción</th>
+        <th style="width: 10%;">Cant.</th>
+        <th class="text-end" style="width: 10%;">P. Unit.</th>
+        <th class="text-end" style="width: 15%;">Importe</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="d : ${venta.detalles}">
+        <td th:text="${d.producto.codigoInterno}">0001</td>
+        <td class="text-start" style="font-weight: bold; color: #1e293b;" th:text="${d.producto.nombre}">Destornillador</td>
+        <td th:text="${d.cantidad}">3</td>
+        <td class="text-end" th:text="${#numbers.formatDecimal(d.precioUnitario, 1, 2)}">7.00</td>
+        <td class="text-end" style="font-weight: bold;" th:text="${#numbers.formatDecimal(d.subtotal, 1, 2)}">21.00</td>
+    </tr>
+    </tbody>
+</table>
+
+<table class="totals-container">
+    <tr>
+        <td class="totals-label">Sub Total:</td>
+        <td class="totals-value" th:text="${'S/ ' + #numbers.formatDecimal(venta.subtotal, 1, 2)}">S/ 17.80</td>
+    </tr>
+    <tr>
+        <td class="totals-label">I.G.V. (18%):</td>
+        <td class="totals-value" th:text="${'S/ ' + #numbers.formatDecimal(venta.igv, 1, 2)}">S/ 3.20</td>
+    </tr>
+    <tr>
+        <td class="totals-label" style="color: #0369a1; font-size: 13px;">TOTAL A PAGAR:</td>
+        <td class="totals-value totals-grand" th:text="${'S/ ' + #numbers.formatDecimal(venta.total, 1, 2)}">S/ 21.00</td>
+    </tr>
+</table>
+
+<div class="footer">
+    <p style="font-weight: bold; font-size: 11px; color: #1e293b; margin-bottom: 5px;">Representación Impresa del Comprobante Electrónico</p>
+    <p style="margin-top: 10px; color: #0369a1; font-weight: bold; font-size: 11px;">¡GRACIAS POR SU PREFERENCIA!</p>
+</div>
+
+</body>
+</html>

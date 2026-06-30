@@ -1,25 +1,19 @@
 package com.tato.motorepuestos.config;
-
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
-
 @Component
 public class SeguridadInterceptor implements HandlerInterceptor {
-
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         HttpSession session = request.getSession(false);
-
         if (session == null || session.getAttribute("usuarioId") == null) {
             response.sendRedirect("/login");
             return false;
         }
-
         String uri = request.getRequestURI();
-
         if (esRutaRestringida(uri, "/usuarios", "/api/usuarios") && !tienePermiso(session, "p_usuarios")) {
             return rechazarAcceso(uri, response);
         }
@@ -32,7 +26,9 @@ public class SeguridadInterceptor implements HandlerInterceptor {
         if (esRutaRestringida(uri, "/categorias", "/api/categorias") && !tienePermiso(session, "p_productos")) {
             return rechazarAcceso(uri, response);
         }
-        if (esRutaRestringida(uri, "/sucursales", "/api/sucursales") && !tienePermiso(session, "p_sucursales")) {
+        if (esRutaRestringida(uri, "/sucursales", "/api/sucursales")
+                && !tienePermiso(session, "p_sucursales")
+                && !tienePermiso(session, "p_cajasadmin")) {
             return rechazarAcceso(uri, response);
         }
         if (esRutaRestringida(uri, "/stocks", "/api/stocks") && !tienePermiso(session, "p_stocks")) {
@@ -59,14 +55,17 @@ public class SeguridadInterceptor implements HandlerInterceptor {
         if (uri.startsWith("/api/ventas") && !tienePermiso(session, "p_ventas_realizar") && !tienePermiso(session, "p_ventas_registro")) {
             return rechazarAcceso(uri, response);
         }
-
+        if (uri.startsWith("/gestion-cajas") && !tienePermiso(session, "p_cajasadmin")) {
+            return rechazarAcceso(uri, response);
+        }
+        if (uri.startsWith("/api/admin/cajas") && !tienePermiso(session, "p_cajasadmin")) {
+            return rechazarAcceso(uri, response);
+        }
         return true;
     }
-
     private boolean esRutaRestringida(String uri, String rutaWeb, String rutaApi) {
         return uri.startsWith(rutaWeb) || uri.startsWith(rutaApi);
     }
-
     private boolean rechazarAcceso(String uri, HttpServletResponse response) throws Exception {
         if (uri.startsWith("/api/")) {
             response.sendError(HttpServletResponse.SC_FORBIDDEN);
@@ -75,7 +74,6 @@ public class SeguridadInterceptor implements HandlerInterceptor {
         }
         return false;
     }
-
     private boolean tienePermiso(HttpSession session, String permiso) {
         Object valor = session.getAttribute(permiso);
         return valor != null && (Boolean) valor;
