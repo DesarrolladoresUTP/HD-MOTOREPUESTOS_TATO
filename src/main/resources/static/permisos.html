@@ -58,10 +58,13 @@
                         <th class="text-start">Nombre del Rol</th>
                         <th>Gestiones</th>
                         <th>Web / Clientes</th>
-                        <th>Stocks / Almacén</th> <th>Traslados</th>
+                        <th>Stocks / Almacén</th>
+                        <th>Traslados</th>
                         <th>Historial</th>
                         <th>Compras</th>
-                        <th>Ventas / Pedidos</th> <th>Estado</th>
+                        <th>Ventas / Pedidos</th>
+                        <th>Cajas</th>
+                        <th>Estado</th>
                     </tr>
                     </thead>
                     <tbody id="tablaRolesBody"></tbody>
@@ -125,6 +128,14 @@
                             <div class="col-md-6"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pVentasRegistro"><label class="form-check-label text-success fw-bold">Reg. Ventas y Pedidos Web</label></div></div>
                         </div>
                     </div>
+
+                    <div class="seccion-permisos border-info" style="border-width: 2px;">
+                        <div class="seccion-titulo text-info" style="color: #0dcaf0 !important;"><i class="bi bi-cash-coin me-2"></i>Módulo de Cajas</div>
+                        <div class="row g-3">
+                            <div class="col-md-6"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pCajas"><label class="form-check-label fw-semibold">Operar Caja</label></div></div>
+                            <div class="col-md-6"><div class="form-check form-switch"><input class="form-check-input" type="checkbox" id="pCajasadmin"><label class="form-check-label fw-bold text-info" style="color: #0dcaf0 !important;">Administración de Cajas</label></div></div>
+                        </div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer bg-light border-top-0">
@@ -174,6 +185,7 @@
                 const gWeb  = (r.permisoClientes?1:0)+(r.permisoWeb?1:0);
                 const gComp = (r.permisoComprasIngresar?1:0)+(r.permisoComprasRegistro?1:0);
                 const gVent = (r.permisoVentasRealizar?1:0)+(r.permisoVentasRegistro?1:0);
+                const gCaja = (r.permisoCajas?1:0)+(r.permisoCajasadmin?1:0); // Nuevo cálculo
 
                 const tr = document.createElement('tr');
                 if (inactivo) tr.className = 'rol-inactivo';
@@ -187,6 +199,7 @@
                     <td>${fracBadge(r.permisoHistorial?1:0,1)}</td>
                     <td>${fracBadge(gComp,2)}</td>
                     <td>${fracBadge(gVent,2)}</td>
+                    <td>${fracBadge(gCaja,2)}</td>
                     <td>${badge}</td>`;
                 tbody.appendChild(tr);
             });
@@ -227,6 +240,10 @@
                 document.getElementById('pVentasRealizar').checked = r.permisoVentasRealizar;
                 document.getElementById('pVentasRegistro').checked = r.permisoVentasRegistro;
 
+                // Nuevos campos
+                document.getElementById('pCajas').checked = !!r.permisoCajas;
+                document.getElementById('pCajasadmin').checked = !!r.permisoCajasadmin;
+
                 document.getElementById('tituloModal').innerHTML = '<i class="bi bi-pencil-square me-2"></i>Editar Rol';
                 document.getElementById('textoBtnGuardar').innerText = 'Actualizar Rol';
                 modalRol.show();
@@ -257,6 +274,10 @@
             permisoComprasRegistro: document.getElementById('pComprasRegistro').checked,
             permisoVentasRealizar:  document.getElementById('pVentasRealizar').checked,
             permisoVentasRegistro:  document.getElementById('pVentasRegistro').checked,
+
+            // Inyectamos los nuevos permisos al JSON
+            permisoCajas:           document.getElementById('pCajas').checked,
+            permisoCajasadmin:      document.getElementById('pCajasadmin').checked
         };
 
         try {

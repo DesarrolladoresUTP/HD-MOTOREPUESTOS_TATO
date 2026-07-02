@@ -62,6 +62,13 @@ public class PedidoWebService {
         BigDecimal total = BigDecimal.ZERO;
 
         for (PedidoWebDTO.ItemCarritoDTO item : dto.getCarrito()) {
+            InventarioSucursal inv = inventarioRepository.findByProductoIdAndSucursalId(item.getId(), 1L)
+                    .orElseThrow(() -> new Exception("El producto '" + item.getNombre() + "' ya no existe en el catálogo."));
+
+            if (inv.getStock() < item.getCantidad()) {
+                throw new Exception("¡Lo sentimos! El producto '" + item.getNombre() + "' se acaba de agotar o no tiene stock suficiente. Quedan: " + inv.getStock() + " unidades.");
+            }
+
             DetallePedidoWeb detalle = new DetallePedidoWeb();
             detalle.setProductoId(item.getId());
             detalle.setNombreProducto(item.getNombre());
@@ -76,15 +83,10 @@ public class PedidoWebService {
             pedido.addDetalle(detalle);
             total = total.add(subtotal);
 
-            Long sucId = dto.getSucursalId() != null ? dto.getSucursalId() : 1L;
-            InventarioSucursal inv = inventarioRepository.findByProductoIdAndSucursalId(item.getId(), sucId)
-                    .orElse(null);
-            if (inv != null) {
-                inv.setStock(inv.getStock() - item.getCantidad());
-                int vendidas = inv.getUnidadesVendidas() == null ? 0 : inv.getUnidadesVendidas();
-                inv.setUnidadesVendidas(vendidas + item.getCantidad());
-                inventarioRepository.save(inv);
-            }
+            inv.setStock(inv.getStock() - item.getCantidad());
+            int vendidas = inv.getUnidadesVendidas() == null ? 0 : inv.getUnidadesVendidas();
+            inv.setUnidadesVendidas(vendidas + item.getCantidad());
+            inventarioRepository.save(inv);
         }
 
         pedido.setTotal(total);

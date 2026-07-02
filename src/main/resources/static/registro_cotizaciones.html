@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Cotizaciones - Motorepuestos Tato</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <style>
+        :root { --fondo-app:#f0f9ff;--azul-primario:#0ea5e9;--azul-oscuro:#0369a1;--logo-rojo:#e31b23;--logo-naranja:#f97316; }
+        body { background-color:var(--fondo-app); font-family:'Segoe UI',sans-serif; animation: fadeIn 0.1s ease-in; }
+        .tato-rojo { color:var(--logo-rojo); font-weight:900; margin-right:5px; }
+        .table-custom th { background-color:var(--azul-oscuro); color:white; border-bottom:2px solid var(--azul-primario); }
+        .table-custom tbody tr:hover { background-color:rgba(14,165,233,0.05); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        /* Aseguramos que el SweetAlert siempre quede por encima de cualquier modal de Bootstrap */
+        .swal2-container { z-index: 11000 !important; }
+    </style>
+</head>
+<body>
+
+<div id="navbar-container"></div>
+
+<div class="container-fluid mt-4 px-4 pt-3 mb-5">
+    <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
+        <h3 style="color:var(--azul-oscuro);">
+            <i class="bi bi-file-earmark-text-fill me-2 text-primary"></i>Registro de <span class="tato-rojo">Cotizaciones</span>
+        </h3>
+        <button class="btn btn-outline-secondary fw-bold" onclick="cargarCotizaciones()">
+            <i class="bi bi-arrow-clockwise me-1"></i> Actualizar
+        </button>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-custom mb-0 align-middle text-center">
+                    <thead>
+                    <tr>
+                        <th style="width: 80px;">Ver</th>
+                        <th>Código</th>
+                        <th>Fecha Emisión</th>
+                        <th>Vencimiento</th>
+                        <th>Cliente</th>
+                        <th>Total</th>
+                        <th>Estado</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tablaCotiBody">
+                    <tr>
+                        <td colspan="7" class="text-center py-4">Cargando cotizaciones...</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalDetalleCoti" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold"><i class="bi bi-receipt me-2"></i>Detalle de Cotización <span
+                        id="detCodigo" class="text-warning"></span></h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light">
+
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-body p-3 bg-white rounded">
+                        <div class="row g-2 text-dark" style="font-size: 0.95rem;">
+                            <div class="col-md-6"><i
+                                    class="bi bi-person-badge text-primary me-2"></i><strong>Cliente:</strong> <span
+                                    id="detCliente"></span></div>
+                            <div class="col-md-6"><i
+                                    class="bi bi-card-text text-primary me-2"></i><strong>DNI/RUC:</strong> <span
+                                    id="detDoc"></span></div>
+                            <div class="col-md-6"><i class="bi bi-calendar-event text-primary me-2"></i><strong>F.
+                                Emisión:</strong> <span id="detFEmision"></span></div>
+                            <div class="col-md-6"><i class="bi bi-calendar-x text-danger me-2"></i><strong>F.
+                                Vencimiento:</strong> <span id="detFVence"></span></div>
+                            <div class="col-md-12"><i
+                                    class="bi bi-info-circle text-primary me-2"></i><strong>Estado:</strong> <span
+                                    id="detEstado"></span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <table class="table table-bordered table-sm text-center align-middle bg-white shadow-sm">
+                    <thead class="table-light">
+                    <tr>
+                        <th class="text-start">Producto</th>
+                        <th>Cant.</th>
+                        <th>P. Unit.</th>
+                        <th>Subtotal</th>
+                    </tr>
+                    </thead>
+                    <tbody id="detItemsBody"></tbody>
+                    <tfoot>
+                    <tr class="fw-bold fs-5 table-warning">
+                        <td colspan="3" class="text-end">Total Cotizado:</td>
+                        <td id="detTotal"></td>
+                    </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <div class="modal-footer bg-white border-top-0 d-flex justify-content-between">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <div>
+                    <button type="button" class="btn btn-outline-dark fw-bold me-2" onclick="imprimirCotizacion()">
+                        <i class="bi bi-printer-fill me-1"></i> Imprimir
+                    </button>
+                    <button type="button" class="btn btn-danger fw-bold" onclick="preguntarCorreo()">
+                        <i class="bi bi-envelope-paper-fill me-1"></i> Enviar al Cliente
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="/navbar.js"></script>
+<script>
+    let cotizacionesGlobal = [];
+    let modalCoti;
+    let cotizacionActual = null; // Para saber cuál estamos viendo
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await initNavbar();
+        modalCoti = new bootstrap.Modal(document.getElementById('modalDetalleCoti'));
+        cargarCotizaciones();
+    });
+
+    async function cargarCotizaciones() {
+        try {
+            const res = await fetch('/api/cotizaciones');
+            cotizacionesGlobal = await res.json();
+            const tbody = document.getElementById('tablaCotiBody');
+            tbody.innerHTML = '';
+
+            if (cotizacionesGlobal.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No hay cotizaciones registradas.</td></tr>';
+                return;
+            }
+
+            const ahora = new Date();
+
+            cotizacionesGlobal.forEach(c => {
+                const fEmision = new Date(c.fechaEmision).toLocaleDateString('es-PE', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
+                const fVence = new Date(c.fechaVencimiento).toLocaleDateString('es-PE');
+
+                let estadoBadge = '';
+                const fechaVencimientoReal = new Date(c.fechaVencimiento);
+
+                if (c.estado === 'CONVERTIDA') {
+                    estadoBadge = '<span class="badge bg-success">Convertida a Venta</span>';
+                } else if (c.estado === 'VENCIDA' || fechaVencimientoReal < ahora) {
+                    estadoBadge = '<span class="badge bg-danger">Vencida</span>';
+                } else {
+                    estadoBadge = '<span class="badge bg-primary">Vigente</span>';
+                }
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>
+                            <button class="btn btn-sm btn-outline-dark" onclick="verDetalles('${c.codigo}')">
+                                <i class="bi bi-eye-fill"></i>
+                            </button>
+                        </td>
+                        <td class="fw-bold text-dark">${c.codigo}</td>
+                        <td>${fEmision}</td>
+                        <td class="${fechaVencimientoReal < ahora && c.estado !== 'CONVERTIDA' ? 'text-danger fw-bold' : ''}">${fVence}</td>
+                        <td class="text-start ps-3 fw-bold">${c.nombreCliente || 'Cliente General'}</td>
+                        <td class="fw-bold text-success">S/ ${c.total.toFixed(2)}</td>
+                        <td>${estadoBadge}</td>
+                    </tr>
+                `;
+            });
+        } catch (error) {
+            document.getElementById('tablaCotiBody').innerHTML = '<tr><td colspan="7" class="text-center text-danger">Error al cargar datos.</td></tr>';
+        }
+    }
+
+    function verDetalles(codigo) {
+        cotizacionActual = cotizacionesGlobal.find(x => x.codigo === codigo);
+        if(!cotizacionActual) return;
+
+        const fEmision = new Date(cotizacionActual.fechaEmision).toLocaleDateString('es-PE', {day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit'});
+        const fVence = new Date(cotizacionActual.fechaVencimiento).toLocaleDateString('es-PE');
+
+        document.getElementById('detCodigo').innerText = cotizacionActual.codigo;
+        document.getElementById('detCliente').innerText = cotizacionActual.nombreCliente || 'Público General';
+        document.getElementById('detDoc').innerText = cotizacionActual.documentoCliente || 'No Registrado';
+        document.getElementById('detFEmision').innerText = fEmision;
+        document.getElementById('detFVence').innerText = fVence;
+        document.getElementById('detEstado').innerText = cotizacionActual.estado;
+
+        document.getElementById('detTotal').innerText = `S/ ${cotizacionActual.total.toFixed(2)}`;
+
+        const tbody = document.getElementById('detItemsBody');
+        tbody.innerHTML = '';
+        cotizacionActual.detalles.forEach(d => {
+            tbody.innerHTML += `
+                <tr>
+                    <td class="text-start">${d.nombreProducto}</td>
+                    <td>${d.cantidad}</td>
+                    <td>S/ ${d.precioUnitario.toFixed(2)}</td>
+                    <td class="fw-bold">S/ ${d.subtotal.toFixed(2)}</td>
+                </tr>
+            `;
+        });
+        modalCoti.show();
+    }
+
+    function imprimirCotizacion() {
+        if (!cotizacionActual) return;
+
+        let printWindow = window.open('', '_blank', 'width=900,height=700');
+
+        let filasHTML = '';
+        cotizacionActual.detalles.forEach(d => {
+            filasHTML += `
+                <tr>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">${d.cantidad}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: left;">${d.nombreProducto}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">S/ ${d.precioUnitario.toFixed(2)}</td>
+                    <td style="padding: 10px; border: 1px solid #ddd; text-align: right;">S/ ${d.subtotal.toFixed(2)}</td>
+                </tr>
+            `;
+        });
+
+        const fEmision = new Date(cotizacionActual.fechaEmision).toLocaleDateString('es-PE');
+        const fVence = new Date(cotizacionActual.fechaVencimiento).toLocaleDateString('es-PE');
+
+        const subtotal = (cotizacionActual.total / 1.18).toFixed(2);
+        const igv = (cotizacionActual.total - subtotal).toFixed(2);
+
+        printWindow.document.write(`
+            <!DOCTYPE html>
+            <html lang="es">
+            <head>
+                <meta charset="UTF-8">
+                <title>Cotización ${cotizacionActual.codigo}</title>
+                <style>
+                    body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 40px; color: #333; font-size: 14px; }
+                    .invoice-container { max-width: 800px; margin: 0 auto; }
+                    .header { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #333; padding-bottom: 20px; margin-bottom: 30px; }
+                    .company-details h1 { margin: 0; color: #111; font-size: 28px; letter-spacing: 1px; }
+                    .company-details p { margin: 4px 0; color: #555; }
+                    .invoice-details { text-align: right; }
+                    .invoice-details h2 { margin: 0; font-size: 22px; color: #333; text-transform: uppercase; }
+                    .invoice-details p { margin: 4px 0; color: #555; }
+                    .customer-section { display: flex; justify-content: space-between; margin-bottom: 30px; }
+                    .customer-box { background: #fafafa; border: 1px solid #eee; padding: 15px; width: 48%; border-radius: 4px; }
+                    .customer-box h3 { margin-top: 0; margin-bottom: 10px; font-size: 14px; color: #777; text-transform: uppercase; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+                    table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+                    th { background-color: #f4f4f4; color: #333; padding: 12px 10px; text-transform: uppercase; font-size: 12px; border: 1px solid #ddd; }
+                    td { border: 1px solid #ddd; }
+                    .totals-container { display: flex; justify-content: flex-end; }
+                    .totals-table { width: 300px; border-collapse: collapse; }
+                    .totals-table td { padding: 10px; border: 1px solid #ddd; }
+                    .totals-table .label { font-weight: bold; background: #f4f4f4; text-align: right; }
+                    .totals-table .value { text-align: right; font-size: 16px; }
+                    .totals-table .grand-total { font-size: 20px; font-weight: bold; color: #111; background: #eee; }
+                    .footer { margin-top: 50px; font-size: 12px; color: #666; border-top: 1px solid #eee; padding-top: 20px; text-align: center; }
+                    .terms { text-align: left; margin-top: 30px; background: #fffdf5; border-left: 4px solid #f59e0b; padding: 15px; }
+                    .terms p { margin: 5px 0; font-weight: bold; color: #555; }
+                </style>
+            </head>
+            <body>
+                <div class="invoice-container">
+                    <div class="header">
+                        <div class="company-details">
+                            <h1>MOTOREPUESTOS TATO</h1>
+                            <p>RUC: 10175386403</p>
+                            <p>Monsalve Baca 298, Lambayeque</p>
+                            <p>Teléfono: +51 987 654 321</p>
+                            <p>Correo: ventas@motorepuestostato.com</p>
+                        </div>
+                        <div class="invoice-details">
+                            <h2>COTIZACIÓN</h2>
+                            <p style="font-size: 18px; font-weight: bold; color: #e31b23;">${cotizacionActual.codigo}</p>
+                            <p>Fecha de Emisión: <strong>${fEmision}</strong></p>
+                        </div>
+                    </div>
+
+                    <div class="customer-section">
+                        <div class="customer-box">
+                            <h3>Facturar a:</h3>
+                            <p><strong>Cliente:</strong> ${cotizacionActual.nombreCliente || 'Público General'}</p>
+                            <p><strong>DNI/RUC:</strong> ${cotizacionActual.documentoCliente || '---'}</p>
+                        </div>
+                        <div class="customer-box">
+                            <h3>Condiciones comerciales:</h3>
+                            <p><strong>Vigencia:</strong> 7 días calendario.</p>
+                            <p><strong>Válido hasta:</strong> <span style="color:#e31b23; font-weight:bold;">${fVence}</span></p>
+                            <p><strong>Moneda:</strong> Soles (PEN)</p>
+                        </div>
+                    </div>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th style="width: 10%;">Cant.</th>
+                                <th style="width: 50%; text-align: left;">Descripción del Repuesto</th>
+                                <th style="width: 20%; text-align: right;">P. Unitario</th>
+                                <th style="width: 20%; text-align: right;">Importe</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${filasHTML}
+                        </tbody>
+                    </table>
+
+                    <div class="totals-container">
+                        <table class="totals-table">
+                            <tr>
+                                <td class="label">Subtotal:</td>
+                                <td class="value">S/ ${subtotal}</td>
+                            </tr>
+                            <tr>
+                                <td class="label">IGV (18%):</td>
+                                <td class="value">S/ ${igv}</td>
+                            </tr>
+                            <tr>
+                                <td class="label" style="background: #eee; color: #111;">TOTAL:</td>
+                                <td class="value grand-total">S/ ${cotizacionActual.total.toFixed(2)}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <div class="terms">
+                        <p>Términos y Condiciones:</p>
+                        <ul style="margin: 5px 0; padding-left: 20px; font-weight: normal; color: #555;">
+                            <li>Esta cotización no representa una reserva física de inventario.</li>
+                            <li>Los precios están sujetos a variación estricta si la cotización es presentada posterior a la fecha de vencimiento (${fVence}).</li>
+                            <li>La disponibilidad de los productos listados se confirmará en caja al momento de la compra física.</li>
+                        </ul>
+                    </div>
+
+                    <div class="footer">
+                        <p>Este documento es una proforma informativa y no posee validez tributaria ante SUNAT.</p>
+                        <p>¡Gracias por su preferencia!</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `);
+
+        printWindow.document.close();
+        setTimeout(() => {
+            printWindow.print();
+        }, 500);
+    }
+
+    async function preguntarCorreo() {
+    if (!cotizacionActual) return;
+
+    const codigoActual = cotizacionActual.codigo;
+
+    modalCoti.hide();
+    await new Promise(resolve => {
+        document.getElementById('modalDetalleCoti')
+            .addEventListener('hidden.bs.modal', resolve, { once: true });
+    });
+
+    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+    document.body.classList.remove('modal-open');
+    document.body.style.removeProperty('overflow');
+    document.body.style.removeProperty('padding-right');
+
+    const { value: email, isConfirmed } = await Swal.fire({
+        title: 'Enviar Cotización',
+        text: `Se enviará la proforma ${codigoActual} al cliente.`,
+        input: 'email',
+        inputLabel: 'Correo Electrónico',
+        inputPlaceholder: 'ejemplo@gmail.com',
+        showCancelButton: true,
+        confirmButtonColor: '#e31b23',
+        confirmButtonText: 'Enviar',
+        cancelButtonText: 'Cancelar',
+        didOpen: () => {
+            // Forzamos el foco en el input del SweetAlert
+            setTimeout(() => {
+                const input = Swal.getInput();
+                if (input) input.focus();
+            }, 100);
+        }
+    });
+
+    if (!isConfirmed || !email) {
+        modalCoti.show();
+        return;
+    }
+
+    Swal.fire({ title: 'Enviando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+    try {
+        const res = await fetch(
+            `/api/cotizaciones/${codigoActual}/enviar?correo=${encodeURIComponent(email)}`,
+            { method: 'POST' }
+        );
+        if (res.ok) {
+            await Swal.fire('¡Enviado!', `La cotización fue enviada a ${email}.`, 'success');
+        } else {
+            await Swal.fire('Error', await res.text(), 'error');
+        }
+    } catch (e) {
+        await Swal.fire('Error', 'Fallo de conexión.', 'error');
+    }
+
+    modalCoti.show();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reporte Global de Ventas - Motorepuestos Tato</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        :root { --fondo-app:#f0f9ff;--azul-primario:#0ea5e9;--azul-oscuro:#0369a1;--logo-rojo:#e31b23; }
+        body { background-color:var(--fondo-app); font-family:'Segoe UI',sans-serif; animation: fadeIn 0.2s ease-in; }
+        .kpi-card { border: none; border-radius: 10px; padding: 20px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); color: white; }
+        .kpi-global { background: linear-gradient(135deg, #0369a1, #0ea5e9); }
+        .kpi-local { background: linear-gradient(135deg, #10b981, #34d399); }
+        .kpi-web { background: linear-gradient(135deg, #f59e0b, #fbbf24); }
+        .table-custom th { background-color:var(--azul-oscuro); color:white; border-bottom:2px solid var(--azul-primario); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div id="navbar-container"></div>
+
+<div class="container-fluid mt-4 px-4 pt-3 mb-5">
+    <h3 style="color:var(--azul-oscuro);" class="mb-4">
+        <i class="bi bi-graph-up-arrow me-2 text-primary"></i>Reporte Global de <span style="color:var(--logo-rojo); font-weight:900;">Ventas</span>
+    </h3>
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="kpi-card kpi-global d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-uppercase fw-bold mb-1 opacity-75">Ingreso Total (Ambos Canales)</h6>
+                    <h2 class="fw-bold mb-0" id="kpiTotalGlobal">S/ 0.00</h2>
+                </div>
+                <i class="bi bi-cash-stack fs-1 opacity-50"></i>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="kpi-card kpi-local d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-uppercase fw-bold mb-1 opacity-75">Ventas Tienda Física</h6>
+                    <h2 class="fw-bold mb-0" id="kpiTotalLocal">S/ 0.00</h2>
+                </div>
+                <i class="bi bi-shop fs-1 opacity-50"></i>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="kpi-card kpi-web d-flex justify-content-between align-items-center">
+                <div>
+                    <h6 class="text-uppercase fw-bold mb-1 opacity-75">Ventas Tienda Web</h6>
+                    <h2 class="fw-bold mb-0" id="kpiTotalWeb">S/ 0.00</h2>
+                </div>
+                <i class="bi bi-globe fs-1 opacity-50"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body bg-white rounded">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-2">
+                    <label class="form-label fw-bold text-secondary small">Desde:</label>
+                    <input type="date" id="filtroDesde" class="form-control" onchange="aplicarFiltros()">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label fw-bold text-secondary small">Hasta:</label>
+                    <input type="date" id="filtroHasta" class="form-control" onchange="aplicarFiltros()">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-secondary small">Canal de Venta:</label>
+                    <select id="filtroCanal" class="form-select" onchange="aplicarFiltros()">
+                        <option value="TODOS">Todos los Canales</option>
+                        <option value="LOCAL">Solo Tienda Física</option>
+                        <option value="WEB">Solo Tienda Web</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold text-secondary small">Buscar por Código:</label>
+                    <input type="text" id="filtroCodigo" class="form-control" placeholder="Ej: WEB-15 o T001..." onkeyup="aplicarFiltros()">
+                </div>
+                <div class="col-md-2 text-end">
+                    <button class="btn btn-outline-secondary w-100 fw-bold" onclick="limpiarFiltros()">
+                        <i class="bi bi-eraser-fill me-1"></i> Limpiar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-custom mb-0 align-middle text-center">
+                    <thead>
+                    <tr>
+                        <th style="width: 60px;">Acción</th>
+                        <th>Origen</th>
+                        <th>N° Comprobante / Orden</th>
+                        <th>Fecha y Hora</th>
+                        <th class="text-start">Cliente</th>
+                        <th>Estado</th>
+                        <th class="text-end pe-4">Importe</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tablaReporteBody">
+                    <tr><td colspan="7" class="text-center py-4">Cargando reporte...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalDetalleGlobal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header" style="background-color: #0369a1; color: white;">
+                <h5 class="modal-title fw-bold">
+                    <i class="bi bi-receipt me-2"></i>Detalle de Transacción <span id="mdlGlobalCodigo" class="text-warning"></span>
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body bg-light p-4">
+                <div class="row mb-3 g-3">
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100 border-start border-4 border-primary">
+                            <small class="text-muted fw-bold d-block mb-1">CLIENTE</small>
+                            <span id="mdlGlobalCliente" class="fw-bold text-dark fs-6"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100 text-center">
+                            <small class="text-muted fw-bold d-block mb-1">FECHA</small>
+                            <span id="mdlGlobalFecha" class="fw-semibold"></span>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3 border rounded bg-white shadow-sm h-100 text-center">
+                            <small class="text-muted fw-bold d-block mb-1">ESTADO</small>
+                            <span id="mdlGlobalEstado"></span>
+                        </div>
+                    </div>
+                </div>
+
+                <h6 class="fw-bold text-dark mb-3"><i class="bi bi-cart-check me-2"></i>Artículos Vendidos</h6>
+                <div class="table-responsive shadow-sm rounded border bg-white">
+                    <table class="table table-hover mb-0 align-middle text-center small">
+                        <thead class="table-light">
+                        <tr>
+                            <th class="text-start ps-3">Producto</th>
+                            <th>Cant.</th>
+                            <th>P. Unitario</th>
+                            <th>Subtotal</th>
+                        </tr>
+                        </thead>
+                        <tbody id="mdlGlobalTablaItems"></tbody>
+                        <tfoot>
+                        <tr class="table-warning fw-bold fs-6">
+                            <td colspan="3" class="text-end pe-3">Monto Total:</td>
+                            <td id="mdlGlobalTotal" class="text-danger">S/ 0.00</td>
+                        </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <button type="button" class="btn btn-secondary fw-bold" data-bs-dismiss="modal">Cerrar Resumen</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/navbar.js"></script>
+<script>
+    let dataGlobal = [];
+    let modalGlobalObj;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await initNavbar();
+        modalGlobalObj = new bootstrap.Modal(document.getElementById('modalDetalleGlobal'));
+        cargarDatos();
+    });
+
+    async function cargarDatos() {
+        try {
+            const res = await fetch('/api/reportes/ventas-globales');
+            dataGlobal = await res.json();
+            dataGlobal.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+            aplicarFiltros();
+        } catch (e) {
+            document.getElementById('tablaReporteBody').innerHTML = '<tr><td colspan="7" class="text-danger">Error cargando el reporte.</td></tr>';
+        }
+    }
+
+    function aplicarFiltros() {
+        const fDesde = document.getElementById('filtroDesde').value;
+        const fHasta = document.getElementById('filtroHasta').value;
+        const fCanal = document.getElementById('filtroCanal').value;
+        const fCodigo = document.getElementById('filtroCodigo').value.toLowerCase().trim();
+
+        let filtrados = dataGlobal.filter(item => {
+            if (fCanal !== 'TODOS' && item.origen !== fCanal) return false;
+            const txt = (item.codigo + " " + item.cliente).toLowerCase();
+            if (fCodigo && !txt.includes(fCodigo)) return false;
+            if (item.fecha) {
+                const fechaItem = item.fecha.substring(0, 10);
+                if (fDesde && fechaItem < fDesde) return false;
+                if (fHasta && fechaItem > fHasta) return false;
+            }
+            return true;
+        });
+
+        renderizarTablaYMetricas(filtrados);
+    }
+
+    function renderizarTablaYMetricas(lista) {
+        const tbody = document.getElementById('tablaReporteBody');
+        tbody.innerHTML = '';
+
+        let sumaGlobal = 0;
+        let sumaLocal = 0;
+        let sumaWeb = 0;
+
+        if (lista.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">No se encontraron ventas con esos filtros.</td></tr>';
+        } else {
+            lista.forEach(v => {
+                sumaGlobal += v.total;
+                if(v.origen === 'LOCAL') sumaLocal += v.total;
+                if(v.origen === 'WEB') sumaWeb += v.total;
+
+                const origenBadge = v.origen === 'WEB'
+                    ? '<span class="badge bg-warning text-dark"><i class="bi bi-globe me-1"></i>Web</span>'
+                    : '<span class="badge bg-success"><i class="bi bi-shop me-1"></i>Local</span>';
+
+                const fechaFormateada = v.fecha ? new Date(v.fecha).toLocaleString('es-PE') : '---';
+                const btnVer = `<button class="btn btn-sm btn-outline-info shadow-sm" onclick="verDetalleEnReporte('${v.origen}', ${v.idOriginal}, '${v.codigo}')" title="Ver Detalle"><i class="bi bi-eye-fill"></i></button>`;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${btnVer}</td>
+                        <td>${origenBadge}</td>
+                        <td class="fw-bold text-dark">${v.codigo}</td>
+                        <td class="text-muted">${fechaFormateada}</td>
+                        <td class="text-start fw-bold">${v.cliente}</td>
+                        <td><span class="badge bg-secondary opacity-75">${v.estado}</span></td>
+                        <td class="text-end pe-4 fw-bold text-primary fs-6">S/ ${v.total.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        document.getElementById('kpiTotalGlobal').innerText = `S/ ${sumaGlobal.toFixed(2)}`;
+        document.getElementById('kpiTotalLocal').innerText = `S/ ${sumaLocal.toFixed(2)}`;
+        document.getElementById('kpiTotalWeb').innerText = `S/ ${sumaWeb.toFixed(2)}`;
+    }
+
+    function limpiarFiltros() {
+        document.getElementById('filtroDesde').value = '';
+        document.getElementById('filtroHasta').value = '';
+        document.getElementById('filtroCanal').value = 'TODOS';
+        document.getElementById('filtroCodigo').value = '';
+        aplicarFiltros();
+    }
+
+    async function verDetalleEnReporte(origen, idOriginal, codigoTexto) {
+        document.getElementById('mdlGlobalCodigo').innerText = codigoTexto;
+        document.getElementById('mdlGlobalCliente').innerText = 'Cargando...';
+        document.getElementById('mdlGlobalTablaItems').innerHTML = '<tr><td colspan="4" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2"></div>Buscando productos...</td></tr>';
+
+        modalGlobalObj.show();
+
+        try {
+            const url = origen === 'LOCAL' ? `/api/ventas/${idOriginal}` : `/api/pedidos-web/${idOriginal}`;
+            const res = await fetch(url);
+            if (!res.ok) throw new Error('Error al consultar');
+
+            const data = await res.json();
+
+            const nombreCli = data.cliente ? data.cliente.razonSocialNombre : (data.nombreCompleto || 'Público General');
+            document.getElementById('mdlGlobalCliente').innerText = nombreCli;
+
+            const fechaDoc = new Date(data.fecha || data.fechaPedido).toLocaleDateString('es-PE', { day:'2-digit', month:'2-digit', year:'numeric', hour:'2-digit', minute:'2-digit' });
+            document.getElementById('mdlGlobalFecha').innerText = fechaDoc;
+
+            const estado = data.estado || data.estadoVenta || 'COMPLETADO';
+            const color = (estado === 'ANULADA' || estado === 'CANCELADO') ? 'bg-danger' : 'bg-success';
+            document.getElementById('mdlGlobalEstado').innerHTML = `<span class="badge ${color}">${estado}</span>`;
+
+            const lista = data.detalles || data.items || [];
+            let htmlItems = '';
+            let sumaTotal = 0;
+
+            if (lista.length === 0) {
+                htmlItems = '<tr><td colspan="4" class="text-muted">No se encontraron productos.</td></tr>';
+            } else {
+                lista.forEach(item => {
+                    const nombre = item.producto ? item.producto.nombre : (item.nombreProducto || 'Artículo');
+                    const cant = item.cantidad || 1;
+                    const precio = parseFloat(item.precioUnitario || item.precio || 0);
+                    const sub = parseFloat(item.subtotal || item.importe || (cant * precio));
+                    sumaTotal += sub;
+
+                    htmlItems += `
+                        <tr>
+                            <td class="text-start ps-3 fw-bold text-secondary">${nombre}</td>
+                            <td class="fw-bold">${cant}</td>
+                            <td>S/ ${precio.toFixed(2)}</td>
+                            <td class="fw-bold text-dark">S/ ${sub.toFixed(2)}</td>
+                        </tr>
+                    `;
+                });
+            }
+
+            document.getElementById('mdlGlobalTablaItems').innerHTML = htmlItems;
+            document.getElementById('mdlGlobalTotal').innerText = `S/ ${(parseFloat(data.total) || sumaTotal).toFixed(2)}`;
+
+        } catch (e) {
+            document.getElementById('mdlGlobalTablaItems').innerHTML = '<tr><td colspan="4" class="text-danger py-4">Error de conexión al obtener los detalles.</td></tr>';
+        }
+    }
+</script>
+</body>
+</html>

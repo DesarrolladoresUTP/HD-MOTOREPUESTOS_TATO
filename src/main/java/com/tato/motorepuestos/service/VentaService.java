@@ -79,9 +79,10 @@ public class VentaService {
             }
 
             if (inventario.getStock() < cantidad) {
-                throw new RuntimeException("Stock insuficiente para: "
+                throw new RuntimeException("¡Venta detenida! El producto '"
                         + inventario.getProducto().getNombre()
-                        + ". Disponible: " + inventario.getStock());
+                        + "' acaba de ser comprado por otro canal o no tiene stock suficiente. Disponible: "
+                        + inventario.getStock());
             }
 
             DetalleVenta detalle = new DetalleVenta();
@@ -93,6 +94,10 @@ public class VentaService {
             venta.getDetalles().add(detalle);
 
             inventario.setStock(inventario.getStock() - cantidad);
+
+            int vendidas = inventario.getUnidadesVendidas() == null ? 0 : inventario.getUnidadesVendidas();
+            inventario.setUnidadesVendidas(vendidas + cantidad);
+
             inventarioRepository.save(inventario);
         }
 

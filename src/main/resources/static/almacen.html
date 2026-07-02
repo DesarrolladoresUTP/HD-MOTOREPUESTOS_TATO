@@ -73,12 +73,15 @@
                         <label class="form-label fw-bold">Stock Real (Físico)</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-box-seam"></i></span>
-                            <input type="number" class="form-control fw-bold fs-5" id="ajusteStock" required min="0">
+                            <input type="number" id="ajusteStock" class="form-control"
+                                   min="0" step="1"
+                                   oninput="this.value = Math.abs(parseInt(this.value)) || 0;">
                         </div>
                     </div>
                     <div class="mb-2">
                         <label class="form-label fw-bold text-danger">Stock Mínimo (Alerta)</label>
-                        <input type="number" class="form-control" id="ajusteMinimo" required min="1">
+                        <input type="number" class="form-control" id="ajusteMinimo" required min="1"
+                               oninput="this.value = Math.abs(parseInt(this.value)) || 1;">
                     </div>
                 </form>
             </div>

@@ -16,4 +16,7 @@ public interface VentaRepository extends JpaRepository<Venta, Long> {
     @Query("SELECT MAX(v.numeroComprobante) FROM Venta v " +
             "WHERE v.tipoComprobante = :tipo AND v.serie = :serie")
     String findUltimoCorrelativo(@Param("tipo") String tipo, @Param("serie") String serie);
+
+    @Query("SELECT v FROM Venta v WHERE v.sucursal.id = :sucursalId AND v.usuario.id = :usuarioId AND v.fecha >= :desde ORDER BY v.fecha DESC")
+    List<Venta> findBySucursalAndUsuarioDesde(@Param("sucursalId") Long sucursalId, @Param("usuarioId") Long usuarioId, @Param("desde") java.time.LocalDateTime desde);
 }

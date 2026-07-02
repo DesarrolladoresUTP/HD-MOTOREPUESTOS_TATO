@@ -65,6 +65,7 @@ public class AuthController {
             session.setAttribute("p_compras_registro", esAdmin || (rol != null && rol.isPermisoComprasRegistro()));
             session.setAttribute("p_ventas_realizar",  esAdmin || (rol != null && rol.isPermisoVentasRealizar()));
             session.setAttribute("p_ventas_registro",  esAdmin || (rol != null && rol.isPermisoVentasRegistro()));
+            session.setAttribute("p_cajasadmin",       esAdmin || (rol != null && rol.isPermisoCajasadmin()));
 
             return ResponseEntity.ok(Map.of("mensaje", "Login exitoso"));
         }
@@ -109,6 +110,7 @@ public class AuthController {
                 permisos.put("permisoComprasRegistro", esAdmin || (rol != null && rol.isPermisoComprasRegistro()));
                 permisos.put("permisoVentasRealizar",  esAdmin || (rol != null && rol.isPermisoVentasRealizar()));
                 permisos.put("permisoVentasRegistro",  esAdmin || (rol != null && rol.isPermisoVentasRegistro()));
+                permisos.put("permisoCajasadmin",      esAdmin || (rol != null && rol.isPermisoCajasadmin()));
 
                 Map<String, Object> userData = new HashMap<>();
                 userData.put("id",           usuario.getId());
