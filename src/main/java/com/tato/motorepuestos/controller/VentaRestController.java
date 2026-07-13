@@ -143,7 +143,7 @@ public class VentaRestController {
             String desc = "Emisión " + venta.getTipoComprobante()
                     + " " + venta.getSerie() + "-" + venta.getNumeroComprobante()
                     + " | Cliente: " + (c != null ? c.getRazonSocialNombre() : "Público General");
-            historialService.registrarAccion("Ventas", "Emisión de Comprobante",
+            historialService.registrarAccion("Ventas", "Emision de Comprobante",
                     desc, venta.getUsuario().getId(), venta.getSucursal().getId());
             return ResponseEntity.ok().build();
         } catch (Exception e) {

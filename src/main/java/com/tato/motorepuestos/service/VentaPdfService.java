@@ -27,11 +27,12 @@ public class VentaPdfService {
             String documento = "00000000";
             String tipoDoc = "DNI";
 
-            // Si la venta tiene un cliente registrado, usamos sus datos
             if (venta.getCliente() != null) {
-                nombreCliente = venta.getCliente().getRazonSocialNombre() != null ? venta.getCliente().getRazonSocialNombre() : "PÚBLICO EN GENERAL";
-                documento = venta.getCliente().getNumeroDocumento() != null ? venta.getCliente().getNumeroDocumento() : "00000000";
-                tipoDoc = (documento != null && documento.length() == 11) ? "RUC" : "DNI";
+                nombreCliente = venta.getCliente().getRazonSocialNombre() != null ?
+                        venta.getCliente().getRazonSocialNombre() : "PÚBLICO EN GENERAL";
+                documento = venta.getCliente().getNumeroDocumento() != null ?
+                        venta.getCliente().getNumeroDocumento() : "00000000";
+                tipoDoc = (documento.length() == 11) ? "RUC" : "DNI";
             }
 
             // Inyectamos las variables al HTML
