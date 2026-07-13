@@ -106,7 +106,7 @@ public class VentaService {
         String desc = "Venta " + venta.getSerie() + "-" + venta.getNumeroComprobante()
                 + " | Cliente: " + cliente.getRazonSocialNombre()
                 + " | Total: S/ " + venta.getTotal().toPlainString();
-        historialService.registrarAccion("Ventas", "Salida de Mercadería", desc, usuarioId, sucursalId);
+        historialService.registrarAccion("Ventas", "Salida de Mercaderia", desc, usuarioId, sucursalId);
     }
 
     public List<Venta> listarPorSucursal(Long sucursalId) {
