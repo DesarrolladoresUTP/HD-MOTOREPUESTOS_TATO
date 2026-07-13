@@ -3,8 +3,7 @@ package com.tato.motorepuestos.service;
 import com.tato.motorepuestos.model.UsuarioCliente;
 import com.tato.motorepuestos.repository.UsuarioClienteRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -20,7 +19,10 @@ public class UsuarioClienteService {
     private PasswordEncoder passwordEncoder;
 
     @Autowired
-    private JavaMailSender mailSender;
+    private EmailService emailService;
+
+    @Value("${app.base-url:http://localhost:8080}")
+    private String baseUrl;
 
     public UsuarioCliente registrar(UsuarioCliente cliente) throws Exception {
         if (repository.findByEmail(cliente.getEmail()).isPresent()) {
@@ -55,19 +57,19 @@ public class UsuarioClienteService {
         cliente.setTokenRecuperacion(token);
         repository.save(cliente);
 
-        String link = "http://localhost:8080/restablecer-cliente.html?token=" + token;
+        String link = baseUrl + "/restablecer-cliente.html?token=" + token;
 
-        SimpleMailMessage message = new SimpleMailMessage();
-        message.setTo(cliente.getEmail());
-        message.setSubject("Recuperación de Contraseña - Motorepuestos Tato");
-        message.setText("Hola " + cliente.getNombreCompleto() + ",\n\n" +
-                "Hemos recibido una solicitud para recuperar tu contraseña en nuestra tienda virtual.\n" +
-                "Por favor, haz clic en el siguiente enlace para crear una nueva contraseña:\n\n" +
-                link + "\n\n" +
-                "Si no fuiste tú quien solicitó esto, simplemente ignora este mensaje.\n\n" +
-                "Atentamente,\nEl equipo de Motorepuestos Tato.");
+        String asunto = "Recuperación de Contraseña - Motorepuestos Tato";
+        String html = """
+                <p>Hola %s,</p>
+                <p>Hemos recibido una solicitud para recuperar tu contraseña en nuestra tienda virtual.</p>
+                <p>Por favor, haz clic en el siguiente enlace para crear una nueva contraseña:</p>
+                <p><a href="%s">%s</a></p>
+                <p>Si no fuiste tú quien solicitó esto, simplemente ignora este mensaje.</p>
+                <p>Atentamente,<br>El equipo de Motorepuestos Tato.</p>
+                """.formatted(cliente.getNombreCompleto(), link, link);
 
-        mailSender.send(message);
+        emailService.enviarCorreoSimple(cliente.getEmail(), asunto, html);
     }
 
     public void restablecerPassword(String token, String nuevoPassword) throws Exception {
@@ -75,9 +77,7 @@ public class UsuarioClienteService {
                 .orElseThrow(() -> new Exception("El enlace de recuperación es inválido, ha expirado o ya fue utilizado."));
 
         cliente.setPassword(passwordEncoder.encode(nuevoPassword));
-
         cliente.setTokenRecuperacion(null);
-
         repository.save(cliente);
     }
 

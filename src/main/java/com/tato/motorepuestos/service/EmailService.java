@@ -47,6 +47,10 @@ public class EmailService {
         enviarCorreoConArchivos(destinatario, asunto, cuerpo, pdfBytes, nombrePdf, null, null, null, null);
     }
 
+    public void enviarCorreoSimple(String destinatario, String asunto, String cuerpo) throws Exception {
+        enviar(destinatario, asunto, cuerpo, null);
+    }
+
     private void agregarAdjunto(List<Map<String, String>> adjuntos, byte[] contenido, String nombre) {
         if (contenido != null && nombre != null) {
             adjuntos.add(Map.of(
