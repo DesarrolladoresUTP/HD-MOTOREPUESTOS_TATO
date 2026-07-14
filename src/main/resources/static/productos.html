@@ -157,7 +157,11 @@
 
             inventarioGlobal.forEach(inv => {
                 const p = inv.producto;
-                const urlImg = p.imagen ? `/uploads/${p.imagen}` : `https://ui-avatars.com/api/?name=${encodeURIComponent(p.nombre.charAt(0))}&background=0ea5e9&color=fff`;
+                const urlImg = p.imagen
+                    ? (p.imagen.startsWith('http')
+                        ? p.imagen
+                        : `https://ui-avatars.com/api/?name=${encodeURIComponent(p.nombre.charAt(0))}&background=0ea5e9&color=fff`)
+                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(p.nombre.charAt(0))}&background=0ea5e9&color=fff`;
                 const inactivo = !inv.activo;
                 const badge = inv.activo ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-secondary">Inactivo</span>';
                 const nombre = p.nombre.replace(/'/g, "\\'");
