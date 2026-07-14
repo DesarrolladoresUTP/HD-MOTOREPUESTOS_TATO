@@ -16,7 +16,7 @@ public interface CajaRepository extends JpaRepository<Caja, Long> {
             "WHERE v.usuario.id = :usuarioId " +
             "AND v.sucursal.id = :sucursalId " +
             "AND v.metodoPago = 'Efectivo' " +
-            "AND v.estadoVenta = 'REGISTRADA' " +
+            "AND v.estadoVenta <> 'ANULADA' " +
             "AND v.fecha >= :desde")
     BigDecimal sumVentasEfectivoDesde(
             @Param("usuarioId") Long usuarioId,

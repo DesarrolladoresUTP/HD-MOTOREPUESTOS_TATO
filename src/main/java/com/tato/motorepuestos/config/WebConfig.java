@@ -60,7 +60,9 @@ public class WebConfig implements WebMvcConfigurer {
                         "/mis-pedidos",
                         "/mis-pedidos.html",
                         "/navbar.js",
-                        "/navbar.js*"
+                        "/navbar.js*",
+                        "/api/perfil/**",
+                        "/perfil"
                 );
     }
 }

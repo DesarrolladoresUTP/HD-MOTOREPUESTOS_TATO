@@ -95,12 +95,18 @@ public class VistasController {
     public String vistaRegistroCotizaciones() {return "forward:/registro_cotizaciones.html";
     }
     @GetMapping("/reporte_ventas")
-    public String vistaReporteVentas() {return "reporte_ventas.html";}
+    public String vistaReporteVentas() {return "forward:/reporte_ventas.html";}
+
     @GetMapping("/gestion-cajas")
     public String vistaCaja() { return "forward:/gestion_caja.html"; }
 
     @GetMapping("/configuracion-almacen")
     public String mostrarConfiguracionAlmacen() {
         return "forward:/configuracion-almacen.html";
+    }
+
+    @GetMapping("/perfil")
+    public String mostrarPerfil() {
+        return "forward:/perfil.html";
     }
 }
