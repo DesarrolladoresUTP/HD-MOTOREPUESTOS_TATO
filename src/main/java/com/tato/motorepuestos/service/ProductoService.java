@@ -18,6 +18,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Map;
+
 
 @Service
 public class ProductoService {
@@ -36,6 +38,9 @@ public class ProductoService {
 
     @Autowired
     private HistorialService historialService;
+
+    @Autowired
+    private com.cloudinary.Cloudinary cloudinary;
 
     private final String UPLOAD_DIR = "uploads/";
 
@@ -169,16 +174,22 @@ public class ProductoService {
         return inventarioRepository.save(inventario);
     }
 
+
     private Producto guardarConImagen(Producto producto, MultipartFile imagen) {
         if (imagen != null && !imagen.isEmpty()) {
             try {
-                Path directorio = Paths.get(UPLOAD_DIR);
-                if (!Files.exists(directorio)) Files.createDirectories(directorio);
-                String nombreImagen = System.currentTimeMillis() + "_" + imagen.getOriginalFilename();
-                Files.copy(imagen.getInputStream(), directorio.resolve(nombreImagen));
-                producto.setImagen(nombreImagen);
+                Map<?, ?> resultado = cloudinary.uploader().upload(
+                        imagen.getBytes(),
+                        com.cloudinary.utils.ObjectUtils.asMap(
+                                "folder", "productos_tato",
+                                "overwrite", true,
+                                "resource_type", "image"
+                        )
+                );
+                String urlSegura = resultado.get("secure_url").toString();
+                producto.setImagen(urlSegura);
             } catch (Exception e) {
-                System.err.println("Error guardando imagen: " + e.getMessage());
+                System.err.println("Error subiendo imagen a Cloudinary: " + e.getMessage());
             }
         }
         return productoRepository.save(producto);
