@@ -159,4 +159,14 @@ public class UsuarioService {
                 "Se envió correo de restablecimiento a: " + usuario.getNombres(),
                 actorId, sucursalId);
     }
+
+    public Usuario actualizarFotoPerfil(Long id, MultipartFile foto, Long actorId, Long sucursalId) {
+        Usuario usuario = obtenerUsuarioPorId(id);
+        if (usuario == null) return null;
+        Usuario actualizado = guardarConFoto(usuario, foto);
+        historialService.registrarAccion("Usuarios", "Actualización de Foto",
+                "El usuario actualizó su foto de perfil: " + usuario.getNombres(),
+                actorId, sucursalId);
+        return actualizado;
+    }
 }
