@@ -78,8 +78,12 @@ public class VentaRestController {
             payload.put("numeroComprobante",
                     String.format("%08d", System.currentTimeMillis() % 100000000));
 
-            ventaService.registrarVenta(payload, usuarioId, sucursalId);
-            return ResponseEntity.ok().build();
+            com.tato.motorepuestos.model.Venta venta = ventaService.registrarVenta(payload, usuarioId, sucursalId);
+            boolean esperaAlmacen = "PENDIENTE_ALMACEN".equals(venta.getEstadoVenta());
+            return ResponseEntity.ok(Map.of(
+                    "ventaId", venta.getId(),
+                    "esperaAlmacen", esperaAlmacen
+            ));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -261,5 +265,14 @@ public class VentaRestController {
         }).collect(java.util.stream.Collectors.toList());
 
         return ResponseEntity.ok(resultado);
+    }
+
+    @Autowired
+    private com.tato.motorepuestos.service.AlmacenComplementarioService almacenComplementarioService;
+
+    @GetMapping("/{id}/estado-almacen")
+    public ResponseEntity<?> estadoAlmacen(@PathVariable Long id) {
+        String estado = almacenComplementarioService.getEstadoPedidoPorVenta(id);
+        return ResponseEntity.ok(Map.of("estado", estado != null ? estado : "N/A"));
     }
 }

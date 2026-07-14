@@ -19,6 +19,7 @@ const RUTA_PERMISO = {
     '/clientes-web':     p => p.permisoClientes,
     '/gestion-web':      p => p.permisoWeb,
     '/gestion-cajas':    p => p.permisoCajasadmin,
+    '/configuracion-almacen': p => p.permisoCajasadmin,
 };
 let _permisosGlobal = null;
 function _tienePermiso(permisos, ruta) {
@@ -44,6 +45,10 @@ function _ocultarDropdownSiVacio(selector) {
 }
 function _aplicarPermisos(p) {
     if (!p.permisoCajasadmin)  _ocultarEnlace('/gestion-cajas');
+    if (!p.permisoCajasadmin) {
+        _ocultarEnlace('/gestion-cajas');
+        _ocultarEnlace('/configuracion-almacen');   // <-- agregar esto
+    }
     if (!p.permisoUsuarios)   _ocultarEnlace('/usuarios');
     if (!p.permisoRoles)      _ocultarEnlace('/permisos');
     if (!p.permisoProductos)  _ocultarEnlace('/productos');

@@ -98,4 +98,9 @@ public class VistasController {
     public String vistaReporteVentas() {return "reporte_ventas.html";}
     @GetMapping("/gestion-cajas")
     public String vistaCaja() { return "forward:/gestion_caja.html"; }
+
+    @GetMapping("/configuracion-almacen")
+    public String mostrarConfiguracionAlmacen() {
+        return "forward:/configuracion-almacen.html";
+    }
 }
