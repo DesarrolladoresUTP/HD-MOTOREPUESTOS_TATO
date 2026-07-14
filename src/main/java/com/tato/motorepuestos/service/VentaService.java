@@ -16,29 +16,32 @@ public class VentaService {
 
     @Autowired
     private VentaRepository ventaRepository;
-
     @Autowired
     private UsuarioRepository usuarioRepository;
-
     @Autowired
     private SucursalRepository sucursalRepository;
-
     @Autowired
     private InventarioSucursalRepository inventarioRepository;
-
     @Autowired
     private ClienteRepository clienteRepository;
-
     @Autowired
     private HistorialService historialService;
 
-    @Transactional
-    public void registrarVenta(Map<String, Object> payload, Long usuarioId, Long sucursalId) {
+    // NUEVO: orquestador del sistema complementario (config del toggle + creacion de pedidos_almacen)
+    @Autowired
+    private AlmacenComplementarioService almacenComplementarioService;
 
+    @Transactional
+    public Venta registrarVenta(Map<String, Object> payload, Long usuarioId, Long sucursalId) {
         String numeroDocumento = payload.get("documentoCliente").toString();
         Cliente cliente = clienteRepository.findByNumeroDocumento(numeroDocumento)
                 .orElseThrow(() -> new RuntimeException(
                         "Cliente no encontrado. Debe consultarse primero antes de registrar la venta"));
+
+        // NUEVO: si esta sucursal tiene activo el toggle, la venta se registra
+        // pero el descuento de stock queda pendiente hasta que el almacenero
+        // entregue el pedido (lo descuenta el backend complementario).
+        boolean esperaAlmacen = almacenComplementarioService.requiereConfirmacionAlmacenero(sucursalId);
 
         Venta venta = new Venta();
         venta.setFecha(LocalDateTime.now());
@@ -56,7 +59,10 @@ public class VentaService {
         venta.setSubtotal(new BigDecimal(payload.get("subtotal").toString()));
         venta.setIgv(new BigDecimal(payload.get("igv").toString()));
         venta.setTotal(new BigDecimal(payload.get("total").toString()));
-        venta.setEstadoVenta("REGISTRADA");
+
+        // CAMBIO: antes siempre "REGISTRADA". Si esperaAlmacen, queda en un
+        // estado intermedio hasta que el almacenero entregue.
+        venta.setEstadoVenta(esperaAlmacen ? "PENDIENTE_ALMACEN" : "REGISTRADA");
         venta.setEstadoSunat("SIN EMITIR");
         venta.setUsuario(usuarioRepository.findById(usuarioId).orElseThrow());
         venta.setSucursal(sucursalRepository.findById(sucursalId).orElseThrow());
@@ -78,6 +84,8 @@ public class VentaService {
                         + " no está disponible");
             }
 
+            // La validacion de stock se mantiene SIEMPRE (con o sin espera),
+            // para no vender algo que no existe.
             if (inventario.getStock() < cantidad) {
                 throw new RuntimeException("¡Venta detenida! El producto '"
                         + inventario.getProducto().getNombre()
@@ -93,20 +101,32 @@ public class VentaService {
             detalle.setSubtotal(new BigDecimal(item.get("importe").toString()));
             venta.getDetalles().add(detalle);
 
-            inventario.setStock(inventario.getStock() - cantidad);
-
-            int vendidas = inventario.getUnidadesVendidas() == null ? 0 : inventario.getUnidadesVendidas();
-            inventario.setUnidadesVendidas(vendidas + cantidad);
-
-            inventarioRepository.save(inventario);
+            // CAMBIO: el descuento de stock solo ocurre AQUI si NO se espera
+            // al almacenero. Si se espera, el backend complementario lo
+            // descuenta cuando el almacenero confirma la entrega (evita
+            // descontar dos veces).
+            if (!esperaAlmacen) {
+                inventario.setStock(inventario.getStock() - cantidad);
+                int vendidas = inventario.getUnidadesVendidas() == null ? 0 : inventario.getUnidadesVendidas();
+                inventario.setUnidadesVendidas(vendidas + cantidad);
+                inventarioRepository.save(inventario);
+            }
         }
 
         ventaRepository.save(venta);
 
         String desc = "Venta " + venta.getSerie() + "-" + venta.getNumeroComprobante()
                 + " | Cliente: " + cliente.getRazonSocialNombre()
-                + " | Total: S/ " + venta.getTotal().toPlainString();
-        historialService.registrarAccion("Ventas", "Salida de Mercaderia", desc, usuarioId, sucursalId);
+                + " | Total: S/ " + venta.getTotal().toPlainString()
+                + (esperaAlmacen ? " | Pendiente de entrega por almacen" : "");
+        historialService.registrarAccion("Ventas", "Salida de Mercadería", desc, usuarioId, sucursalId);
+
+        // NUEVO: crea el pedido de almacen + notifica al almacenero, si aplica.
+        if (esperaAlmacen) {
+            almacenComplementarioService.crearPedidoAlmacenParaVenta(venta);
+        }
+
+        return venta;
     }
 
     public List<Venta> listarPorSucursal(Long sucursalId) {

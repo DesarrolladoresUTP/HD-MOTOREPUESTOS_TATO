@@ -61,6 +61,10 @@ public class SeguridadInterceptor implements HandlerInterceptor {
         if (uri.startsWith("/api/admin/cajas") && !tienePermiso(session, "p_cajasadmin")) {
             return rechazarAcceso(uri, response);
         }
+        if (esRutaRestringida(uri, "/configuracion-almacen", "/api/admin/almacen-config")
+                && !tienePermiso(session, "p_cajasadmin")) {
+            return rechazarAcceso(uri, response);
+        }
         return true;
     }
     private boolean esRutaRestringida(String uri, String rutaWeb, String rutaApi) {

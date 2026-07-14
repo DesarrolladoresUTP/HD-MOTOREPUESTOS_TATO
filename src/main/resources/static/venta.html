@@ -441,6 +441,21 @@
     </div>
 </div>
 
+
+
+<div class="modal fade" id="modalEsperaAlmacen" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content border-0 shadow-lg text-center py-4">
+            <div class="modal-body">
+                <div class="spinner-border text-primary mb-3" style="width:3rem;height:3rem;" role="status"></div>
+                <h6 class="fw-bold">Esperando al almacenero...</h6>
+                <p class="text-muted small mb-0">El pedido ya fue enviado. La venta se confirmará automáticamente cuando el almacenero entregue los productos.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -942,8 +957,10 @@
     async function procesarVenta() {
         if (carritoVenta.length === 0)
             return Swal.fire({ icon: 'warning', title: 'Carrito Vacío' });
+
         const docCliente = document.getElementById('documentoCliente').value.trim() || '00000000';
         const nomCliente = document.getElementById('nombreCliente').value.trim()    || 'Público General';
+
         const payload = {
             tipoComprobante:   'Nota de Venta',
             serie:             'T001',
@@ -963,6 +980,7 @@
                 nombre:         i.nombre
             }))
         };
+
         Swal.fire({
             title: `Procesar Venta de S/ ${gTotal.toFixed(2)}`,
             text: 'Se descontará del Almacén.',
@@ -980,13 +998,21 @@
                     body: JSON.stringify(payload)
                 });
                 if (res.ok) {
+                    const data = await res.json(); // { ventaId, esperaAlmacen }
+
                     carritoVenta = [];
                     actualizarTabla();
                     document.getElementById('documentoCliente').value = '';
                     document.getElementById('nombreCliente').value    = '';
                     document.getElementById('clienteIdSeleccionado').value = '';
                     await refrescarDashboardCaja();
-                    Swal.fire({ icon: 'success', title: '¡Venta Exitosa!', confirmButtonColor: '#198754' });
+                    Swal.close();
+
+                    if (data.esperaAlmacen) {
+                        await esperarConfirmacionAlmacenero(data.ventaId);
+                    } else {
+                        Swal.fire({ icon: 'success', title: '¡Venta Exitosa!', confirmButtonColor: '#198754' });
+                    }
                 } else {
                     const errText = await res.text();
                     if (errText === 'CAJA_CERRADA') {
@@ -1000,6 +1026,27 @@
                 Swal.fire({ icon: 'error', title: 'Error de red' });
             }
         });
+    }
+
+
+    async function esperarConfirmacionAlmacenero(ventaId) {
+        const modalEspera = new bootstrap.Modal(document.getElementById('modalEsperaAlmacen'));
+        modalEspera.show();
+
+        const intervalo = setInterval(async () => {
+            try {
+                const res = await fetch(`/api/ventas/${ventaId}/estado-almacen`);
+                const data = await res.json();
+                if (data.estado === 'ENTREGADO') {
+                    clearInterval(intervalo);
+                    modalEspera.hide();
+                    Swal.fire({ icon: 'success', title: '¡Venta Confirmada!', text: 'El almacenero ya entregó los productos.', confirmButtonColor: '#198754' });
+                }
+                // Si estado es CANCELADO, tambien podrias manejarlo aqui mostrando un aviso.
+            } catch (e) {
+                // si falla una consulta puntual, simplemente reintenta en el siguiente tick
+            }
+        }, 4000); // consulta cada 4 segundos
     }
 
     // ── CÁMARA ────────────────────────────────────────────────────

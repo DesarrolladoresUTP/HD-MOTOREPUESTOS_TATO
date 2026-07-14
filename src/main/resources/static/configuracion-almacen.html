@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Config. Almacén Complementario - Motorepuestos Tato</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <style>
+        :root { --fondo-app:#f0f9ff; --azul-primario:#0ea5e9; --azul-oscuro:#0369a1; --logo-rojo:#e31b23; }
+        body { background-color: var(--fondo-app); font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:0.9rem; }
+        .panel-erp { background:#fff; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.05); border-top:4px solid var(--azul-primario); padding:20px; margin-bottom:20px; }
+        .form-label { font-weight:bold; color:#475569; font-size:0.85rem; }
+        .table-erp th { background:var(--azul-primario); color:#fff; font-weight:500; font-size:0.85rem; padding:10px; }
+        .table-erp td { vertical-align:middle; padding:8px; }
+        .input-coord { width:70px; display:inline-block; }
+        .form-switch .form-check-input { width:3em; height:1.5em; }
+        .badge-pendiente { background:#fef9c3; color:#92400e; }
+    </style>
+</head>
+<body>
+<div id="navbar-container"></div>
+
+<div class="container-fluid px-4 py-4">
+    <h4 style="color:var(--azul-oscuro);">
+        <i class="bi bi-diagram-3 me-2 text-secondary"></i>Configuración del <span style="color:var(--logo-rojo);font-weight:900;">Almacén Complementario</span>
+    </h4>
+    <p class="text-muted">Configura el grid del almacén, asigna ubicaciones a productos, genera perfiles IA y activa la espera de confirmación del almacenero por sucursal.</p>
+
+    <div class="panel-erp">
+        <div class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Sucursal</label>
+                <select id="selectSucursal" class="form-select" onchange="cambiarSucursal()"></select>
+            </div>
+        </div>
+    </div>
+
+    <div id="contenidoSucursal" style="display:none;">
+
+        <div class="panel-erp">
+            <h6 class="fw-bold border-bottom pb-2 text-secondary"><i class="bi bi-grid-3x3-gap me-1"></i> Grid del almacén y modo de espera</h6>
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label">Estantes</label>
+                    <input type="number" id="inputEstantes" class="form-control" min="1">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Filas</label>
+                    <input type="number" id="inputFilas" class="form-control" min="1">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Columnas</label>
+                    <input type="number" id="inputColumnas" class="form-control" min="1">
+                </div>
+                <div class="col-md-4 d-flex align-items-center">
+                    <div class="form-check form-switch mt-4">
+                        <input class="form-check-input" type="checkbox" id="switchEspera">
+                        <label class="form-check-label fw-bold" for="switchEspera">
+                            Requiere confirmación del almacenero en ventas presenciales
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button class="btn btn-success w-100 fw-bold" onclick="guardarConfig()">
+                        <i class="bi bi-save me-1"></i>Guardar
+                    </button>
+                </div>
+            </div>
+            <small class="text-muted">
+                Si activas esto, al procesar una venta presencial en esta sucursal el stock NO se descuenta
+                inmediatamente: se crea un pedido en la app del almacenero y el stock recién se descuenta
+                cuando él confirma la entrega. El cajero verá una pantalla de espera mientras tanto.
+            </small>
+        </div>
+
+        <div class="panel-erp p-0 overflow-hidden">
+            <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-secondary"><i class="bi bi-geo-alt me-1"></i> Productos sin ubicación asignada</h6>
+                <span class="badge badge-pendiente" id="badgeSinUbicacion">0</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-erp mb-0">
+                    <thead><tr><th>Código</th><th>Producto</th><th>Marca</th><th>Estante</th><th>Fila</th><th>Columna</th><th></th></tr></thead>
+                    <tbody id="tablaSinUbicacion">
+                    <tr><td colspan="7" class="text-center text-muted py-4">Selecciona una sucursal...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="panel-erp p-0 overflow-hidden mt-3">
+            <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold text-secondary"><i class="bi bi-robot me-1"></i> Productos sin perfil IA (identificación por foto)</h6>
+                <span class="badge badge-pendiente" id="badgeSinPerfil">0</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-erp mb-0">
+                    <thead><tr><th>Código</th><th>Producto</th><th>Marca</th><th></th></tr></thead>
+                    <tbody id="tablaSinPerfil">
+                    <tr><td colspan="4" class="text-center text-muted py-4">Cargando...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+            <small class="text-muted d-block p-3 pt-0">
+                Usa la foto que el producto ya tiene guardada (la que subiste al crearlo en "Productos").
+                Si un producto no tiene foto, primero edítalo en Productos y sube una imagen clara.
+            </small>
+        </div>
+
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="/navbar.js?v2"></script>
+<script>
+    let sucursalActual = null;
+
+    document.addEventListener('DOMContentLoaded', async () => {
+        await initNavbar();
+        await cargarSucursales();
+        await cargarProductosSinPerfil(); // es global, no depende de sucursal
+    });
+
+    async function cargarSucursales() {
+        try {
+            const res = await fetch('/api/sucursales/activas');
+            const sucursales = await res.json();
+            const select = document.getElementById('selectSucursal');
+            select.innerHTML = '<option value="">-- Selecciona --</option>' +
+                sucursales.map(s => `<option value="${s.id}">${s.nombre}</option>`).join('');
+        } catch (e) {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudieron cargar las sucursales.' });
+        }
+    }
+
+    async function cambiarSucursal() {
+        const sucursalId = document.getElementById('selectSucursal').value;
+        if (!sucursalId) {
+            document.getElementById('contenidoSucursal').style.display = 'none';
+            return;
+        }
+        sucursalActual = sucursalId;
+        document.getElementById('contenidoSucursal').style.display = '';
+        await cargarConfig(sucursalId);
+        await cargarProductosSinUbicacion(sucursalId);
+    }
+
+    async function cargarConfig(sucursalId) {
+        try {
+            const res = await fetch(`/api/admin/almacen-config/${sucursalId}`);
+            const data = await res.json();
+            document.getElementById('inputEstantes').value = data.totalEstantes;
+            document.getElementById('inputFilas').value = data.totalFilas;
+            document.getElementById('inputColumnas').value = data.totalColumnas;
+            document.getElementById('switchEspera').checked = data.requiereConfirmacionAlmacenero;
+        } catch (e) {
+            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo cargar la configuración.' });
+        }
+    }
+
+    async function guardarConfig() {
+        if (!sucursalActual) return;
+        const payload = {
+            sucursalId: sucursalActual,
+            totalEstantes: parseInt(document.getElementById('inputEstantes').value),
+            totalFilas: parseInt(document.getElementById('inputFilas').value),
+            totalColumnas: parseInt(document.getElementById('inputColumnas').value),
+            requiereConfirmacionAlmacenero: document.getElementById('switchEspera').checked
+        };
+        try {
+            const res = await fetch('/api/admin/almacen-config', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Configuración guardada', showConfirmButton: false, timer: 1800 });
+            } else {
+                Swal.fire({ icon: 'error', title: 'Error', text: await res.text() });
+            }
+        } catch (e) {
+            Swal.fire({ icon: 'error', title: 'Error de red' });
+        }
+    }
+
+    async function cargarProductosSinUbicacion(sucursalId) {
+        const tbody = document.getElementById('tablaSinUbicacion');
+        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Cargando...</td></tr>';
+        try {
+            const res = await fetch(`/api/admin/almacen-config/productos-sin-ubicacion?sucursalId=${sucursalId}`);
+            if (!res.ok) throw new Error(await res.text());
+            const productos = await res.json();
+            document.getElementById('badgeSinUbicacion').textContent = productos.length;
+            if (productos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-success py-4"><i class="bi bi-check-circle me-1"></i>Todos los productos de esta sucursal ya tienen ubicación.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = productos.map(p => `
+                <tr data-producto-id="${p.id}">
+                    <td>${p.codigoInterno}</td>
+                    <td>${p.nombre}</td>
+                    <td>${p.marca}</td>
+                    <td><input type="number" min="1" class="form-control form-control-sm input-coord" placeholder="E"></td>
+                    <td><input type="number" min="1" class="form-control form-control-sm input-coord" placeholder="F"></td>
+                    <td><input type="number" min="1" class="form-control form-control-sm input-coord" placeholder="C"></td>
+                    <td><button class="btn btn-sm btn-primary" onclick="guardarUbicacion(this, ${p.id})"><i class="bi bi-save"></i></button></td>
+                </tr>`).join('');
+        } catch (e) {
+            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Error: ${e.message}</td></tr>`;
+        }
+    }
+
+    async function guardarUbicacion(btn, productoId) {
+        const fila = btn.closest('tr');
+        const inputs = fila.querySelectorAll('input');
+        const [estante, filaVal, columna] = [inputs[0].value, inputs[1].value, inputs[2].value];
+        if (!estante || !filaVal || !columna) {
+            Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'Completa E, F y C', showConfirmButton: false, timer: 1800 });
+            return;
+        }
+        try {
+            const res = await fetch('/api/admin/almacen-config/ubicaciones', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ productoId, sucursalId: sucursalActual, estante, fila: filaVal, columna })
+            });
+            if (res.ok) {
+                fila.remove();
+                document.getElementById('badgeSinUbicacion').textContent =
+                    document.querySelectorAll('#tablaSinUbicacion tr[data-producto-id]').length;
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Ubicación guardada', showConfirmButton: false, timer: 1500 });
+            } else {
+                Swal.fire({ icon: 'error', title: 'Error', text: await res.text() });
+            }
+        } catch (e) {
+            Swal.fire({ icon: 'error', title: 'Error de red' });
+        }
+    }
+
+    async function cargarProductosSinPerfil() {
+        const tbody = document.getElementById('tablaSinPerfil');
+        try {
+            const res = await fetch('/api/admin/almacen-config/productos-sin-perfil-ia');
+            if (!res.ok) throw new Error(await res.text());
+            const productos = await res.json();
+            document.getElementById('badgeSinPerfil').textContent = productos.length;
+            if (productos.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-success py-4"><i class="bi bi-check-circle me-1"></i>Todos los productos ya tienen perfil IA.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = productos.map(p => `
+                <tr data-producto-id="${p.id}">
+                    <td>${p.codigoInterno}</td>
+                    <td>${p.nombre}</td>
+                    <td>${p.marca}</td>
+                    <td><button class="btn btn-sm btn-outline-primary" onclick="generarPerfil(this, ${p.id})"><i class="bi bi-magic me-1"></i>Generar perfil IA</button></td>
+                </tr>`).join('');
+        } catch (e) {
+            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">Error: ${e.message}</td></tr>`;
+        }
+    }
+
+    async function generarPerfil(btn, productoId) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Analizando...';
+        try {
+            const res = await fetch(`/api/admin/almacen-config/productos/${productoId}/generar-perfil-ia`, { method: 'POST' });
+            if (res.ok) {
+                btn.closest('tr').remove();
+                document.getElementById('badgeSinPerfil').textContent =
+                    document.querySelectorAll('#tablaSinPerfil tr[data-producto-id]').length;
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Perfil IA generado', showConfirmButton: false, timer: 2000 });
+            } else {
+                Swal.fire({ icon: 'error', title: 'No se pudo generar', text: await res.text() });
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-magic me-1"></i>Generar perfil IA';
+            }
+        } catch (e) {
+            Swal.fire({ icon: 'error', title: 'Error de red' });
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-magic me-1"></i>Generar perfil IA';
+        }
+    }
+</script>
+</body>
+</html>
