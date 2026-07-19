@@ -2,7 +2,6 @@ package com.tato.motorepuestos.controller;
 
 import com.tato.motorepuestos.model.InventarioSucursal;
 import com.tato.motorepuestos.model.Producto;
-import com.tato.motorepuestos.model.Sucursal;
 import com.tato.motorepuestos.service.ProductoService;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,14 +50,22 @@ public class ProductoRestController {
             @RequestParam(value = "stock", required = false, defaultValue = "0") Integer stock,
             @RequestParam(value = "stockMinimo", required = false, defaultValue = "5") Integer stockMinimo,
             @RequestParam(value = "imagen", required = false) MultipartFile imagen,
+
+            // PARÁMETROS PARA VARIANTES (Añadimos variantesStocks)
+            @RequestParam(value = "variantesNombres", required = false) List<String> variantesNombres,
+            @RequestParam(value = "variantesUrls", required = false) List<String> variantesUrls,
+            @RequestParam(value = "variantesImagenes", required = false) List<MultipartFile> variantesImagenes,
+            @RequestParam(value = "variantesStocks", required = false) List<Integer> variantesStocks,
+
             HttpSession session) {
         try {
             Long sucursalId = (Long) session.getAttribute("sucursalId");
             Long usuarioId = (Long) session.getAttribute("usuarioId");
             InventarioSucursal resultado = productoService.guardarProducto(
                     codigoInterno, nombre, descripcion, marca, categoriaId,
-                    precioCompra, precioVenta, stock, stockMinimo,
-                    imagen, usuarioId, sucursalId);
+                    precioCompra, precioVenta, stock, stockMinimo, imagen,
+                    variantesNombres, variantesUrls, variantesImagenes, variantesStocks,
+                    usuarioId, sucursalId);
             return ResponseEntity.ok(resultado);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -75,17 +82,27 @@ public class ProductoRestController {
             @RequestParam("marca") String marca,
             @RequestParam(value = "precioCompra", required = false, defaultValue = "0") BigDecimal precioCompra,
             @RequestParam("precioVenta") BigDecimal precioVenta,
-            @RequestParam(value = "stock", required = false, defaultValue = "0") Integer stock,
-            @RequestParam(value = "stockMinimo", required = false, defaultValue = "5") Integer stockMinimo,
+
+            @RequestParam(value = "stock", required = false) Integer stock,
+            @RequestParam(value = "stockMinimo", required = false) Integer stockMinimo,
+
             @RequestParam(value = "imagen", required = false) MultipartFile imagen,
+
+            // PARÁMETROS PARA VARIANTES (Añadimos variantesStocks)
+            @RequestParam(value = "variantesNombres", required = false) List<String> variantesNombres,
+            @RequestParam(value = "variantesUrls", required = false) List<String> variantesUrls,
+            @RequestParam(value = "variantesImagenes", required = false) List<MultipartFile> variantesImagenes,
+            @RequestParam(value = "variantesStocks", required = false) List<Integer> variantesStocks,
+
             HttpSession session) {
         try {
             Long sucursalId = (Long) session.getAttribute("sucursalId");
             Long usuarioId = (Long) session.getAttribute("usuarioId");
             InventarioSucursal resultado = productoService.actualizarProducto(
                     inventarioId, codigoInterno, nombre, descripcion, marca, categoriaId,
-                    precioCompra, precioVenta, stock, stockMinimo,
-                    imagen, usuarioId, sucursalId);
+                    precioCompra, precioVenta, stock, stockMinimo, imagen,
+                    variantesNombres, variantesUrls, variantesImagenes, variantesStocks,
+                    usuarioId, sucursalId);
             return ResponseEntity.ok(resultado);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -121,13 +138,8 @@ public class ProductoRestController {
     public ResponseEntity<?> listarParaTienda(HttpSession session) {
         try {
             Long sucursalId = (Long) session.getAttribute("sucursalId");
-
-            if (sucursalId == null) {
-                sucursalId = 1L;
-            }
-
-            List<InventarioSucursal> inventario = productoService.listarPorSucursal(sucursalId);
-            return ResponseEntity.ok(inventario);
+            if (sucursalId == null) { sucursalId = 1L; }
+            return ResponseEntity.ok(productoService.listarPorSucursal(sucursalId));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

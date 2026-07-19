@@ -12,9 +12,24 @@
         body { background-color:var(--fondo-app); font-family:'Segoe UI',sans-serif; animation: fadeIn 0.1s ease-in; }
         .tato-rojo { color:var(--logo-rojo); font-weight:900; margin-right:5px; }
         .casco-logo { color:var(--logo-naranja); }
-        .table-custom th { background-color:var(--azul-oscuro); color:white; border-bottom:2px solid var(--azul-primario); }
-        .table-custom tbody tr:hover { background-color:rgba(14,165,233,0.05); }
+        .table-custom th { background-color:var(--azul-oscuro); color:white; border-bottom:2px solid var(--azul-primario); white-space: nowrap; }
+        .table-custom tbody tr { cursor: pointer; transition: 0.2s; }
+        .table-custom tbody tr:hover { background-color:rgba(14,165,233,0.08); }
+        .table-custom tbody tr.fila-activa { background-color: #e0f2fe; border-left: 4px solid var(--azul-primario); }
         .stock-critico { background-color: #ffe5e5 !important; }
+
+        /* Timeline del Historial */
+        .timeline { position: relative; padding-left: 1.5rem; list-style: none; margin-bottom: 0; }
+        .timeline::before { content: ''; position: absolute; top: 0; bottom: 0; left: 6px; width: 2px; background: #cbd5e1; }
+        .timeline-item { position: relative; margin-bottom: 1.5rem; }
+        .timeline-item::before {
+            content: ''; position: absolute; left: -1.5rem; top: 4px; width: 14px; height: 14px;
+            border-radius: 50%; background: white; border: 3px solid var(--azul-primario); z-index: 1;
+        }
+        .timeline-item.ajuste::before { border-color: #f59e0b; }
+        .timeline-item.venta::before { border-color: #10b981; }
+        .timeline-item.compra::before { border-color: #3b82f6; }
+
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
@@ -32,63 +47,119 @@
         </button>
     </div>
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-custom mb-0 align-middle text-center">
-                    <thead>
-                    <tr>
-                        <th class="text-start ps-4">Producto</th>
-                        <th>Categoría</th>
-                        <th>Cód. Sistema</th>
-                        <th>Stock Actual</th>
-                        <th>Stock Mínimo</th>
-                        <th>Vendidos</th>
-                        <th>Rotación</th>
-                        <th>Ajuste Manual</th>
-                    </tr>
-                    </thead>
-                    <tbody id="tablaAlmacenBody"></tbody>
-                </table>
+    <div class="row">
+        <!-- TABLA DE INVENTARIO -->
+        <div class="col-xl-8 col-lg-7 mb-4">
+            <div class="card shadow-sm border-0 h-100">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-custom mb-0 align-middle text-center" id="tablaAlmacen">
+                            <thead>
+                            <tr>
+                                <th class="text-start ps-4">Producto</th>
+                                <th>Cód. Sistema</th>
+                                <th>Stock Actual</th>
+                                <th>Mínimo</th>
+                                <th>Rotación</th>
+                                <th>Acción</th>
+                            </tr>
+                            </thead>
+                            <tbody id="tablaAlmacenBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- PANEL DE HISTORIAL SIEMPRE VISIBLE -->
+        <div class="col-xl-4 col-lg-5 mb-4" id="panelHistorial">
+            <div class="card shadow-sm border-0 h-100 border-top border-primary border-4">
+                <div class="card-header bg-white py-3">
+                    <h6 class="fw-bold mb-0 text-dark"><i class="bi bi-clock-history me-2 text-primary"></i>Auditoría de Movimientos</h6>
+                </div>
+                <div class="card-body bg-light" style="max-height: 600px; overflow-y: auto;">
+
+                    <!-- MENSAJE POR DEFECTO (Cuando no hay producto seleccionado) -->
+                    <div id="historialVacio" class="text-center py-5 text-muted">
+                        <i class="bi bi-hand-index-thumb fs-1 d-block mb-3"></i>
+                        <h5>Selecciona un producto</h5>
+                        <p class="small">Haz clic en cualquier fila de la tabla para cargar el historial de cambios, ventas y regulaciones de stock.</p>
+                    </div>
+
+                    <!-- CONTENIDO DEL HISTORIAL (Oculto al inicio) -->
+                    <div id="historialContenido" style="display: none;">
+                        <div class="mb-3 p-2 bg-white rounded border border-info-subtle text-center">
+                            <small class="text-muted d-block fw-bold">Viendo historial de:</small>
+                            <span id="historialNombreProd" class="fw-bold text-primary fs-6"></span>
+                        </div>
+                        <ul class="timeline mt-4" id="historialTimeline">
+                            <!-- Los items reales de la BD se inyectarán aquí -->
+                        </ul>
+                    </div>
+
+                </div>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Modal Ajuste con Soporte para Variantes (Fase 3) -->
 <div class="modal fade" id="modalAjuste" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-sm">
+    <div class="modal-dialog">
         <div class="modal-content border-0 shadow">
             <div class="modal-header bg-warning">
-                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-tools me-2"></i>Ajuste Físico</h5>
+                <h5 class="modal-title fw-bold text-dark"><i class="bi bi-tools me-2"></i>Ajuste Físico de Stock</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body bg-light">
                 <form id="formAjuste">
                     <input type="hidden" id="ajusteInventarioId">
+                    <input type="hidden" id="tieneVariantes" value="false">
+
                     <div class="mb-3">
                         <label class="form-label fw-bold text-muted small">Producto</label>
                         <input type="text" class="form-control fw-bold bg-white" id="ajusteNombre" readonly disabled>
                     </div>
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Stock Real (Físico)</label>
-                        <div class="input-group">
-                            <span class="input-group-text"><i class="bi bi-box-seam"></i></span>
-                            <input type="number" id="ajusteStock" class="form-control"
-                                   min="0" step="1"
-                                   oninput="this.value = Math.abs(parseInt(this.value)) || 0;">
+
+                    <!-- SECCIÓN DINÁMICA: DEPENDIENDO SI TIENE O NO MODELOS -->
+                    <div id="contenedorStockGlobal" class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label fw-bold">Stock Físico Real</label>
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="bi bi-box-seam"></i></span>
+                                <input type="number" id="ajusteStock" class="form-control" min="0" step="1">
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label fw-bold text-danger">Stock Mínimo</label>
+                            <input type="number" class="form-control" id="ajusteMinimo" min="1">
                         </div>
                     </div>
+
+                    <div id="contenedorStockVariantes" style="display:none;" class="mb-3">
+                        <label class="form-label fw-bold text-primary"><i class="bi bi-ui-radios-grid me-1"></i>Regulación por Modelos</label>
+                        <div class="p-3 bg-white border rounded" id="listaVariantesStock">
+                            <!-- Aquí se inyectarán los inputs de cada variante -->
+                        </div>
+
+                        <!-- El stock mínimo sigue siendo global para el producto -->
+                        <div class="mt-3">
+                            <label class="form-label fw-bold text-danger">Stock Mínimo (Global del Producto)</label>
+                            <input type="number" class="form-control" id="ajusteMinimoVar" min="1">
+                        </div>
+                    </div>
+                    <!-- ============================================== -->
+
                     <div class="mb-2">
-                        <label class="form-label fw-bold text-danger">Stock Mínimo (Alerta)</label>
-                        <input type="number" class="form-control" id="ajusteMinimo" required min="1"
-                               oninput="this.value = Math.abs(parseInt(this.value)) || 1;">
+                        <label class="form-label fw-bold">Motivo del Ajuste <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="ajusteMotivo" rows="2" placeholder="Ej: Regulación por conteo físico, producto dañado, merma..." required></textarea>
                     </div>
                 </form>
             </div>
             <div class="modal-footer bg-light border-top-0">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
                 <button type="button" class="btn btn-warning fw-bold text-dark" onclick="guardarAjuste()">
-                    <i class="bi bi-check-circle me-1"></i> Guardar Ajuste
+                    <i class="bi bi-check-circle me-1"></i> Confirmar Ajuste
                 </button>
             </div>
         </div>
@@ -116,7 +187,7 @@
             tbody.innerHTML = '';
 
             if (almacenGlobal.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="8" class="text-center text-muted py-4">No hay productos registrados en el sistema.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No hay productos.</td></tr>';
                 return;
             }
 
@@ -126,29 +197,43 @@
                 const p = inv.producto;
                 const estaBajo = inv.stock <= inv.stockMinimo;
 
-                const badgeStock = estaBajo
-                    ? `<span class="badge bg-danger fs-6 px-3 py-2">${inv.stock} u.</span>`
-                    : `<span class="badge bg-primary fs-6 px-3 py-2">${inv.stock} u.</span>`;
+                // LÓGICA DE VARIANTES VISUAL EN LA TABLA
+                const tieneVariantes = p.variantes && Array.isArray(p.variantes) && p.variantes.length > 0;
+                let badgeStock = "";
 
-                const tr = document.createElement('tr');
-                if (estaBajo) tr.className = 'stock-critico';
+                if (tieneVariantes) {
+                    badgeStock = estaBajo
+                        ? `<span class="badge bg-danger fs-6 px-3 py-2" title="Modelos regulados individualmente">Global: ${inv.stock} u.</span>`
+                        : `<span class="badge bg-primary fs-6 px-3 py-2" title="Modelos regulados individualmente"><i class="bi bi-layers"></i> Global: ${inv.stock} u.</span>`;
+                } else {
+                    badgeStock = estaBajo
+                        ? `<span class="badge bg-danger fs-6 px-3 py-2">${inv.stock} u.</span>`
+                        : `<span class="badge bg-primary fs-6 px-3 py-2">${inv.stock} u.</span>`;
+                }
 
                 const vendidas = inv.unidadesVendidas || 0;
                 let rotacionBadge = '<span class="badge bg-secondary">Baja</span>';
                 if (vendidas >= 20) rotacionBadge = '<span class="badge bg-success">Alta</span>';
                 else if (vendidas >= 5) rotacionBadge = '<span class="badge bg-warning text-dark">Media</span>';
 
+                const tr = document.createElement('tr');
+                tr.id = `fila-inv-${inv.id}`;
+                if (estaBajo) tr.classList.add('stock-critico');
+
+                tr.onclick = (e) => {
+                    if(e.target.closest('button')) return;
+                    verHistorial(inv.id, p.nombre);
+                };
+
                 tr.innerHTML = `
                     <td class="text-start ps-4 fw-bold text-dark">${p.nombre}</td>
-                    <td>${p.categoria ? p.categoria.nombre : '-'}</td>
                     <td class="font-monospace text-muted">${p.codigoInterno}</td>
                     <td>${badgeStock}</td>
                     <td><span class="badge bg-light text-dark border">${inv.stockMinimo} u.</span></td>
-                    <td class="fw-bold text-primary">${vendidas}</td>
                     <td>${rotacionBadge}</td>
                     <td>
                         <button class="btn btn-sm btn-outline-dark fw-bold" onclick="abrirAjuste(${inv.id})">
-                            <i class="bi bi-sliders me-1"></i> Ajustar
+                            <i class="bi bi-sliders"></i>
                         </button>
                     </td>
                 `;
@@ -159,37 +244,168 @@
         }
     }
 
+    async function verHistorial(inventarioId, nombreProducto) {
+        document.querySelectorAll('#tablaAlmacenBody tr').forEach(tr => tr.classList.remove('fila-activa'));
+        document.getElementById(`fila-inv-${inventarioId}`).classList.add('fila-activa');
+
+        document.getElementById('historialVacio').style.display = 'none';
+        document.getElementById('historialContenido').style.display = 'block';
+        document.getElementById('historialNombreProd').innerText = nombreProducto;
+
+        const timeline = document.getElementById('historialTimeline');
+        timeline.innerHTML = '<div class="text-center py-4"><div class="spinner-border text-primary" role="status"></div><p class="text-muted mt-2">Cargando base de datos...</p></div>';
+
+        try {
+            const res = await fetch(`/api/almacen/${inventarioId}/historial`);
+            if(res.ok) {
+                const data = await res.json();
+                renderizarTimeline(data);
+            } else {
+                throw new Error("No se pudo cargar");
+            }
+        } catch (e) {
+            timeline.innerHTML = '<div class="alert alert-danger mx-3">Error al conectar con el servidor.</div>';
+        }
+    }
+
+    function renderizarTimeline(datos) {
+        const timeline = document.getElementById('historialTimeline');
+        timeline.innerHTML = '';
+
+        if(datos.length === 0) {
+            timeline.innerHTML = '<li class="text-muted text-center py-4"><i class="bi bi-inbox fs-1 d-block mb-2"></i>Este producto no tiene movimientos registrados.</li>';
+            return;
+        }
+
+        datos.forEach(mov => {
+            let icono = mov.tipoMovimiento === 'Ajuste Manual' ? 'bi-tools text-warning' : (mov.tipoMovimiento === 'Venta' ? 'bi-cart-check text-success' : 'bi-box-arrow-in-down text-primary');
+            let clase = mov.tipoMovimiento === 'Ajuste Manual' ? 'ajuste' : (mov.tipoMovimiento === 'Venta' ? 'venta' : 'compra');
+
+            let diferencia = mov.stockNuevo - mov.stockAnterior;
+            let difBadge = diferencia > 0 ? `<span class="text-success fw-bold"> (+${diferencia})</span>` : (diferencia < 0 ? `<span class="text-danger fw-bold"> (${diferencia})</span>` : `<span class="text-secondary fw-bold"> (Sin cambios)</span>`);
+
+            timeline.innerHTML += `
+                <li class="timeline-item ${clase}">
+                    <div class="d-flex justify-content-between mb-1">
+                        <strong class="text-dark"><i class="bi ${icono} me-1"></i>${mov.tipoMovimiento}</strong>
+                        <small class="text-muted fw-bold">${mov.fechaRegistro}</small>
+                    </div>
+                    <div class="p-2 mt-2 bg-white border rounded shadow-sm">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="text-muted small">Cambio de Stock:</span>
+                            <span class="fs-6 fw-bold text-dark">
+                                <span class="text-secondary text-decoration-line-through me-1">${mov.stockAnterior}</span>
+                                <i class="bi bi-arrow-right mx-1"></i> ${mov.stockNuevo} ${difBadge}
+                            </span>
+                        </div>
+                        <div class="text-muted small mt-2 pt-2 border-top">
+                            <i class="bi bi-person-badge me-1"></i> Usuario: <strong>${mov.nombreUsuario}</strong> <br>
+                            <i class="bi bi-card-text me-1"></i> Motivo: <em>${mov.observacion || 'Sin observaciones'}</em>
+                        </div>
+                    </div>
+                </li>
+            `;
+        });
+    }
+
     function abrirAjuste(inventarioId) {
         const inv = almacenGlobal.find(i => i.id === inventarioId);
         if (!inv) return;
 
+        document.getElementById('formAjuste').reset();
         document.getElementById('ajusteInventarioId').value = inv.id;
         document.getElementById('ajusteNombre').value = inv.producto.nombre;
-        document.getElementById('ajusteStock').value = inv.stock;
-        document.getElementById('ajusteMinimo').value = inv.stockMinimo;
+
+        const tieneVariantes = inv.producto.variantes && Array.isArray(inv.producto.variantes) && inv.producto.variantes.length > 0;
+        document.getElementById('tieneVariantes').value = tieneVariantes;
+
+        // FASE 3: Lógica Condicional del Modal
+        if (tieneVariantes) {
+            // OCULTAR STOCK GENERAL, MOSTRAR VARIANTES
+            document.getElementById('contenedorStockGlobal').style.display = 'none';
+            document.getElementById('contenedorStockVariantes').style.display = 'block';
+            document.getElementById('ajusteMinimoVar').value = inv.stockMinimo;
+
+            const listaVar = document.getElementById('listaVariantesStock');
+            listaVar.innerHTML = '';
+
+            inv.producto.variantes.forEach((v, index) => {
+                listaVar.innerHTML += `
+                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 ${index < inv.producto.variantes.length - 1 ? 'border-bottom' : ''}">
+                        <div class="fw-bold text-secondary">
+                            <i class="bi bi-tag-fill text-muted me-1"></i> ${v.nombre}
+                        </div>
+                        <div class="input-group input-group-sm" style="width: 120px;">
+                            <input type="number" class="form-control text-center input-var-stock" data-var-id="${v.id}" data-var-nombre="${v.nombre}" value="${v.stock}" min="0">
+                            <span class="input-group-text">u.</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+        } else {
+            // OCULTAR VARIANTES, MOSTRAR STOCK GENERAL
+            document.getElementById('contenedorStockGlobal').style.display = 'flex';
+            document.getElementById('contenedorStockVariantes').style.display = 'none';
+
+            document.getElementById('ajusteStock').value = inv.stock;
+            document.getElementById('ajusteMinimo').value = inv.stockMinimo;
+        }
 
         modalAjuste.show();
     }
 
     async function guardarAjuste() {
         const id = document.getElementById('ajusteInventarioId').value;
-        const stock = document.getElementById('ajusteStock').value;
-        const minimo = document.getElementById('ajusteMinimo').value;
+        const motivo = document.getElementById('ajusteMotivo').value.trim();
+        const tieneVariantes = document.getElementById('tieneVariantes').value === 'true';
 
-        if(stock === "" || minimo === "") {
-            Swal.fire({ icon: 'warning', title: 'Atención', text: 'Rellena ambos campos.' });
+        if(motivo === "") {
+            Swal.fire({ icon: 'warning', title: 'Atención', text: 'Por favor, rellena el motivo del ajuste.' });
             return;
         }
 
+        let payload = { motivo: motivo };
+
+        if (tieneVariantes) {
+            payload.stockMinimo = document.getElementById('ajusteMinimoVar').value;
+            if (payload.stockMinimo === "") return Swal.fire({ icon: 'warning', title: 'Atención', text: 'Rellena el stock mínimo.' });
+
+            let variantesArray = [];
+            document.querySelectorAll('.input-var-stock').forEach(input => {
+                variantesArray.push({
+                    id: input.getAttribute('data-var-id'),
+                    nombre: input.getAttribute('data-var-nombre'),
+                    stock: input.value
+                });
+            });
+            payload.variantes = variantesArray;
+
+        } else {
+            payload.stock = document.getElementById('ajusteStock').value;
+            payload.stockMinimo = document.getElementById('ajusteMinimo').value;
+            if (payload.stock === "" || payload.stockMinimo === "") return Swal.fire({ icon: 'warning', title: 'Atención', text: 'Rellena los campos de stock.' });
+        }
+
         try {
-            const res = await fetch(`/api/almacen/${id}/ajuste?stock=${stock}&stockMinimo=${minimo}`, { method: 'PUT' });
+            // FASE 2: CAMBIAMOS A ENVIAR UN JSON (Payload)
+            const res = await fetch(`/api/almacen/${id}/ajuste`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+
             if (res.ok) {
                 modalAjuste.hide();
                 Swal.fire({ icon: 'success', title: 'Inventario Actualizado', timer: 1500, showConfirmButton: false });
                 cargarAlmacen();
+
+                const prodAbierto = document.querySelector('.fila-activa');
+                if(prodAbierto && prodAbierto.id === `fila-inv-${id}`) {
+                    verHistorial(id, document.getElementById('ajusteNombre').value);
+                }
             } else {
-                const err = await res.text();
-                Swal.fire('Error', err, 'error');
+                Swal.fire('Error', await res.text(), 'error');
             }
         } catch (e) {
             Swal.fire('Error de conexión', '', 'error');

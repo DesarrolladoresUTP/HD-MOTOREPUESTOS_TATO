@@ -2,6 +2,7 @@ package com.tato.motorepuestos.controller;
 
 import com.tato.motorepuestos.model.Rol;
 import com.tato.motorepuestos.model.Usuario;
+import com.tato.motorepuestos.repository.UsuarioRepository;
 import com.tato.motorepuestos.service.UsuarioService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/usuarios")
@@ -18,6 +20,10 @@ public class UsuarioRestController {
 
     @Autowired
     private UsuarioService usuarioService;
+
+    // Repositorio inyectado para consultar directamente la contraseña real
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     @GetMapping
     public List<Usuario> listar() {
@@ -120,5 +126,56 @@ public class UsuarioRestController {
                 ? ":" + request.getServerPort() : "");
         usuarioService.enviarResetPassword(id, actorId, sucursalId, baseUrl);
         return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/verificar-credencial")
+    public ResponseEntity<?> verificarCredencial(@RequestBody Map<String, String> payload, HttpSession session) {
+        Long usuarioLogeadoId = (Long) session.getAttribute("usuarioId");
+
+        if (usuarioLogeadoId == null) {
+            return ResponseEntity.status(401).body("Sesión no válida o expirada.");
+        }
+
+        String passwordIngresado = payload.get("password");
+        if (passwordIngresado != null) {
+            passwordIngresado = passwordIngresado.trim(); // Limpiamos espacios accidentales
+        }
+
+        Usuario usuarioLogeado = usuarioRepository.findById(usuarioLogeadoId).orElse(null);
+
+        if (usuarioLogeado != null && usuarioLogeado.getPassword() != null) {
+            String passwordBd = usuarioLogeado.getPassword();
+
+            // ESTO APARECERÁ EN TU CONSOLA DE INTELLIJ (Letras blancas)
+            System.out.println("=== VALIDACIÓN DE SEGURIDAD ===");
+            System.out.println("ID Usuario: " + usuarioLogeadoId);
+            System.out.println("Pass ingresada: [" + passwordIngresado + "]");
+            System.out.println("Pass en BD: [" + passwordBd + "]");
+
+            boolean coinciden = false;
+
+            // CASO A: Si la contraseña está encriptada (Spring Security BCrypt)
+            if (passwordBd.startsWith("$2a$") || passwordBd.startsWith("$2b$")) {
+                try {
+                    org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder encoder = new org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder();
+                    coinciden = encoder.matches(passwordIngresado, passwordBd);
+                } catch (Exception e) {
+                    System.out.println("Fallo al usar BCrypt: " + e.getMessage());
+                }
+            }
+            // CASO B: Si la contraseña está en texto normal en la base de datos
+            else {
+                coinciden = passwordBd.equals(passwordIngresado);
+            }
+
+            System.out.println("¿Coinciden?: " + coinciden);
+            System.out.println("===============================");
+
+            if (coinciden) {
+                return ResponseEntity.ok().build();
+            }
+        }
+
+        return ResponseEntity.status(401).body("Contraseña incorrecta.");
     }
 }

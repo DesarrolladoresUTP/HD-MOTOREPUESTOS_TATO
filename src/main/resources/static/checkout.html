@@ -152,6 +152,13 @@
                     </div>
                 </div>
 
+                <!-- NUEVO: SECCIÓN DE COMPROBANTE DE PAGO -->
+                <div class="mb-4 p-3 border rounded shadow-sm" style="background-color: #f8f9fa; border-color: #dee2e6;">
+                    <h6 class="fw-bold text-secondary mb-2"><i class="bi bi-camera me-1 text-primary"></i> Comprobante de Pago <span class="text-danger">*</span></h6>
+                    <p class="small text-muted mb-2">Por favor, realiza el pago a nuestras cuentas (Yape/Plin o transferencia) y sube aquí la captura de pantalla para validar tu compra.</p>
+                    <input type="file" class="form-control form-control-sm border-secondary shadow-sm" id="comprobantePago" accept="image/*" required>
+                </div>
+
                 <button class="btn btn-tato-red w-100 btn-lg fw-bold shadow-sm d-flex justify-content-center align-items-center" id="btnFinalizarPedido" onclick="procesarPedidoFinal()" disabled>
                     <i class="bi bi-shield-lock fs-5 me-2"></i> Confirmar Pedido Seguro
                 </button>
@@ -171,10 +178,8 @@
     });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/leaflet-routing-machine@latest/dist/leaflet-routing-machine.js"></script>
-
-<script src="/checkout.js?v14"></script>
+<script src="/checkout.js?v15"></script>
 </body>
 </html>

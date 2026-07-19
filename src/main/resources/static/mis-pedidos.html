@@ -61,8 +61,8 @@
     });
 
     function generarBarraEstado(estado) {
-        const pasos = ['PENDIENTE', 'EN_PREPARACION', 'ENVIADO', 'ENTREGADO'];
-        const pasoLabels = ['Recibido', 'Preparando', 'En camino', 'Entregado'];
+        const pasos = ['Confirmando Pago', 'PENDIENTE', 'EN_PREPARACION', 'ENVIADO', 'ENTREGADO'];
+        const pasoLabels = ['Pago', 'Recibido', 'Preparando', 'En camino', 'Entregado'];
         if (estado === 'CANCELADO') {
             return `<div class="mt-2 mb-3">
                 <div class="progress" style="height:6px">
@@ -72,7 +72,7 @@
             </div>`;
         }
         let indexActual = pasos.indexOf(estado);
-        if (estado === 'LISTO_RECOJO') indexActual = 2;
+        if (estado === 'LISTO_RECOJO') indexActual = 3;
         const porcentaje = indexActual < 0 ? 10 : Math.round(((indexActual + 1) / pasos.length) * 100);
         return `<div class="mt-2 mb-3">
             <div class="progress mb-1" style="height:6px; border-radius:3px;">
@@ -80,7 +80,7 @@
             </div>
             <div class="d-flex justify-content-between">
                 ${pasoLabels.map((label, i) => `
-                    <small class="fw-bold" style="font-size:0.65rem; color:${i <= indexActual ? '#e31b23' : '#adb5bd'}">${label}</small>
+                    <small class="fw-bold" style="font-size:0.60rem; color:${i <= indexActual ? '#e31b23' : '#adb5bd'}">${label}</small>
                 `).join('')}
             </div>
         </div>`;
@@ -151,7 +151,7 @@
             }
             if (!res.ok) throw new Error("Error al cargar pedidos");
             const pedidos = await res.json();
-            pedidosCache = pedidos; // guardar en caché global
+            pedidosCache = pedidos;
             contenedor.innerHTML = '';
             if (pedidos.length === 0) {
                 contenedor.innerHTML = `
@@ -167,7 +167,9 @@
                 const fecha = new Date(p.fechaPedido).toLocaleDateString('es-PE', {
                     day: '2-digit', month: '2-digit', year: 'numeric'
                 });
-                let colorEstado = 'bg-warning text-dark', iconoEstado = 'bi-hourglass-split', textoEstado = 'Pendiente de Revisión';
+
+                let colorEstado = 'bg-dark text-white', iconoEstado = 'bi-cash-coin', textoEstado = 'Pendiente de Revisión';
+                if (p.estado === 'PENDIENTE') { colorEstado = 'bg-warning text-dark'; iconoEstado = 'bi-hourglass-split'; textoEstado = 'Pago Confirmado'; }
                 if (p.estado === 'EN_PREPARACION') { colorEstado = 'bg-info text-dark'; iconoEstado = 'bi-box-seam'; textoEstado = 'Empacando tu pedido'; }
                 if (p.estado === 'LISTO_RECOJO')   { colorEstado = 'bg-primary text-white'; iconoEstado = 'bi-shop'; textoEstado = '¡Listo para recoger!'; }
                 if (p.estado === 'ENVIADO')         { colorEstado = 'bg-secondary text-white'; iconoEstado = 'bi-truck'; textoEstado = 'En camino'; }

@@ -1,5 +1,7 @@
 package com.tato.motorepuestos.controller;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tato.motorepuestos.dto.PedidoWebDTO;
 import com.tato.motorepuestos.model.PedidoWeb;
 import com.tato.motorepuestos.service.PdfService;
@@ -8,6 +10,7 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 import java.util.Map;
@@ -22,11 +25,43 @@ public class PedidoWebRestController {
     @Autowired
     private PdfService pdfService;
 
+    // MODIFICADO: Eliminamos el @Autowired de ObjectMapper para evitar el error de inyección
+    // y lo instanciamos directamente dentro del método.
+
     @PostMapping("/procesar")
-    public ResponseEntity<?> procesarPedido(@RequestBody PedidoWebDTO pedidoDTO, HttpSession session) {
+    public ResponseEntity<?> procesarPedido(
+            @RequestParam("tipoDocumento") String tipoDocumento,
+            @RequestParam("numeroDocumento") String numeroDocumento,
+            @RequestParam("nombreCompleto") String nombreCompleto,
+            @RequestParam("telefono") String telefono,
+            @RequestParam("metodoEntrega") String metodoEntrega,
+            @RequestParam(value = "sucursalId", required = false) Long sucursalId,
+            @RequestParam(value = "direccionEntrega", required = false) String direccionEntrega,
+            @RequestParam("carritoJson") String carritoJson,
+            @RequestParam("comprobantePago") MultipartFile comprobantePago,
+            HttpSession session) {
         try {
             Long clienteWebId = (Long) session.getAttribute("clienteWebId");
-            PedidoWeb nuevoPedido = pedidoService.procesarPedido(pedidoDTO, clienteWebId);
+
+            // Construir DTO desde los params
+            PedidoWebDTO pedidoDTO = new PedidoWebDTO();
+            pedidoDTO.setTipoDocumento(tipoDocumento);
+            pedidoDTO.setNumeroDocumento(numeroDocumento);
+            pedidoDTO.setNombreCompleto(nombreCompleto);
+            pedidoDTO.setTelefono(telefono);
+            pedidoDTO.setMetodoEntrega(metodoEntrega);
+            pedidoDTO.setSucursalId(sucursalId);
+            pedidoDTO.setDireccionEntrega(direccionEntrega);
+
+            // Instanciar ObjectMapper directamente
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            // Parsear Carrito JSON a Lista
+            List<PedidoWebDTO.ItemCarritoDTO> carrito = objectMapper.readValue(
+                    carritoJson, new TypeReference<List<PedidoWebDTO.ItemCarritoDTO>>() {});
+            pedidoDTO.setCarrito(carrito);
+
+            PedidoWeb nuevoPedido = pedidoService.procesarPedido(pedidoDTO, clienteWebId, comprobantePago);
             return ResponseEntity.ok(nuevoPedido);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body("Error al procesar pedido: " + e.getMessage());
@@ -64,9 +99,9 @@ public class PedidoWebRestController {
             return ResponseEntity.status(401).body("No autenticado");
         }
         try {
-            PedidoWeb pedido = pedidoService.obtenerPorId(id); // necesitas este método
+            PedidoWeb pedido = pedidoService.obtenerPorId(id);
             if (pedido == null) return ResponseEntity.notFound().build();
-            // Verificar que el pedido pertenece al cliente
+
             if (pedido.getUsuarioCliente() == null ||
                     !pedido.getUsuarioCliente().getId().equals(clienteWebId)) {
                 return ResponseEntity.status(403).body("Acceso denegado");

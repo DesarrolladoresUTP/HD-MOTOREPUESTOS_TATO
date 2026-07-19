@@ -30,4 +30,16 @@ public class TrasladoRestController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    // NUEVO: Método GET para cargar el historial de traslados en el frontend
+    @GetMapping
+    public ResponseEntity<?> listarTraslados() {
+        try {
+            // Devuelve la lista completa de traslados.
+            // Asegúrate de que el método en tu TrasladoService se llame 'listarTodos()'
+            return ResponseEntity.ok(trasladoService.listarTodos());
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body("Error al cargar historial: " + e.getMessage());
+        }
+    }
 }

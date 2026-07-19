@@ -10,15 +10,16 @@
     <style>
         /* Variables Globales de Color */
         :root {
-            --fondo-app: #f0f9ff;
+            --fondo-app: #f4f6f8;
             --azul-primario: #0ea5e9;
             --azul-oscuro: #0369a1;
             --azul-hover: #38bdf8;
             --logo-rojo: #e31b23;
             --logo-naranja: #f97316;
+            --texto-oscuro: #334155;
         }
 
-        body { background-color: var(--fondo-app); font-family: 'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; animation: fadeIn 0.1s ease-in; }
+        body { background-color: var(--fondo-app); font-family: 'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; animation: fadeIn 0.3s ease-in; color: var(--texto-oscuro); }
 
         /* Estilos del Navbar Compartido */
         .navbar-custom { background-color: var(--azul-oscuro); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -29,109 +30,149 @@
         .tato-rojo { color: var(--logo-rojo); font-weight: 900; margin-right: 5px; }
         .casco-logo { color: var(--logo-naranja); }
 
-        /* Estilos de Tablas Generales */
-        .table-custom th { background-color: var(--azul-oscuro); color: white; border-bottom: 2px solid var(--azul-primario); }
-        .table-custom tbody tr:hover { background-color: rgba(14,165,233,0.05); }
+        /* Estilos de Tablas y Tarjetas */
+        .card-custom { border-radius: 12px; border: none; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; }
+        .table-custom { margin-bottom: 0; }
+        .table-custom thead th {
+            background-color: var(--azul-oscuro);
+            color: white;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            padding: 1rem;
+            border-bottom: none;
+        }
+        .table-custom tbody tr { transition: all 0.2s; border-bottom: 1px solid #e2e8f0; }
+        .table-custom tbody tr:hover { background-color: #f1f5f9; transform: translateY(-1px); }
+        .table-custom td { padding: 1rem; vertical-align: middle; }
 
         /* Clases Específicas */
-        .cliente-inactivo { opacity: 0.6; background-color: #f8f9fa; }
+        .cliente-inactivo { opacity: 0.65; background-color: #f8fafc; }
+        .badge-estado { font-size: 0.8rem; padding: 0.4rem 0.8rem; border-radius: 20px; font-weight: 600; }
 
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+        /* Inputs del Modal */
+        .form-control:focus, .form-select:focus { border-color: var(--azul-primario); box-shadow: 0 0 0 0.25rem rgba(14, 165, 233, 0.25); }
+        .input-group-text { background-color: #f8fafc; border-color: #dee2e6; color: #64748b; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
 <div id="navbar-container"></div>
 
-<div class="container-fluid mt-4 px-4 pt-3">
+<div class="container-fluid mt-4 px-4 pt-3 mb-5">
     <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
-        <h3 style="color:var(--azul-oscuro);">
-            <i class="bi bi-person-vcard-fill me-2 casco-logo"></i>Cartera de <span class="tato-rojo">Clientes</span>
+        <h3 class="fw-bold" style="color:var(--azul-oscuro);">
+            <i class="bi bi-person-lines-fill me-2 casco-logo"></i>Cartera de <span class="tato-rojo">Clientes</span>
         </h3>
-        <button class="btn btn-primary fw-bold" onclick="abrirModalNuevo()">
-            <i class="bi bi-plus-circle me-1"></i> Registrar Cliente
+        <button class="btn btn-primary fw-bold px-4 py-2 rounded-pill shadow-sm" onclick="abrirModalNuevo()" style="background-color: var(--azul-primario); border-color: var(--azul-primario);">
+            <i class="bi bi-person-plus-fill me-1"></i> Registrar Cliente
         </button>
     </div>
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover table-custom mb-0 align-middle">
-                    <thead>
-                    <tr>
-                        <th class="text-center" style="width: 100px;">Acciones</th>
-                        <th>Documento</th>
-                        <th>Razón Social / Nombres</th>
-                        <th>Correo Electrónico</th>
-                        <th>Teléfono</th>
-                        <th>Estado</th>
-                    </tr>
-                    </thead>
-                    <tbody id="tablaClientes">
-                    <tr>
-                        <td colspan="6" class="text-center py-4 text-muted">
-                            <div class="spinner-border spinner-border-sm text-primary me-2"></div> Cargando clientes...
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
+    <!-- Barra de búsqueda rápida (Opcional, pero mejora la UX) -->
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <div class="input-group shadow-sm rounded-pill overflow-hidden">
+                <span class="input-group-text bg-white border-0"><i class="bi bi-search text-muted"></i></span>
+                <input type="text" class="form-control border-0 bg-white" id="buscarCliente" placeholder="Buscar por documento o nombre..." onkeyup="filtrarTabla()">
             </div>
+        </div>
+    </div>
+
+    <div class="card card-custom">
+        <div class="table-responsive">
+            <table class="table table-hover table-custom mb-0 align-middle" id="tablaMainClientes">
+                <thead>
+                <tr>
+                    <th class="text-center" style="width: 120px;">Acciones</th>
+                    <th style="width: 180px;">Documento</th>
+                    <th>Razón Social / Nombres</th>
+                    <th>Correo Electrónico</th>
+                    <th style="width: 150px;">Teléfono</th>
+                    <th class="text-center" style="width: 120px;">Estado</th>
+                </tr>
+                </thead>
+                <tbody id="tablaClientes">
+                <tr>
+                    <td colspan="6" class="text-center py-5 text-muted">
+                        <div class="spinner-border text-primary mb-2" role="status"></div>
+                        <p class="mb-0 fw-bold">Cargando base de datos de clientes...</p>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
 
-<div class="modal fade" id="modalCliente" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content border-0 shadow">
-            <div class="modal-header" style="background-color:var(--azul-oscuro);color:white;">
-                <h5 class="modal-title fw-bold"><i class="bi bi-person-plus-fill me-2"></i>Ficha del Cliente</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+<!-- Modal Cliente -->
+<div class="modal fade" id="modalCliente" tabindex="-1" data-bs-backdrop="static">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg" style="border-radius: 15px; overflow: hidden;">
+            <div class="modal-header border-0" style="background-color:var(--azul-oscuro); color:white; padding: 1.5rem;">
+                <h5 class="modal-title fw-bold"><i class="bi bi-person-vcard me-2"></i>Ficha de Registro de Cliente</h5>
+                <button type="button" class="btn-close btn-close-white shadow-none" data-bs-dismiss="modal"></button>
             </div>
-            <div class="modal-body bg-light">
+            <div class="modal-body bg-light p-4">
                 <form id="formCliente">
                     <input type="hidden" id="cliId">
-                    <div class="row g-3">
+                    <div class="row g-4">
                         <div class="col-md-4">
-                            <label class="form-label fw-bold small">Tipo Doc.</label>
-                            <select class="form-select" id="cliTipoDoc">
+                            <label class="form-label fw-bold small text-muted text-uppercase mb-1">Tipo Doc.</label>
+                            <select class="form-select shadow-sm" id="cliTipoDoc" onchange="ajustarValidacionDocumento()">
                                 <option value="DNI">DNI</option>
                                 <option value="RUC">RUC</option>
-                                <option value="CE">CE</option>
+                                <option value="CE">Carnet Ext.</option>
                             </select>
                         </div>
                         <div class="col-md-8">
-                            <label class="form-label fw-bold small">Número de Documento</label>
-                            <input type="text" id="numDocumento" class="form-control"
-                                   placeholder="Ej: 74308925"
-                                   oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 11);">
+                            <label class="form-label fw-bold small text-muted text-uppercase mb-1" id="lblDoc">N° Documento</label>
+                            <div class="input-group shadow-sm rounded">
+                                <span class="input-group-text bg-white border-end-0"><i class="bi bi-123"></i></span>
+                                <input type="text" id="numDocumento" class="form-control border-start-0 ps-0"
+                                       placeholder="Ingrese el número"
+                                       maxlength="8"
+                                       oninput="this.value = this.value.replace(/[^0-9A-Za-z]/g, '')">
+                            </div>
+                            <div class="form-text small" id="ayudaDoc">Debe contener exactamente 8 dígitos.</div>
                         </div>
+
                         <div class="col-12">
-                            <label class="form-label fw-bold small">Razón Social o Nombre Completo</label>
-                            <input type="text" class="form-control" id="cliNombre" required>
-                        </div>
-                        <div class="col-12">
-                            <label class="form-label fw-bold small text-secondary">Correo Electrónico (Opcional)</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-white"><i class="bi bi-envelope"></i></span>
-                                <input type="email" class="form-control" id="cliCorreo">
+                            <label class="form-label fw-bold small text-muted text-uppercase mb-1">Razón Social o Nombres</label>
+                            <div class="input-group shadow-sm rounded">
+                                <span class="input-group-text bg-white border-end-0"><i class="bi bi-person"></i></span>
+                                <input type="text" class="form-control border-start-0 ps-0 text-uppercase" id="cliNombre" placeholder="Nombre completo del cliente" required>
                             </div>
                         </div>
+
                         <div class="col-12">
-                            <label class="form-label fw-bold small text-secondary">Teléfono (Opcional)</label>
-                            <div class="input-group">
-                                <span class="input-group-text bg-white"><i class="bi bi-telephone"></i></span>
-                                <input type="text" id="telefonoCliente" class="form-control"
-                                       placeholder="Opcional"
-                                       oninput="this.value = this.value.replace(/[^0-9]/g, '').slice(0, 9);">
+                            <label class="form-label fw-bold small text-muted text-uppercase mb-1">Correo Electrónico <span class="text-secondary fw-normal text-lowercase">(Opcional)</span></label>
+                            <div class="input-group shadow-sm rounded">
+                                <span class="input-group-text bg-white border-end-0"><i class="bi bi-envelope"></i></span>
+                                <input type="email" class="form-control border-start-0 ps-0" id="cliCorreo" placeholder="ejemplo@correo.com">
+                            </div>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-bold small text-muted text-uppercase mb-1">Teléfono Móvil <span class="text-secondary fw-normal text-lowercase">(Opcional)</span></label>
+                            <div class="input-group shadow-sm rounded">
+                                <span class="input-group-text bg-white border-end-0"><i class="bi bi-telephone"></i></span>
+                                <input type="text" id="telefonoCliente" class="form-control border-start-0 ps-0"
+                                       placeholder="Ej: 999888777"
+                                       maxlength="9"
+                                       oninput="this.value = this.value.replace(/[^0-9]/g, '');">
                             </div>
                         </div>
                     </div>
                 </form>
             </div>
-            <div class="modal-footer bg-light border-top-0">
-                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <button class="btn btn-success fw-bold" onclick="guardarCliente()">
-                    <i class="bi bi-save me-1"></i> Guardar Cliente
+            <div class="modal-footer bg-white border-top-0 p-3">
+                <button class="btn btn-outline-secondary fw-bold rounded-pill px-4" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-success fw-bold rounded-pill px-4 shadow-sm" onclick="guardarCliente()">
+                    <i class="bi bi-cloud-arrow-up-fill me-1"></i> Guardar Registro
                 </button>
             </div>
         </div>
@@ -140,7 +181,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-<script src="/navbar.js?v3"></script>
+<script src="/navbar.js?v4"></script>
 <script>
     let modalCliente;
 
@@ -150,6 +191,28 @@
         cargarClientes();
     });
 
+    // Función simple de filtrado para la barra de búsqueda
+    function filtrarTabla() {
+        const input = document.getElementById("buscarCliente");
+        const filter = input.value.toUpperCase();
+        const table = document.getElementById("tablaMainClientes");
+        const tr = table.getElementsByTagName("tr");
+
+        for (let i = 1; i < tr.length; i++) {
+            const tdDoc = tr[i].getElementsByTagName("td")[1];
+            const tdNom = tr[i].getElementsByTagName("td")[2];
+            if (tdDoc || tdNom) {
+                const txtValueDoc = tdDoc.textContent || tdDoc.innerText;
+                const txtValueNom = tdNom.textContent || tdNom.innerText;
+                if (txtValueDoc.toUpperCase().indexOf(filter) > -1 || txtValueNom.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
+
     async function cargarClientes() {
         try {
             const res = await fetch('/api/clientes');
@@ -158,53 +221,112 @@
             tbody.innerHTML = '';
 
             if (data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No hay clientes registrados.</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-5"><i class="bi bi-inboxes display-4 d-block mb-3"></i>No hay clientes registrados en el sistema.</td></tr>';
                 return;
             }
 
             data.forEach(c => {
                 const inactivoClase = !c.activo ? 'cliente-inactivo' : '';
-                const badge = c.activo ? '<span class="badge bg-success">Activo</span>' : '<span class="badge bg-danger">Bloqueado</span>';
+                const badge = c.activo
+                    ? '<span class="badge badge-estado bg-success bg-opacity-10 text-success border border-success"><i class="bi bi-check-circle-fill me-1"></i>Activo</span>'
+                    : '<span class="badge badge-estado bg-danger bg-opacity-10 text-danger border border-danger"><i class="bi bi-ban me-1"></i>Bloqueado</span>';
 
-                const btnEstado = c.activo
-                  ? `<button class="btn btn-sm btn-outline-warning" onclick="cambiarEstado(${c.id}, false)" title="Bloquear"><i class="bi bi-ban"></i></button>`
-                  : `<button class="btn btn-sm btn-outline-success" onclick="cambiarEstado(${c.id}, true)" title="Activar"><i class="bi bi-check-circle"></i></button>`;
+                // Si es el cliente generico, ocultamos los botones
+                let btnEstado = '';
+                if (c.numeroDocumento !== '00000000') {
+                    btnEstado = c.activo
+                    ? `<button class="btn btn-sm btn-outline-danger border-0 rounded-circle" style="width:32px; height:32px;" onclick="cambiarEstado(${c.id}, false)" title="Bloquear Cliente"><i class="bi bi-lock-fill"></i></button>`
+                    : `<button class="btn btn-sm btn-outline-success border-0 rounded-circle" style="width:32px; height:32px;" onclick="cambiarEstado(${c.id}, true)" title="Reactivar Cliente"><i class="bi bi-unlock-fill"></i></button>`;
+                } else {
+                    btnEstado = `<span class="text-muted" title="Cliente por defecto"><i class="bi bi-shield-lock"></i></span>`;
+                }
 
                 tbody.innerHTML += `
                     <tr class="${inactivoClase}">
                         <td class="text-center">${btnEstado}</td>
-                        <td class="font-monospace text-muted">${c.tipoDocumento} ${c.numeroDocumento}</td>
-                        <td class="fw-bold text-dark">${c.razonSocialNombre}</td>
-                        <td class="text-primary">${c.correo || '-'}</td>
-                        <td>${c.telefono || '-'}</td>
-                        <td>${badge}</td>
+                        <td class="font-monospace fw-bold text-secondary">
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary border me-1">${c.tipoDocumento}</span>
+                            ${c.numeroDocumento}
+                        </td>
+                        <td class="fw-bold" style="color: var(--azul-oscuro);">${c.razonSocialNombre}</td>
+                        <td class="text-muted small">${c.correo || '<i class="text-black-50">No registrado</i>'}</td>
+                        <td class="text-muted"><i class="bi bi-telephone-fill small text-black-50 me-1"></i>${c.telefono || '-'}</td>
+                        <td class="text-center">${badge}</td>
                     </tr>`;
             });
         } catch (e) {
-            document.getElementById('tablaClientes').innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4">Error al cargar clientes.</td></tr>';
+            document.getElementById('tablaClientes').innerHTML = '<tr><td colspan="6" class="text-center text-danger py-4"><i class="bi bi-exclamation-triangle me-2"></i>Error de conexión al cargar clientes.</td></tr>';
         }
     }
 
     function abrirModalNuevo() {
         document.getElementById('formCliente').reset();
         document.getElementById('cliId').value = '';
+        ajustarValidacionDocumento();
         modalCliente.show();
     }
 
-    async function guardarCliente() {
-        const payload = {
-            id: document.getElementById('cliId').value || null,
-            tipoDocumento: document.getElementById('cliTipoDoc').value,
-            numeroDocumento: document.getElementById('cliNumDoc').value.trim(),
-            razonSocialNombre: document.getElementById('cliNombre').value.trim(),
-            correo: document.getElementById('cliCorreo').value.trim(),
-            telefono: document.getElementById('cliTelefono').value.trim()
-        };
+    function ajustarValidacionDocumento() {
+        const tipo = document.getElementById('cliTipoDoc').value;
+        const input = document.getElementById('numDocumento');
+        const ayuda = document.getElementById('ayudaDoc');
 
-        if (!payload.numeroDocumento || !payload.razonSocialNombre) {
-            Swal.fire({ icon: 'warning', title: 'Campos requeridos', text: 'Completa el documento y el nombre.', confirmButtonColor: '#0ea5e9' });
+        // Limpiamos el valor al cambiar de tipo
+        input.value = '';
+
+        if (tipo === 'DNI') {
+            input.maxLength = 8;
+            input.oninput = function() { this.value = this.value.replace(/[^0-9]/g, ''); };
+            ayuda.innerText = 'Debe contener exactamente 8 dígitos.';
+        } else if (tipo === 'RUC') {
+            input.maxLength = 11;
+            input.oninput = function() { this.value = this.value.replace(/[^0-9]/g, ''); };
+            ayuda.innerText = 'Debe contener exactamente 11 dígitos y empezar con 10 o 20.';
+        } else {
+            // Carnet de extranjería o Pasaporte (permite alfanumérico en algunos casos, max 12)
+            input.maxLength = 12;
+            input.oninput = function() { this.value = this.value.replace(/[^0-9A-Za-z]/g, '').toUpperCase(); };
+            ayuda.innerText = 'Puede contener letras y números (máx. 12).';
+        }
+    }
+
+    async function guardarCliente() {
+        const id = document.getElementById('cliId').value || null;
+        const tipo = document.getElementById('cliTipoDoc').value;
+        const num = document.getElementById('numDocumento').value.trim();
+        const nombre = document.getElementById('cliNombre').value.trim().toUpperCase();
+        const correo = document.getElementById('cliCorreo').value.trim();
+        const telefono = document.getElementById('telefonoCliente').value.trim();
+
+        // Validaciones estrictas
+        if (!num || !nombre) {
+            Swal.fire({ icon: 'warning', title: 'Datos Incompletos', text: 'El documento y el nombre son obligatorios.', confirmButtonColor: '#0ea5e9' });
             return;
         }
+
+        if (tipo === 'DNI' && num.length !== 8) {
+            Swal.fire({ icon: 'warning', title: 'DNI Inválido', text: 'El DNI debe tener exactamente 8 dígitos numéricos.', confirmButtonColor: '#e31b23' });
+            return;
+        }
+
+        if (tipo === 'RUC' && num.length !== 11) {
+            Swal.fire({ icon: 'warning', title: 'RUC Inválido', text: 'El RUC debe tener exactamente 11 dígitos numéricos.', confirmButtonColor: '#e31b23' });
+            return;
+        }
+
+        if (telefono && telefono.length < 9) {
+            Swal.fire({ icon: 'warning', title: 'Teléfono Inválido', text: 'Si ingresas un celular, debe tener 9 dígitos.', confirmButtonColor: '#e31b23' });
+            return;
+        }
+
+        const payload = {
+            id: id,
+            tipoDocumento: tipo,
+            numeroDocumento: num,
+            razonSocialNombre: nombre,
+            correo: correo,
+            telefono: telefono
+        };
 
         try {
             const res = await fetch('/api/clientes', {
@@ -215,26 +337,34 @@
             if(res.ok) {
                 modalCliente.hide();
                 cargarClientes();
-                Swal.fire({icon:'success', title:'Guardado', timer:1500, showConfirmButton:false});
+                Swal.fire({icon:'success', title:'Cliente Registrado', timer:1500, showConfirmButton:false});
             } else {
-                Swal.fire({icon:'error', title:'Error', text: await res.text()});
+                Swal.fire({icon:'error', title:'Ocurrió un problema', text: await res.text()});
             }
         } catch (e) {
-            Swal.fire({icon:'error', title:'Error de conexión'});
+            Swal.fire({icon:'error', title:'Error de conexión', text: 'No se pudo comunicar con el servidor.'});
         }
     }
 
     function cambiarEstado(id, estado) {
         Swal.fire({
             title: estado ? '¿Reactivar Cliente?' : '¿Bloquear Cliente?',
+            html: estado ? 'El cliente podrá volver a ser seleccionado en ventas.' : 'El cliente no podrá realizar nuevas compras.',
             icon: estado ? 'info' : 'warning',
             showCancelButton: true,
             confirmButtonColor: estado ? '#198754' : '#e31b23',
-            confirmButtonText: estado ? 'Sí, reactivar' : 'Sí, bloquear'
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: estado ? '<i class="bi bi-unlock-fill me-1"></i>Sí, reactivar' : '<i class="bi bi-lock-fill me-1"></i>Sí, bloquear',
+            cancelButtonText: 'Cancelar'
         }).then(async r => {
             if (r.isConfirmed) {
-                await fetch(`/api/clientes/${id}/estado?activo=${estado}`, { method: 'PUT' });
-                cargarClientes();
+                try {
+                    await fetch(`/api/clientes/${id}/estado?activo=${estado}`, { method: 'PUT' });
+                    cargarClientes();
+                    Swal.fire({icon: 'success', title: 'Estado actualizado', timer: 1200, showConfirmButton: false});
+                } catch (e) {
+                    Swal.fire({icon:'error', title:'Error', text: 'No se pudo cambiar el estado.'});
+                }
             }
         });
     }

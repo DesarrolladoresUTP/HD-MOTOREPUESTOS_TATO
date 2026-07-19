@@ -74,7 +74,6 @@ function cargarCarrito() {
 
     if (carritoCheckout.length > 0) {
         cargarSucursalesDisponibles().then(() => {
-            // Inicializar mapa si Retiro en Tienda está seleccionado por defecto
             if(document.getElementById('entregaTienda').checked) {
                 iniciarFuncionesMapa();
             }
@@ -135,7 +134,6 @@ async function cargarSucursalesDisponibles() {
             return;
         }
 
-        // Agregamos data-lat y data-lng al HTML para leerlos en el mapa
         contenedor.innerHTML = sucursales.map(s => `
             <div class="form-check mb-2">
                 <input class="form-check-input" type="radio" name="sucursalRetiro"
@@ -153,24 +151,18 @@ async function cargarSucursalesDisponibles() {
     }
 }
 
-/* =========================================
-   NUEVAS FUNCIONES PARA EL MAPA
-   ========================================= */
 function iniciarFuncionesMapa() {
     document.getElementById('mapaContainer').style.display = 'block';
 
-    // Crear el mapa solo si no existe
     if (!map) {
-        map = L.map('mapaContainer').setView([-6.70111, -79.90611], 14); // Centro por defecto (Lambayeque)
+        map = L.map('mapaContainer').setView([-6.70111, -79.90611], 14);
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             attribution: '&copy; OpenStreetMap contributors'
         }).addTo(map);
     }
 
-    // Solucionar bug visual de Leaflet al mostrar un mapa que estaba oculto
     setTimeout(() => map.invalidateSize(), 300);
 
-    // Obtener ubicación del usuario
     if (!userLat) {
         if (navigator.geolocation) {
             navigator.geolocation.getCurrentPosition(
@@ -181,7 +173,6 @@ function iniciarFuncionesMapa() {
                 },
                 (error) => {
                     console.warn("El usuario denegó la ubicación o hubo un error.");
-                    // Si no da ubicación, igual trazamos la ruta apuntando a la tienda seleccionada
                     trazarRutaMapa();
                 }
             );
@@ -195,38 +186,32 @@ function trazarRutaMapa() {
     const sucursalElegida = document.querySelector('input[name="sucursalRetiro"]:checked');
     if (!sucursalElegida || !map) return;
 
-    // Obtener coordenadas de la tienda seleccionada
     const tiendaLat = parseFloat(sucursalElegida.getAttribute('data-lat'));
     const tiendaLng = parseFloat(sucursalElegida.getAttribute('data-lng'));
 
-    // Limpiar ruta anterior si existe
     if (routingControl) {
         map.removeControl(routingControl);
     }
 
     if (userLat && userLng) {
-        // Trazar ruta desde Usuario hasta Tienda
         routingControl = L.Routing.control({
             waypoints: [
-                L.latLng(userLat, userLng), // Origen: Cliente
-                L.latLng(tiendaLat, tiendaLng) // Destino: Sucursal
+                L.latLng(userLat, userLng),
+                L.latLng(tiendaLat, tiendaLng)
             ],
             routeWhileDragging: false,
             addWaypoints: false,
             fitSelectedRoutes: true,
             lineOptions: {
-                styles: [{ color: '#e31b23', opacity: 0.8, weight: 5 }] // Línea roja (Tato)
+                styles: [{ color: '#e31b23', opacity: 0.8, weight: 5 }]
             }
         }).addTo(map);
     } else {
-        // Si no tenemos ubicación del usuario, solo ponemos un marcador en la tienda
         map.setView([tiendaLat, tiendaLng], 15);
         L.marker([tiendaLat, tiendaLng]).addTo(map).bindPopup("<b>Ubicación de Retiro</b>").openPopup();
     }
 }
-/* ========================================= */
 
-// Mantuve toda tu lógica intacta aquí abajo
 async function consultarDocumentoPeruanos() {
     const tipo = document.getElementById('tipoDocumento').value;
     const numero = document.getElementById('numDocumento').value.trim();
@@ -269,6 +254,8 @@ function validarTelefonoPeruano(telefono) {
     return /^9\d{8}$/.test(limpio);
 }
 
+// Para usar FormData necesitamos enviar un POST multipart/form-data
+// Modificaremos la funcion para usar FormData
 async function procesarPedidoFinal() {
     const tipoDoc = document.getElementById('tipoDocumento').value;
     const numDoc = document.getElementById('numDocumento').value.trim();
@@ -310,40 +297,51 @@ async function procesarPedidoFinal() {
         sucursalId = parseInt(sucursalChecked.value);
     }
 
+    const fileInput = document.getElementById('comprobantePago');
+    if (fileInput.files.length === 0) {
+        Swal.fire({ icon: 'warning', title: 'Falta Comprobante', text: 'Por favor sube la captura de tu pago para continuar.' });
+        return;
+    }
+
     const btn = document.getElementById('btnFinalizarPedido');
     btn.innerHTML = '<span class="spinner-border spinner-border-sm"></span> Procesando Orden...';
     btn.disabled = true;
 
-    const payload = {
-        tipoDocumento: tipoDoc,
-        numeroDocumento: numDoc,
-        nombreCompleto: nombre,
-        telefono: telefono,
-        metodoEntrega: metodoEntrega,
-        sucursalId: sucursalId,
-        direccionEntrega: direccion,
-        carrito: carritoCheckout.map(item => ({
-            id: item.id,
-            nombre: item.nombre,
-            precio: parseFloat(item.precio),
-            cantidad: parseInt(item.cantidad)
-        }))
-    };
-
     try {
         Swal.fire({
             title: 'Procesando pedido...',
-            text: 'Verificando stock y pasarela de pago...',
+            text: 'Verificando stock y subiendo comprobante...',
             allowOutsideClick: false,
             didOpen: () => {
                 Swal.showLoading();
             }
         });
 
+        // Construir Payload FormData
+        const formData = new FormData();
+        formData.append('tipoDocumento', tipoDoc);
+        formData.append('numeroDocumento', numDoc);
+        formData.append('nombreCompleto', nombre);
+        formData.append('telefono', telefono);
+        formData.append('metodoEntrega', metodoEntrega);
+        if (sucursalId) formData.append('sucursalId', sucursalId);
+        if (direccion) formData.append('direccionEntrega', direccion);
+
+        // Agregar comprobante
+        formData.append('comprobantePago', fileInput.files[0]);
+
+        // Agregar carrito como JSON
+        const carritoStr = JSON.stringify(carritoCheckout.map(item => ({
+            id: item.id,
+            nombre: item.nombre,
+            precio: parseFloat(item.precio),
+            cantidad: parseInt(item.cantidad)
+        })));
+        formData.append('carritoJson', carritoStr);
+
         const response = await fetch('/api/pedidos-web/procesar', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
+            body: formData
         });
 
         if (response.ok) {
@@ -353,7 +351,7 @@ async function procesarPedidoFinal() {
             Swal.fire({
                 icon: 'success',
                 title: '¡Pedido Confirmado!',
-                html: `Tu número de orden es: <b>#000${data.id}</b><br>Nos comunicaremos contigo pronto.`,
+                html: `Tu número de orden es: <b>#000${data.id}</b><br>Validaremos tu pago y nos comunicaremos contigo pronto.`,
                 confirmButtonColor: '#e31b23',
                 allowOutsideClick: false
             }).then(() => {

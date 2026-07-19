@@ -28,8 +28,13 @@ public class PedidoWeb {
     private String metodoEntrega;
     private String direccionEntrega;
 
+    // MODIFICADO: Estado inicial a Confirmando Pago
     @Column(nullable = false)
-    private String estado = "PENDIENTE";
+    private String estado = "Confirmando Pago";
+
+    // NUEVO: URL para el comprobante de Cloudinary
+    @Column(length = 500)
+    private String urlComprobante;
 
     @Column(nullable = false)
     private BigDecimal total;
@@ -53,10 +58,6 @@ public class PedidoWeb {
         this.fechaPedido = LocalDateTime.now();
     }
 
-
-
-
-
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
     public UsuarioCliente getUsuarioCliente() { return usuarioCliente; }
@@ -75,6 +76,8 @@ public class PedidoWeb {
     public void setDireccionEntrega(String direccionEntrega) { this.direccionEntrega = direccionEntrega; }
     public String getEstado() { return estado; }
     public void setEstado(String estado) { this.estado = estado; }
+    public String getUrlComprobante() { return urlComprobante; }
+    public void setUrlComprobante(String urlComprobante) { this.urlComprobante = urlComprobante; }
     public BigDecimal getTotal() { return total; }
     public void setTotal(BigDecimal total) { this.total = total; }
     public LocalDateTime getFechaPedido() { return fechaPedido; }

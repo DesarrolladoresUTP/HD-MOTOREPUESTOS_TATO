@@ -1,11 +1,13 @@
 let carrito = JSON.parse(localStorage.getItem('tato_carrito')) || [];
 let inventarioGlobal = [];
+let modalVariantesWeb;
 
 document.addEventListener("DOMContentLoaded", () => {
     cargarConfiguracionWeb();
     verificarSesionCliente();
     cargarCatalogo();
     actualizarInterfazCarrito();
+    modalVariantesWeb = new bootstrap.Modal(document.getElementById('modalVariantesWeb'));
 
     document.getElementById('btnProcederPago').addEventListener('click', () => {
         const nombreCliente = localStorage.getItem('tato_cliente_nombre');
@@ -24,7 +26,6 @@ function verificarSesionCliente() {
 
     if (nombreCliente && authContainer) {
         const primerNombre = nombreCliente.split(' ')[0];
-
         authContainer.innerHTML = `
             <div class="dropdown">
                 <button class="btn btn-tato-red btn-sm fw-bold px-3 dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -45,11 +46,7 @@ function verificarSesionCliente() {
 }
 
 async function cerrarSesionCliente() {
-    try {
-        await fetch('/api/clientes-web/logout', { method: 'POST' });
-    } catch (e) {
-        console.error(e);
-    }
+    try { await fetch('/api/clientes-web/logout', { method: 'POST' }); } catch (e) {}
     localStorage.removeItem('tato_cliente_nombre');
     window.location.href = '/tienda';
 }
@@ -61,25 +58,13 @@ function cargarConfiguracionWeb() {
         colorPrimario: '#e31b23', colorSecundario: '#212529',
         whatsapp: '', facebook: '', instagram: ''
     };
-
     document.documentElement.style.setProperty('--tato-primary', config.colorPrimario);
     document.documentElement.style.setProperty('--tato-secondary', config.colorSecundario);
-
     document.getElementById('frontTitulo').innerText = config.titulo;
     document.getElementById('frontSubtitulo').innerText = config.subtitulo;
-
-    if(config.facebook) {
-        let btn = document.getElementById('btnFrontFb');
-        btn.href = config.facebook; btn.classList.remove('d-none');
-    }
-    if(config.instagram) {
-        let btn = document.getElementById('btnFrontIg');
-        btn.href = config.instagram; btn.classList.remove('d-none');
-    }
-    if(config.whatsapp) {
-        let btn = document.getElementById('btnFrontWa');
-        btn.href = `https://wa.me/${config.whatsapp}`; btn.classList.remove('d-none');
-    }
+    if(config.facebook) { let btn = document.getElementById('btnFrontFb'); btn.href = config.facebook; btn.classList.remove('d-none'); }
+    if(config.instagram) { let btn = document.getElementById('btnFrontIg'); btn.href = config.instagram; btn.classList.remove('d-none'); }
+    if(config.whatsapp) { let btn = document.getElementById('btnFrontWa'); btn.href = `https://wa.me/${config.whatsapp}`; btn.classList.remove('d-none'); }
 }
 
 async function cargarCatalogo() {
@@ -97,9 +82,7 @@ async function cargarCatalogo() {
 function poblarFiltroCategorias() {
     const selectCat = document.getElementById('filtroCategoria');
     const categoriasUnicas = new Set();
-    inventarioGlobal.forEach(item => {
-        if (item.producto?.categoria?.nombre) categoriasUnicas.add(item.producto.categoria.nombre);
-    });
+    inventarioGlobal.forEach(item => { if (item.producto?.categoria?.nombre) categoriasUnicas.add(item.producto.categoria.nombre); });
     categoriasUnicas.forEach(cat => { selectCat.innerHTML += `<option value="${cat}">${cat}</option>`; });
 }
 
@@ -117,10 +100,7 @@ function aplicarFiltros() {
         return coincideNombre && coincideCat;
     });
 
-    const getPrecioLimpio = (item) => {
-        if (item.precioVenta) return parseFloat(item.precioVenta.toString().replace(',', '.')) || 0;
-        return 0;
-    };
+    const getPrecioLimpio = (item) => parseFloat(item.precioVenta?.toString().replace(',', '.') || 0) || 0;
 
     filtrados.sort((a, b) => {
         let precioA = getPrecioLimpio(a);
@@ -130,11 +110,9 @@ function aplicarFiltros() {
         return 0;
     });
 
-    const esFiltroPorDefecto = (textoBuscar === "" && categoriaSel === "TODAS" && ordenSel === "RELEVANTE");
-    if (esFiltroPorDefecto) {
+    if (textoBuscar === "" && categoriaSel === "TODAS" && ordenSel === "RELEVANTE") {
         filtrados = filtrados.slice(0, 16);
     }
-
     renderizarProductos(filtrados);
 }
 
@@ -149,12 +127,27 @@ function renderizarProductos(lista) {
     lista.forEach(item => {
         const prod = item.producto;
         let precioNumeric = parseFloat(item.precioVenta?.toString().replace(',', '.') || 0) || 0;
-        const imagenRuta = prod.imagen ? `/uploads/${prod.imagen}` : 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=300';
+        const imagenRuta = prod.imagen ? prod.imagen : 'https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=300';
 
         const hayStock = item.stock > 0;
-        const btnClase = hayStock ? 'btn-outline-dark' : 'btn-danger disabled';
-        const btnIcono = hayStock ? '<i class="bi bi-cart-plus me-1"></i> Al Carrito' : '<i class="bi bi-x-circle me-1"></i> Agotado';
-        const btnAccion = hayStock ? `onclick="agregarAlCarrito(${prod.id}, '${prod.nombre.replace(/'/g, "\\'")}', ${precioNumeric}, ${item.stock})"` : '';
+        const tieneVariantes = prod.variantes && Array.isArray(prod.variantes) && prod.variantes.length > 0;
+
+        let btnClase = '';
+        let btnIcono = '';
+        let btnAccion = '';
+
+        if (!hayStock) {
+            btnClase = 'btn-danger disabled';
+            btnIcono = '<i class="bi bi-x-circle me-1"></i> Agotado';
+        } else if (tieneVariantes) {
+            btnClase = 'btn-outline-primary';
+            btnIcono = '<i class="bi bi-ui-radios-grid me-1"></i> Elegir Modelo';
+            btnAccion = `onclick="abrirSelectorVariantesWeb(${item.id})"`;
+        } else {
+            btnClase = 'btn-outline-dark';
+            btnIcono = '<i class="bi bi-cart-plus me-1"></i> Al Carrito';
+            btnAccion = `onclick="agregarAlCarrito(${prod.id}, '${prod.nombre.replace(/'/g, "\'")}', ${precioNumeric}, ${item.stock})"`;
+        }
 
         contenedor.innerHTML += `
             <div class="col-12 col-sm-6 col-md-4 col-lg-3">
@@ -164,9 +157,9 @@ function renderizarProductos(lista) {
                         <img src="${imagenRuta}" onerror="this.src='https://images.unsplash.com/photo-1558981806-ec527fa84c39?w=300'" class="img-fluid" alt="${prod.nombre}" style="max-height: 100%; object-fit: contain; ${!hayStock ? 'filter: grayscale(100%);' : ''}">
                     </div>
                     <div class="card-body d-flex flex-column border-top">
-                        <div class="d-flex justify-content-between">
-                            <span class="badge bg-dark mb-2">${prod.categoria?.nombre || 'General'}</span>
-                            <span class="badge ${hayStock ? 'bg-success' : 'bg-danger'} mb-2">Stock: ${item.stock}</span>
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="badge bg-dark">${prod.categoria?.nombre || 'General'}</span>
+                            <span class="badge ${hayStock ? 'bg-success' : 'bg-danger'}">Stock: ${item.stock}</span>
                         </div>
                         <h6 class="card-title fw-bold text-dark">${prod.nombre || 'Sin nombre'}</h6>
                         <p class="card-text text-tato-red fw-bold fs-4 mb-3 mt-auto">S/ ${precioNumeric.toFixed(2)}</p>
@@ -177,11 +170,60 @@ function renderizarProductos(lista) {
     });
 }
 
+// ── LÓGICA DE VARIANTES WEB (ACTUALIZADA CON STOCK POR MODELO) ──
+function abrirSelectorVariantesWeb(inventarioId) {
+    const inv = inventarioGlobal.find(i => i.id === inventarioId);
+    if (!inv) return;
+
+    const contenedor = document.getElementById('contenedorModelosWeb');
+    contenedor.innerHTML = '';
+
+    inv.producto.variantes.forEach(v => {
+        const imgUrl = v.imagen ? v.imagen : (inv.producto.imagen || `https://ui-avatars.com/api/?name=${encodeURIComponent(v.nombre.charAt(0))}&background=e31b23&color=fff`);
+
+        // Verifica el stock específico de esta variante
+        const hayStockVar = v.stock > 0;
+        const claseDisabled = hayStockVar ? '' : 'disabled';
+        const clickAction = hayStockVar ? `onclick="confirmarVarianteWeb(${inv.id}, '${v.nombre.replace(/'/g, "\'")}', ${v.stock})"` : '';
+        const badgeHTML = hayStockVar
+                          ? `<span class="badge-stock-var bg-success text-white">Stock: ${v.stock}</span>`
+                          : `<span class="badge-stock-var bg-danger text-white">Agotado</span>`;
+
+        contenedor.innerHTML += `
+            <div class="col-6 col-sm-4 text-center">
+                <div class="card h-100 border-0 shadow-sm variante-card rounded-3 overflow-hidden ${claseDisabled}" ${clickAction}>
+                    ${badgeHTML}
+                    <img src="${imgUrl}" class="card-img-top" style="height:120px; object-fit:cover;" alt="${v.nombre}">
+                    <div class="card-body p-2 bg-white">
+                        <h6 class="card-title mb-0 text-dark" style="font-size:0.9rem;font-weight:700;">${v.nombre}</h6>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    modalVariantesWeb.show();
+}
+
+function confirmarVarianteWeb(inventarioId, nombreVariante, stockVariante) {
+    const inv = inventarioGlobal.find(i => i.id === inventarioId);
+    if (!inv) return;
+    modalVariantesWeb.hide();
+
+    const nombreFinal = `${inv.producto.nombre} - ${nombreVariante}`;
+    let precioNumeric = parseFloat(inv.precioVenta?.toString().replace(',', '.') || 0) || 0;
+
+    // AHORA ENVIAMOS EL STOCK ESPECÍFICO DE LA VARIANTE, NO EL DEL INVENTARIO GENERAL
+    agregarAlCarrito(inv.producto.id, nombreFinal, precioNumeric, stockVariante);
+}
+
+// ── LÓGICA DEL CARRITO ──
 function agregarAlCarrito(id, nombre, precio, stockMaximo) {
-    const itemExistente = carrito.find(i => i.id === id);
+    const itemExistente = carrito.find(i => i.id === id && i.nombre === nombre);
+
     if (itemExistente) {
         if (itemExistente.cantidad >= stockMaximo) {
-            Swal.fire({ icon: 'warning', title: 'Stock Límite', text: `Solo hay ${stockMaximo} unidades disponibles.`});
+            Swal.fire({ icon: 'warning', title: 'Stock Límite', text: `Solo hay ${stockMaximo} unidades disponibles para este modelo.`});
             return;
         }
         itemExistente.cantidad++;
@@ -193,13 +235,8 @@ function agregarAlCarrito(id, nombre, precio, stockMaximo) {
     actualizarInterfazCarrito();
 
     Swal.fire({
-        toast: true,
-        position: 'bottom-end',
-        icon: 'success',
-        title: 'Agregado al carrito',
-        showConfirmButton: false,
-        timer: 1500,
-        timerProgressBar: true
+        toast: true, position: 'bottom-end', icon: 'success',
+        title: 'Agregado al carrito', showConfirmButton: false, timer: 1500, timerProgressBar: true
     });
 }
 

@@ -1,332 +1,388 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestión de Usuarios - Motorepuestos Tato</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
-  <style>
-    :root { --fondo-app:#f0f9ff;--azul-primario:#0ea5e9;--azul-oscuro:#0369a1;--azul-hover:#38bdf8;--logo-rojo:#e31b23;--logo-naranja:#f97316; }
-    body { background-color:var(--fondo-app); font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; }
-    .navbar-custom { background-color:var(--azul-oscuro); box-shadow:0 4px 6px rgba(0,0,0,0.1); }
-    .navbar-custom .navbar-brand,.navbar-custom .nav-link { color:#fff; font-weight:500; }
-    .navbar-custom .nav-link.active,.navbar-custom .nav-link:hover { color:var(--azul-hover); }
-    .tato-rojo { color:var(--logo-rojo); font-weight:900; margin-right:5px; }
-    .casco-logo { color:var(--logo-naranja); }
-    .table-custom th { background-color:var(--azul-oscuro); color:white; border-bottom:2px solid var(--azul-primario); }
-    .table-custom tbody tr:hover { background-color:rgba(14,165,233,0.05); }
-    .foto-perfil-tabla { width:40px; height:40px; border-radius:50%; object-fit:cover; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
-    .usuario-inactivo { opacity:0.6; filter:grayscale(80%) blur(0.5px); background-color:#f8f9fa; }
-    body {
-    animation: fadeIn 0.1s ease-in;
-    }
-    @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(4px); }
-    to   { opacity: 1; transform: translateY(0); }
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Usuarios - Motorepuestos Tato</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
+    <style>
+        :root { --fondo-app:#f0f9ff;--azul-primario:#0ea5e9;--azul-oscuro:#0369a1;--azul-hover:#38bdf8;--logo-rojo:#e31b23;--logo-naranja:#f97316; }
+        body { background-color:var(--fondo-app); font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; }
+        .navbar-custom { background-color:var(--azul-oscuro); box-shadow:0 4px 6px rgba(0,0,0,0.1); }
+        .navbar-custom .navbar-brand,.navbar-custom .nav-link { color:#fff; font-weight:500; }
+        .navbar-custom .nav-link.active,.navbar-custom .nav-link:hover { color:var(--azul-hover); }
+        .tato-rojo { color:var(--logo-rojo); font-weight:900; margin-right:5px; }
+        .casco-logo { color:var(--logo-naranja); }
+        .table-custom th { background-color:var(--azul-oscuro); color:white; border-bottom:2px solid var(--azul-primario); }
+        .table-custom tbody tr:hover { background-color:rgba(14,165,233,0.05); }
+        .foto-perfil-tabla { width:40px; height:40px; border-radius:50%; object-fit:cover; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.1); }
+        .usuario-inactivo { opacity:0.6; filter:grayscale(80%) blur(0.5px); background-color:#f8f9fa; }
+        body {
+        animation: fadeIn 0.1s ease-in;
+        }
+        @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(4px); }
+        to   { opacity: 1; transform: translateY(0); }
+        }
+    </style>
 </head>
 <body>
 
 <div id="navbar-container"></div>
 
 <div class="container mt-4 pt-3">
-  <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
-    <h3 style="color:var(--azul-oscuro);">
-      <i class="bi bi-people-fill me-2 casco-logo"></i>Gestión de <span class="tato-rojo">Usuarios</span>
-    </h3>
-    <button class="btn btn-primary" onclick="abrirModalNuevo()">
-      <i class="bi bi-plus-circle me-1"></i> Nuevo Usuario
-    </button>
-  </div>
-  <div class="card shadow-sm border-0">
-    <div class="card-body p-0">
-      <div class="table-responsive">
-        <table class="table table-hover table-custom mb-0 align-middle">
-          <thead>
-          <tr>
-            <th class="text-center" style="width:150px;">Acciones</th>
-            <th>Foto</th>
-            <th>Nombres y Apellidos</th>
-            <th>Correo Electrónico</th>
-            <th>Rol</th>
-            <th>Estado</th>
-          </tr>
-          </thead>
-          <tbody id="tablaUsuariosBody"></tbody>
-        </table>
-      </div>
+    <div class="d-flex justify-content-between align-items-center mb-4 pt-2">
+        <h3 style="color:var(--azul-oscuro);">
+            <i class="bi bi-people-fill me-2 casco-logo"></i>Gestión de <span class="tato-rojo">Usuarios</span>
+        </h3>
+        <button class="btn btn-primary" onclick="abrirModalNuevo()">
+            <i class="bi bi-plus-circle me-1"></i> Nuevo Usuario
+        </button>
     </div>
-  </div>
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-custom mb-0 align-middle">
+                    <thead>
+                    <tr>
+                        <th class="text-center" style="width:150px;">Acciones</th>
+                        <th>Foto</th>
+                        <th>Nombres y Apellidos</th>
+                        <th>Correo Electrónico</th>
+                        <th>Rol</th>
+                        <th>Estado</th>
+                    </tr>
+                    </thead>
+                    <tbody id="tablaUsuariosBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
-<div class="modal fade" id="modalUsuario" tabindex="-1" data-bs-backdrop="static">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content border-0 shadow-lg">
-      <div class="modal-header" style="background-color:var(--azul-oscuro);color:white;">
-        <h5 class="modal-title" id="tituloModal"><i class="bi bi-person-plus me-2"></i>Registrar Nuevo Usuario</h5>
-        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-      </div>
-      <div class="modal-body bg-light">
-        <form id="formUsuario">
-          <input type="hidden" id="usuarioId">
-          <div class="row g-3">
-            <div class="col-md-6">
-              <label class="form-label fw-bold">Nombres</label>
-              <input type="text" class="form-control" id="nombres" required>
+<div class="modal fade" id="modalUsuario" data-bs-backdrop="static">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header" style="background-color:var(--azul-oscuro);color:white;">
+                <h5 class="modal-title" id="tituloModal"><i class="bi bi-person-plus me-2"></i>Registrar Nuevo Usuario</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-            <div class="col-md-6">
-              <label class="form-label fw-bold">Apellidos</label>
-              <input type="text" class="form-control" id="apellidos" required>
+            <div class="modal-body bg-light">
+                <form id="formUsuario">
+                    <input type="hidden" id="usuarioId">
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Nombres</label>
+                            <input type="text" class="form-control" id="nombres" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Apellidos</label>
+                            <input type="text" class="form-control" id="apellidos" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Correo Electrónico</label>
+                            <input type="email" class="form-control" id="correo" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Rol</label>
+                            <select class="form-select" id="rol" required>
+                                <option value="" disabled selected>Cargando roles...</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Foto de Perfil</label>
+                            <input class="form-control" type="file" id="foto" accept="image/png,image/jpeg">
+                        </div>
+                    </div>
+                </form>
             </div>
-            <div class="col-md-6">
-              <label class="form-label fw-bold">Correo Electrónico</label>
-              <input type="email" class="form-control" id="correo" required>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-success" onclick="guardarUsuario()">
+                    <i class="bi bi-save me-1"></i> <span id="textoBtnGuardar">Guardar Usuario</span>
+                </button>
             </div>
-            <div class="col-md-6">
-              <label class="form-label fw-bold">Rol</label>
-              <select class="form-select" id="rol" required>
-                <option value="" disabled selected>Cargando roles...</option>
-              </select>
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-bold">Foto de Perfil</label>
-              <input class="form-control" type="file" id="foto" accept="image/png,image/jpeg">
-            </div>
-          </div>
-        </form>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-success" onclick="guardarUsuario()">
-          <i class="bi bi-save me-1"></i> <span id="textoBtnGuardar">Guardar Usuario</span>
-        </button>
-      </div>
+        </div>
     </div>
-  </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="/navbar.js?v2"></script>
 <script>
-  let modalUsuario;
-  let miUsuarioId = null;
+    let modalUsuario;
+    let miUsuarioId = null;
 
-  document.addEventListener('DOMContentLoaded', async () => {
-      await initNavbar(data => { miUsuarioId = data.id; });
-      modalUsuario = new bootstrap.Modal(document.getElementById('modalUsuario'));
-      cargarRolesSelect();
-      cargarUsuarios();
-  });
+    document.addEventListener('DOMContentLoaded', async () => {
+        await initNavbar(data => { miUsuarioId = data.id; });
+        modalUsuario = new bootstrap.Modal(document.getElementById('modalUsuario'), {
+    focus: false
+    });
+        cargarRolesSelect();
+        cargarUsuarios();
+    });
 
-  async function cargarRolesSelect() {
-      try {
-          const res = await fetch('/api/roles/activos');
-          if (res.ok) {
-              const roles = await res.json();
-              const sel = document.getElementById('rol');
-              sel.innerHTML = '<option value="" disabled selected>Seleccione un rol...</option>';
-              roles.forEach(r => {
-                  const o = document.createElement('option');
-                  o.value = r.id;
-                  o.textContent = r.nombre;
-                  sel.appendChild(o);
-              });
-          }
-      } catch (e) {}
+    async function cargarRolesSelect() {
+        try {
+            const res = await fetch('/api/roles/activos');
+            if (res.ok) {
+                const roles = await res.json();
+                const sel = document.getElementById('rol');
+                sel.innerHTML = '<option value="" disabled selected>Seleccione un rol...</option>';
+                roles.forEach(r => {
+                    const o = document.createElement('option');
+                    o.value = r.id;
+                    o.textContent = r.nombre;
+                    sel.appendChild(o);
+                });
+            }
+        } catch (e) {}
+    }
+
+    async function cargarUsuarios() {
+        try {
+            const res = await fetch('/api/usuarios');
+            const usuarios = await res.json();
+            const tbody = document.getElementById('tablaUsuariosBody');
+            tbody.innerHTML = '';
+            if (usuarios.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No hay usuarios registrados.</td></tr>';
+                return;
+            }
+            usuarios.forEach(u => {
+                const urlFoto = u.foto
+                    ? `/uploads/${u.foto}`
+                    : `https://ui-avatars.com/api/?name=${encodeURIComponent(u.nombres+' '+u.apellidos)}&background=0ea5e9&color=fff`;
+                const esMiCuenta = String(u.id) === String(miUsuarioId);
+                const inactivo = !u.activo;
+                const badge = u.activo
+                    ? '<span class="badge bg-success">Activo</span>'
+                    : '<span class="badge bg-secondary">Inactivo</span>';
+
+                let botones = `<button class="btn btn-outline-primary" onclick="abrirModalEditar(${u.id})" title="Editar"><i class="bi bi-pencil-square"></i></button>`;
+                if (esMiCuenta) {
+                    botones += `<button class="btn btn-secondary" disabled title="Tu propia cuenta"><i class="bi bi-shield-lock-fill"></i></button>`;
+                } else if (u.activo) {
+                    botones += `
+                        <button class="btn btn-outline-info" onclick="resetearPassword(${u.id},'${u.nombres}')" title="Resetear contraseña">
+                            <i class="bi bi-key"></i>
+                        <button class="btn btn-outline-warning" onclick="desactivar(${u.id},'${u.nombres}')" title="Desactivar"><i class="bi bi-pause-circle"></i></button>
+                        <button class="btn btn-outline-danger" onclick="eliminarLogico(${u.id},'${u.nombres}')" title="Eliminar"><i class="bi bi-trash"></i></button>`;
+                } else {
+                    botones += `
+                        <button class="btn btn-outline-info" onclick="resetearPassword(${u.id},'${u.nombres}')" title="Resetear contraseña">
+                        <i class="bi bi-key"></i>
+                        <button class="btn btn-outline-success" onclick="activar(${u.id},'${u.nombres}')" title="Activar"><i class="bi bi-play-circle"></i></button>
+                        <button class="btn btn-outline-danger" onclick="eliminarLogico(${u.id},'${u.nombres}')" title="Eliminar"><i class="bi bi-trash"></i></button>`;
+                }
+
+                const tr = document.createElement('tr');
+                if (inactivo) tr.className = 'usuario-inactivo';
+                tr.innerHTML = `
+                    <td class="text-center"><div class="btn-group btn-group-sm">${botones}</div></td>
+                    <td><img src="${urlFoto}" class="foto-perfil-tabla" alt="Foto"></td>
+                    <td class="fw-bold">${u.nombres} ${u.apellidos}</td>
+                    <td>${u.correoElectronico}</td>
+                    <td><span class="badge bg-primary">${u.rol ? u.rol.nombre : '-'}</span></td>
+                    <td>${badge}</td>`;
+                tbody.appendChild(tr);
+            });
+        } catch (e) {}
+    }
+
+    function abrirModalNuevo() {
+        document.getElementById('formUsuario').reset();
+        document.getElementById('usuarioId').value = '';
+        document.getElementById('tituloModal').innerHTML = '<i class="bi bi-person-plus me-2"></i>Registrar Nuevo Usuario';
+        document.getElementById('textoBtnGuardar').innerText = 'Guardar Usuario';
+        modalUsuario.show();
+    }
+
+    async function abrirModalEditar(id) {
+        try {
+            const res = await fetch(`/api/usuarios/${id}`);
+            if (res.ok) {
+                const u = await res.json();
+                document.getElementById('usuarioId').value = u.id;
+                document.getElementById('nombres').value = u.nombres;
+                document.getElementById('apellidos').value = u.apellidos;
+                document.getElementById('correo').value = u.correoElectronico;
+                document.getElementById('rol').value = u.rol ? u.rol.id : '';
+                document.getElementById('tituloModal').innerHTML = '<i class="bi bi-pencil-square me-2"></i>Editar Usuario';
+                document.getElementById('textoBtnGuardar').innerText = 'Actualizar Usuario';
+                modalUsuario.show();
+            }
+        } catch (e) {}
+    }
+
+    async function guardarUsuario() {
+        const id       = document.getElementById('usuarioId').value;
+        const nombres  = document.getElementById('nombres').value.trim();
+        const apellidos= document.getElementById('apellidos').value.trim();
+        const correo   = document.getElementById('correo').value.trim();
+        const rolId    = document.getElementById('rol').value;
+        const foto     = document.getElementById('foto');
+
+        if (!nombres || !apellidos || !correo || !rolId) {
+            Swal.fire({ icon:'warning', title:'Campos Incompletos', confirmButtonColor:'#0ea5e9' });
+            return;
+        }
+
+        // Si se está editando un usuario (existe un ID), pedimos la contraseña por seguridad
+        if (id) {
+            const { value: password } = await Swal.fire({
+                title: 'Validación de Seguridad',
+                text: 'Ingresa tu contraseña para autorizar esta modificación.',
+                input: 'password',
+                inputPlaceholder: 'Tu contraseña actual...',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#0ea5e9',
+                cancelButtonColor: '#64748b',
+                confirmButtonText: '<i class="bi bi-shield-lock"></i> Autorizar',
+                cancelButtonText: 'Cancelar',
+                inputValidator: (value) => {
+                    if (!value) {
+                        return 'La contraseña es obligatoria para continuar.';
+                    }
+                }
+            });
+
+            // Si el usuario cancela el modal, detenemos la ejecución
+            if (!password) return;
+
+            Swal.fire({
+                title: 'Verificando...',
+                allowOutsideClick: false,
+                didOpen: () => Swal.showLoading()
+            });
+
+            try {
+                const resAuth = await fetch('/api/usuarios/verificar-credencial', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ password: password })
+                });
+
+                if (!resAuth.ok) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Acceso Denegado',
+                        text: 'La contraseña ingresada es incorrecta.'
+                    });
+                    return; // Detiene el flujo si falla la validación
+                }
+            } catch (error) {
+                Swal.fire({ icon: 'error', title: 'Error', text: 'Problema al verificar credenciales.' });
+                return;
+            }
+        }
+
+        Swal.fire({ title: 'Guardando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+
+        const fd = new FormData();
+        fd.append('nombres', nombres);
+        fd.append('apellidos', apellidos);
+        fd.append('correo', correo);
+        fd.append('rol_id', rolId);
+        if (foto.files.length > 0) fd.append('foto', foto.files[0]);
+
+        try {
+            const res = await fetch(id ? `/api/usuarios/${id}` : '/api/usuarios', {
+                method: id ? 'PUT' : 'POST',
+                body: fd
+            });
+            if (res.ok) {
+                modalUsuario.hide();
+                cargarUsuarios();
+                Swal.fire({ icon:'success', title: id ? '¡Actualizado!' : '¡Registrado!', showConfirmButton:false, timer:1500 });
+            } else {
+                Swal.fire({ icon:'error', title:'Error', text:'No se pudo guardar.' });
+            }
+        } catch (e) {
+            Swal.fire({ icon:'error', title:'Error de Conexión', text:'Ocurrió un problema de red.' });
+        }
+    }
+
+    function desactivar(id, nombre) {
+        if (String(id) === String(miUsuarioId)) return;
+        Swal.fire({
+            title:'¿Desactivar Usuario?', text:`"${nombre}" perderá acceso al sistema.`,
+            icon:'warning', showCancelButton:true,
+            confirmButtonColor:'#f59e0b', confirmButtonText:'Sí, desactivar'
+        }).then(async r => {
+            if (r.isConfirmed) {
+                try {
+                    const res = await fetch(`/api/usuarios/${id}/desactivar`, { method:'PUT' });
+                    if (res.ok) cargarUsuarios();
+                } catch (e) {}
+            }
+        });
+    }
+
+    function activar(id, nombre) {
+        Swal.fire({
+            title:'¿Reactivar Usuario?', text:`"${nombre}" recuperará el acceso.`,
+            icon:'info', showCancelButton:true,
+            confirmButtonColor:'#198754', confirmButtonText:'Sí, activar'
+        }).then(async r => {
+            if (r.isConfirmed) {
+                try {
+                    const res = await fetch(`/api/usuarios/${id}/activar`, { method:'PUT' });
+                    if (res.ok) cargarUsuarios();
+                } catch (e) {}
+            }
+        });
+    }
+
+    function eliminarLogico(id, nombre) {
+        if (String(id) === String(miUsuarioId)) return;
+        Swal.fire({
+            title:'¿Eliminar Usuario?',
+            text:`"${nombre}" quedará desactivado definitivamente. No se puede deshacer.`,
+            icon:'error', showCancelButton:true,
+            confirmButtonColor:'#e31b23', confirmButtonText:'Sí, eliminar'
+        }).then(async r => {
+            if (r.isConfirmed) {
+                try {
+                    const res = await fetch(`/api/usuarios/${id}`, { method:'DELETE' });
+                    if (res.ok) {
+                        Swal.fire({ icon:'success', title:'Eliminado', showConfirmButton:false, timer:1500 });
+                        cargarUsuarios();
+                    }
+                } catch (e) {}
+            }
+        });
+    }
+
+    function resetearPassword(id, nombre) {
+    Swal.fire({
+        title: '¿Resetear contraseña?',
+        text: `Se enviará un correo a "${nombre}" para que establezca una nueva contraseña.`,
+        icon: 'info',
+        showCancelButton: true,
+        confirmButtonColor: '#0369a1',
+        cancelButtonText: 'Cancelar',
+        confirmButtonText: 'Sí, enviar correo'
+    }).then(async r => {
+        if (r.isConfirmed) {
+            try {
+                const res = await fetch(`/api/usuarios/${id}/reset-password`, { method: 'POST' });
+                if (res.ok) {
+                    Swal.fire({ icon: 'success', title: '¡Correo enviado!',
+                                text: 'El usuario recibirá un enlace para cambiar su contraseña.',
+                                showConfirmButton: false, timer: 2000 });
+                } else {
+                    Swal.fire({ icon: 'error', title: 'Error al enviar el correo.' });
+                }
+            } catch (e) {
+                Swal.fire({ icon: 'error', title: 'Error de conexión.' });
+            }
+        }
+    });
   }
-
-  async function cargarUsuarios() {
-      try {
-          const res = await fetch('/api/usuarios');
-          const usuarios = await res.json();
-          const tbody = document.getElementById('tablaUsuariosBody');
-          tbody.innerHTML = '';
-          if (usuarios.length === 0) {
-              tbody.innerHTML = '<tr><td colspan="6" class="text-center text-muted py-4">No hay usuarios registrados.</td></tr>';
-              return;
-          }
-          usuarios.forEach(u => {
-              const urlFoto = u.foto
-                  ? `/uploads/${u.foto}`
-                  : `https://ui-avatars.com/api/?name=${encodeURIComponent(u.nombres+' '+u.apellidos)}&background=0ea5e9&color=fff`;
-              const esMiCuenta = String(u.id) === String(miUsuarioId);
-              const inactivo = !u.activo;
-              const badge = u.activo
-                  ? '<span class="badge bg-success">Activo</span>'
-                  : '<span class="badge bg-secondary">Inactivo</span>';
-
-              let botones = `<button class="btn btn-outline-primary" onclick="abrirModalEditar(${u.id})" title="Editar"><i class="bi bi-pencil-square"></i></button>`;
-              if (esMiCuenta) {
-                  botones += `<button class="btn btn-secondary" disabled title="Tu propia cuenta"><i class="bi bi-shield-lock-fill"></i></button>`;
-              } else if (u.activo) {
-                  botones += `
-                      <button class="btn btn-outline-info" onclick="resetearPassword(${u.id},'${u.nombres}')" title="Resetear contraseña">
-                          <i class="bi bi-key"></i>
-                      <button class="btn btn-outline-warning" onclick="desactivar(${u.id},'${u.nombres}')" title="Desactivar"><i class="bi bi-pause-circle"></i></button>
-                      <button class="btn btn-outline-danger" onclick="eliminarLogico(${u.id},'${u.nombres}')" title="Eliminar"><i class="bi bi-trash"></i></button>`;
-              } else {
-                  botones += `
-                      <button class="btn btn-outline-info" onclick="resetearPassword(${u.id},'${u.nombres}')" title="Resetear contraseña">
-                      <i class="bi bi-key"></i>
-                      <button class="btn btn-outline-success" onclick="activar(${u.id},'${u.nombres}')" title="Activar"><i class="bi bi-play-circle"></i></button>
-                      <button class="btn btn-outline-danger" onclick="eliminarLogico(${u.id},'${u.nombres}')" title="Eliminar"><i class="bi bi-trash"></i></button>`;
-              }
-
-              const tr = document.createElement('tr');
-              if (inactivo) tr.className = 'usuario-inactivo';
-              tr.innerHTML = `
-                  <td class="text-center"><div class="btn-group btn-group-sm">${botones}</div></td>
-                  <td><img src="${urlFoto}" class="foto-perfil-tabla" alt="Foto"></td>
-                  <td class="fw-bold">${u.nombres} ${u.apellidos}</td>
-                  <td>${u.correoElectronico}</td>
-                  <td><span class="badge bg-primary">${u.rol ? u.rol.nombre : '-'}</span></td>
-                  <td>${badge}</td>`;
-              tbody.appendChild(tr);
-          });
-      } catch (e) {}
-  }
-
-  function abrirModalNuevo() {
-      document.getElementById('formUsuario').reset();
-      document.getElementById('usuarioId').value = '';
-      document.getElementById('tituloModal').innerHTML = '<i class="bi bi-person-plus me-2"></i>Registrar Nuevo Usuario';
-      document.getElementById('textoBtnGuardar').innerText = 'Guardar Usuario';
-      modalUsuario.show();
-  }
-
-  async function abrirModalEditar(id) {
-      try {
-          const res = await fetch(`/api/usuarios/${id}`);
-          if (res.ok) {
-              const u = await res.json();
-              document.getElementById('usuarioId').value = u.id;
-              document.getElementById('nombres').value = u.nombres;
-              document.getElementById('apellidos').value = u.apellidos;
-              document.getElementById('correo').value = u.correoElectronico;
-              document.getElementById('rol').value = u.rol ? u.rol.id : '';
-              document.getElementById('tituloModal').innerHTML = '<i class="bi bi-pencil-square me-2"></i>Editar Usuario';
-              document.getElementById('textoBtnGuardar').innerText = 'Actualizar Usuario';
-              modalUsuario.show();
-          }
-      } catch (e) {}
-  }
-
-  async function guardarUsuario() {
-      const id       = document.getElementById('usuarioId').value;
-      const nombres  = document.getElementById('nombres').value.trim();
-      const apellidos= document.getElementById('apellidos').value.trim();
-      const correo   = document.getElementById('correo').value.trim();
-      const rolId    = document.getElementById('rol').value;
-      const foto     = document.getElementById('foto');
-
-      if (!nombres || !apellidos || !correo || !rolId) {
-          Swal.fire({ icon:'warning', title:'Campos Incompletos', confirmButtonColor:'#0ea5e9' });
-          return;
-      }
-
-      const fd = new FormData();
-      fd.append('nombres', nombres);
-      fd.append('apellidos', apellidos);
-      fd.append('correo', correo);
-      fd.append('rol_id', rolId);
-      if (foto.files.length > 0) fd.append('foto', foto.files[0]);
-
-      try {
-          const res = await fetch(id ? `/api/usuarios/${id}` : '/api/usuarios', {
-              method: id ? 'PUT' : 'POST',
-              body: fd
-          });
-          if (res.ok) {
-              modalUsuario.hide();
-              cargarUsuarios();
-              Swal.fire({ icon:'success', title: id ? '¡Actualizado!' : '¡Registrado!', showConfirmButton:false, timer:1500 });
-          } else {
-              Swal.fire({ icon:'error', title:'Error', text:'No se pudo guardar.' });
-          }
-      } catch (e) {}
-  }
-
-  function desactivar(id, nombre) {
-      if (String(id) === String(miUsuarioId)) return;
-      Swal.fire({
-          title:'¿Desactivar Usuario?', text:`"${nombre}" perderá acceso al sistema.`,
-          icon:'warning', showCancelButton:true,
-          confirmButtonColor:'#f59e0b', confirmButtonText:'Sí, desactivar'
-      }).then(async r => {
-          if (r.isConfirmed) {
-              try {
-                  const res = await fetch(`/api/usuarios/${id}/desactivar`, { method:'PUT' });
-                  if (res.ok) cargarUsuarios();
-              } catch (e) {}
-          }
-      });
-  }
-
-  function activar(id, nombre) {
-      Swal.fire({
-          title:'¿Reactivar Usuario?', text:`"${nombre}" recuperará el acceso.`,
-          icon:'info', showCancelButton:true,
-          confirmButtonColor:'#198754', confirmButtonText:'Sí, activar'
-      }).then(async r => {
-          if (r.isConfirmed) {
-              try {
-                  const res = await fetch(`/api/usuarios/${id}/activar`, { method:'PUT' });
-                  if (res.ok) cargarUsuarios();
-              } catch (e) {}
-          }
-      });
-  }
-
-  function eliminarLogico(id, nombre) {
-      if (String(id) === String(miUsuarioId)) return;
-      Swal.fire({
-          title:'¿Eliminar Usuario?',
-          text:`"${nombre}" quedará desactivado definitivamente. No se puede deshacer.`,
-          icon:'error', showCancelButton:true,
-          confirmButtonColor:'#e31b23', confirmButtonText:'Sí, eliminar'
-      }).then(async r => {
-          if (r.isConfirmed) {
-              try {
-                  const res = await fetch(`/api/usuarios/${id}`, { method:'DELETE' });
-                  if (res.ok) {
-                      Swal.fire({ icon:'success', title:'Eliminado', showConfirmButton:false, timer:1500 });
-                      cargarUsuarios();
-                  }
-              } catch (e) {}
-          }
-      });
-  }
-
-  function resetearPassword(id, nombre) {
-  Swal.fire({
-      title: '¿Resetear contraseña?',
-      text: `Se enviará un correo a "${nombre}" para que establezca una nueva contraseña.`,
-      icon: 'info',
-      showCancelButton: true,
-      confirmButtonColor: '#0369a1',
-      cancelButtonText: 'Cancelar',
-      confirmButtonText: 'Sí, enviar correo'
-  }).then(async r => {
-      if (r.isConfirmed) {
-          try {
-              const res = await fetch(`/api/usuarios/${id}/reset-password`, { method: 'POST' });
-              if (res.ok) {
-                  Swal.fire({ icon: 'success', title: '¡Correo enviado!',
-                              text: 'El usuario recibirá un enlace para cambiar su contraseña.',
-                              showConfirmButton: false, timer: 2000 });
-              } else {
-                  Swal.fire({ icon: 'error', title: 'Error al enviar el correo.' });
-              }
-          } catch (e) {
-              Swal.fire({ icon: 'error', title: 'Error de conexión.' });
-          }
-      }
-  });
-}
 </script>
 </body>
 </html>

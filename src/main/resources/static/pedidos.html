@@ -134,6 +134,14 @@
                     </div>
                 </div>
 
+                <!-- NUEVO: Sección del comprobante de pago -->
+                <div class="card border-0 shadow-sm p-3 bg-white mb-4">
+                    <h6 class="fw-bold text-secondary mb-3"><i class="bi bi-receipt text-success me-1"></i> Comprobante de Pago (Yape/Plin/Transferencia)</h6>
+                    <div id="detComprobanteContainer" class="text-center bg-light border rounded p-3">
+                        <!-- La imagen se inyectará aquí -->
+                    </div>
+                </div>
+
                 <div id="contenedorMapaPedido" class="mb-4" style="display: none;">
                     <h6 class="fw-bold text-secondary mb-2"><i class="bi bi-geo-fill text-danger me-1"></i> Punto de Recojo</h6>
                     <div id="mapaPedido" style="height: 250px; width: 100%; border-radius: 10px;" class="border shadow-sm"></div>
@@ -231,10 +239,12 @@
     let pedidoMap = null;
     let pedidoMarker = null;
 
-    const FLUJO_DELIVERY = ['PENDIENTE', 'EN_PREPARACION', 'ENVIADO', 'ENTREGADO'];
-    const FLUJO_RECOJO   = ['PENDIENTE', 'EN_PREPARACION', 'LISTO_RECOJO', 'ENTREGADO'];
+    // MODIFICADO: Agregamos Confirmando Pago
+    const FLUJO_DELIVERY = ['Confirmando Pago', 'PENDIENTE', 'EN_PREPARACION', 'ENVIADO', 'ENTREGADO'];
+    const FLUJO_RECOJO   = ['Confirmando Pago', 'PENDIENTE', 'EN_PREPARACION', 'LISTO_RECOJO', 'ENTREGADO'];
 
     const ESTADO_LABEL = {
+        'Confirmando Pago': 'Confirmando Pago',
         PENDIENTE:       'Pendiente',
         EN_PREPARACION:  'En preparación',
         ENVIADO:         'Enviado',
@@ -244,6 +254,7 @@
     };
 
     const ESTADO_BADGE_CLASS = {
+        'Confirmando Pago': 'bg-dark text-white',
         PENDIENTE:       'bg-warning text-dark',
         EN_PREPARACION:  'bg-info text-dark',
         LISTO_RECOJO:    'bg-primary text-white',
@@ -253,6 +264,7 @@
     };
 
     const ESTADO_ICONO = {
+        'Confirmando Pago': 'bi-cash-coin',
         PENDIENTE:       'bi-hourglass-split',
         EN_PREPARACION:  'bi-box-seam',
         ENVIADO:         'bi-truck',
@@ -328,6 +340,14 @@
                 ? (p.direccionEntrega || 'Sin dirección')
                 : (p.sucursalNombre ? `Sucursal: ${p.sucursalNombre}` : 'Retira en local');
         document.getElementById('detTotal').innerText = `S/ ${p.total.toFixed(2)}`;
+
+        // MODIFICADO: Mostrar comprobante de pago urlComprobante
+        const compContainer = document.getElementById('detComprobanteContainer');
+        if (p.urlComprobante) {
+            compContainer.innerHTML = `<img src="${p.urlComprobante}" class="img-fluid rounded shadow-sm" style="max-height: 250px; cursor: pointer; border: 1px solid #dee2e6;" onclick="window.open('${p.urlComprobante}', '_blank')" title="Clic para ampliar imagen">`;
+        } else {
+            compContainer.innerHTML = '<p class="text-muted small mb-0"><i class="bi bi-info-circle me-1"></i> No se adjuntó comprobante de pago.</p>';
+        }
 
         const mapContainer = document.getElementById('contenedorMapaPedido');
         if (p.metodoEntrega !== 'DELIVERY') {
@@ -413,7 +433,7 @@
         const panel = document.getElementById('gstEstadoActualPanel');
         const textoEstado = document.getElementById('gstEstadoActualTexto');
         textoEstado.innerText = ESTADO_LABEL[p.estado] || p.estado;
-        const colores = { PENDIENTE: '#f59e0b', EN_PREPARACION: '#0ea5e9', ENVIADO: '#6c757d', LISTO_RECOJO: '#0369a1', ENTREGADO: '#198754', CANCELADO: '#dc3545' };
+        const colores = { 'Confirmando Pago': '#212529', PENDIENTE: '#f59e0b', EN_PREPARACION: '#0ea5e9', ENVIADO: '#6c757d', LISTO_RECOJO: '#0369a1', ENTREGADO: '#198754', CANCELADO: '#dc3545' };
         panel.style.borderLeftColor = colores[p.estado] || '#0369a1';
         textoEstado.style.color = colores[p.estado] || '#0369a1';
 
