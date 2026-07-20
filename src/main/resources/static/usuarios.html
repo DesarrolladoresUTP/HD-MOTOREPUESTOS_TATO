@@ -75,11 +75,11 @@
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Nombres</label>
-                            <input type="text" class="form-control" id="nombres" required>
+                            <input type="text" class="form-control" id="nombres" required oninput="this.value = this.value.replace(/[0-9]/g, '');">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Apellidos</label>
-                            <input type="text" class="form-control" id="apellidos" required>
+                            <input type="text" class="form-control" id="apellidos" required oninput="this.value = this.value.replace(/[0-9]/g, '');">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Correo Electrónico</label>
@@ -153,7 +153,7 @@
             }
             usuarios.forEach(u => {
                 const urlFoto = u.foto
-                    ? `/uploads/${u.foto}`
+                    ? (u.foto.startsWith('http') ? u.foto : `/uploads/${u.foto}`)
                     : `https://ui-avatars.com/api/?name=${encodeURIComponent(u.nombres+' '+u.apellidos)}&background=0ea5e9&color=fff`;
                 const esMiCuenta = String(u.id) === String(miUsuarioId);
                 const inactivo = !u.activo;
@@ -161,27 +161,28 @@
                     ? '<span class="badge bg-success">Activo</span>'
                     : '<span class="badge bg-secondary">Inactivo</span>';
 
-                let botones = `<button class="btn btn-outline-primary" onclick="abrirModalEditar(${u.id})" title="Editar"><i class="bi bi-pencil-square"></i></button>`;
+                let btnEditar = `<button class="btn btn-sm btn-outline-primary" onclick="abrirModalEditar(${u.id})" title="Editar"><i class="bi bi-pencil-square"></i></button>`;
+                let btnClave = `<button class="btn btn-sm btn-outline-info" onclick="resetearPassword(${u.id},'${u.nombres}')" title="Resetear contraseña"><i class="bi bi-key"></i></button>`;
+                let btnEliminarBloquear = '';
+
                 if (esMiCuenta) {
-                    botones += `<button class="btn btn-secondary" disabled title="Tu propia cuenta"><i class="bi bi-shield-lock-fill"></i></button>`;
+                    btnEliminarBloquear = `<span class="badge bg-secondary rounded" style="padding: 6px 8px;" title="No puedes suspender tu propia cuenta"><i class="bi bi-shield-lock-fill"></i></span>`;
                 } else if (u.activo) {
-                    botones += `
-                        <button class="btn btn-outline-info" onclick="resetearPassword(${u.id},'${u.nombres}')" title="Resetear contraseña">
-                            <i class="bi bi-key"></i>
-                        <button class="btn btn-outline-warning" onclick="desactivar(${u.id},'${u.nombres}')" title="Desactivar"><i class="bi bi-pause-circle"></i></button>
-                        <button class="btn btn-outline-danger" onclick="eliminarLogico(${u.id},'${u.nombres}')" title="Eliminar"><i class="bi bi-trash"></i></button>`;
+                    btnEliminarBloquear = `
+                        <button class="btn btn-sm btn-outline-warning" onclick="desactivar(${u.id},'${u.nombres}')" title="Desactivar"><i class="bi bi-pause-circle"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="eliminarLogico(${u.id},'${u.nombres}')" title="Eliminar"><i class="bi bi-trash"></i></button>`;
                 } else {
-                    botones += `
-                        <button class="btn btn-outline-info" onclick="resetearPassword(${u.id},'${u.nombres}')" title="Resetear contraseña">
-                        <i class="bi bi-key"></i>
-                        <button class="btn btn-outline-success" onclick="activar(${u.id},'${u.nombres}')" title="Activar"><i class="bi bi-play-circle"></i></button>
-                        <button class="btn btn-outline-danger" onclick="eliminarLogico(${u.id},'${u.nombres}')" title="Eliminar"><i class="bi bi-trash"></i></button>`;
+                    btnEliminarBloquear = `
+                        <button class="btn btn-sm btn-outline-success" onclick="activar(${u.id},'${u.nombres}')" title="Activar"><i class="bi bi-play-circle"></i></button>
+                        <button class="btn btn-sm btn-outline-danger" onclick="eliminarLogico(${u.id},'${u.nombres}')" title="Eliminar"><i class="bi bi-trash"></i></button>`;
                 }
+
+                let botones = `<div class="btn-group btn-group-sm">${btnEditar}${btnClave}${btnEliminarBloquear}</div>`;
 
                 const tr = document.createElement('tr');
                 if (inactivo) tr.className = 'usuario-inactivo';
                 tr.innerHTML = `
-                    <td class="text-center"><div class="btn-group btn-group-sm">${botones}</div></td>
+                    <td class="text-center">${botones}</td>
                     <td><img src="${urlFoto}" class="foto-perfil-tabla" alt="Foto"></td>
                     <td class="fw-bold">${u.nombres} ${u.apellidos}</td>
                     <td>${u.correoElectronico}</td>

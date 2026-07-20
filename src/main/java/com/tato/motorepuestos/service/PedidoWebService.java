@@ -57,7 +57,7 @@ public class PedidoWebService {
         pedido.setMetodoEntrega(dto.getMetodoEntrega());
         pedido.setDireccionEntrega(dto.getDireccionEntrega());
 
-        // MODIFICADO: El estado inicial ahora es Confirmando Pago
+        // FASE 1: El estado inicial indica que falta verificar el pago
         pedido.setEstado("Confirmando Pago");
 
         if (dto.getSucursalId() != null) {
@@ -88,6 +88,7 @@ public class PedidoWebService {
             InventarioSucursal inv = inventarioRepository.findByProductoIdAndSucursalId(item.getId(), 1L)
                     .orElseThrow(() -> new Exception("El producto '" + item.getNombre() + "' ya no existe en el catálogo."));
 
+            // Pre-validación: Verificamos si en ESTE momento hay stock para dejarlo crear la orden.
             if (inv.getStock() < item.getCantidad()) {
                 throw new Exception("¡Lo sentimos! El producto '" + item.getNombre() + "' se acaba de agotar o no tiene stock suficiente. Quedan: " + inv.getStock() + " unidades.");
             }
@@ -106,22 +107,8 @@ public class PedidoWebService {
             pedido.addDetalle(detalle);
             total = total.add(subtotal);
 
-            Integer stockAnterior = inv.getStock();
-
-            inv.setStock(stockAnterior - item.getCantidad());
-            int vendidas = inv.getUnidadesVendidas() == null ? 0 : inv.getUnidadesVendidas();
-            inv.setUnidadesVendidas(vendidas + item.getCantidad());
-            inventarioRepository.save(inv);
-
-            MovimientoInventario mov = new MovimientoInventario();
-            mov.setInventario(inv);
-            mov.setTipoMovimiento("Venta Web");
-            mov.setStockAnterior(stockAnterior);
-            mov.setStockNuevo(inv.getStock());
-            mov.setObservacion("Pedido de " + pedido.getNombreCompleto() + " | Vía: " + pedido.getMetodoEntrega());
-            mov.setFechaRegistro(LocalDateTime.now());
-            mov.setNombreUsuario("Cliente Web: " + pedido.getNombreCompleto());
-            movimientoRepository.save(mov);
+            // FASE 1: Se ELIMINÓ la resta de stock y el registro de movimientos aquí.
+            // El inventario queda intacto.
         }
 
         pedido.setTotal(total);
@@ -154,9 +141,66 @@ public class PedidoWebService {
         return pedidoRepository.findByUsuarioClienteIdOrderByFechaPedidoDesc(clienteWebId);
     }
 
+    // FASE 2: Método blindado para manejar el stock
+    @Transactional
     public void actualizarEstado(Long pedidoId, String nuevoEstado) throws Exception {
         PedidoWeb pedido = pedidoRepository.findById(pedidoId)
                 .orElseThrow(() -> new Exception("Pedido no encontrado."));
+
+        // Normalizar estado por si el frontend envía una variante
+        if ("EN_PREPARACION".equalsIgnoreCase(nuevoEstado)) {
+            nuevoEstado = "PREPARANDO";
+        }
+
+        // Verificamos si el pedido estaba en el estado inicial (donde no se ha tocado el stock)
+        boolean eraEstadoSinDescuento = "Confirmando Pago".equalsIgnoreCase(pedido.getEstado());
+
+        // Verificamos si el nuevo estado es uno de los que indican que el pago ya fue aprobado
+        boolean esEstadoConDescuento = "PREPARANDO".equalsIgnoreCase(nuevoEstado)
+                || "PENDIENTE".equalsIgnoreCase(nuevoEstado)
+                || "ENVIADO".equalsIgnoreCase(nuevoEstado)
+                || "LISTO_RECOJO".equalsIgnoreCase(nuevoEstado)
+                || "ENTREGADO".equalsIgnoreCase(nuevoEstado);
+
+        // Si es la primera vez que pasa a un estado aprobado, hacemos el descuento de stock
+        if (eraEstadoSinDescuento && esEstadoConDescuento) {
+
+            // 1. Verificación estricta de TODO el stock antes de restar
+            for (DetallePedidoWeb detalle : pedido.getDetalles()) {
+                InventarioSucursal inv = inventarioRepository.findByProductoIdAndSucursalId(detalle.getProductoId(), 1L)
+                        .orElseThrow(() -> new Exception("El producto '" + detalle.getNombreProducto() + "' ya no existe en el catálogo."));
+
+                if (inv.getStock() < detalle.getCantidad()) {
+                    throw new Exception("Stock insuficiente para aprobar el pedido. El producto '"
+                            + detalle.getNombreProducto() + "' solo tiene " + inv.getStock() + " unidades disponibles.");
+                }
+            }
+
+            // 2. Procedemos a descontar el stock
+            for (DetallePedidoWeb detalle : pedido.getDetalles()) {
+                InventarioSucursal inv = inventarioRepository.findByProductoIdAndSucursalId(detalle.getProductoId(), 1L).get();
+
+                Integer stockAnterior = inv.getStock();
+
+                inv.setStock(stockAnterior - detalle.getCantidad());
+                int vendidas = inv.getUnidadesVendidas() == null ? 0 : inv.getUnidadesVendidas();
+                inv.setUnidadesVendidas(vendidas + detalle.getCantidad());
+                inventarioRepository.save(inv);
+
+                // Registrar el movimiento oficial en el Kardex/Historial
+                MovimientoInventario mov = new MovimientoInventario();
+                mov.setInventario(inv);
+                mov.setTipoMovimiento("Venta Web Confirmada");
+                mov.setStockAnterior(stockAnterior);
+                mov.setStockNuevo(inv.getStock());
+                mov.setObservacion("Pago verificado para Pedido #" + pedido.getId() + " | Cliente: " + pedido.getNombreCompleto());
+                mov.setFechaRegistro(LocalDateTime.now());
+                mov.setNombreUsuario("Admin Web");
+                movimientoRepository.save(mov);
+            }
+        }
+
+        // Guardamos el nuevo estado del pedido
         pedido.setEstado(nuevoEstado);
         pedidoRepository.save(pedido);
     }

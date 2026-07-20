@@ -1,5 +1,7 @@
 package com.tato.motorepuestos.controller;
 
+import com.tato.motorepuestos.model.DetallePedidoWeb;
+import com.tato.motorepuestos.model.DetalleVenta;
 import com.tato.motorepuestos.model.PedidoWeb;
 import com.tato.motorepuestos.model.Venta;
 import com.tato.motorepuestos.repository.PedidoWebRepository;
@@ -14,6 +16,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/reportes")
@@ -30,15 +33,14 @@ public class ReporteRestController {
         List<Map<String, Object>> reporteGlobal = new ArrayList<>();
 
         try {
+            // Procesar Ventas de Tienda Física
             List<Venta> ventas = ventaRepository.findAll();
             for (Venta v : ventas) {
                 Map<String, Object> map = new HashMap<>();
                 map.put("origen", "LOCAL");
-
                 map.put("idOriginal", v.getId());
 
                 String codigoFinal = "V-" + v.getId();
-
                 if ("SIN EMITIR".equalsIgnoreCase(v.getEstadoSunat())) {
                     codigoFinal = "TICKET PENDIENTE (" + v.getNumeroComprobante() + ")";
                 }
@@ -48,9 +50,7 @@ public class ReporteRestController {
                 else if (v.getNumeroComprobante() != null) {
                     codigoFinal = v.getNumeroComprobante();
                 }
-
                 map.put("codigo", codigoFinal);
-
                 map.put("fecha", v.getFecha() != null ? v.getFecha().toString() : "");
 
                 String nombreCliente = "Mostrador";
@@ -58,26 +58,53 @@ public class ReporteRestController {
                     nombreCliente = v.getCliente().getRazonSocialNombre();
                 }
                 map.put("cliente", nombreCliente);
-
                 map.put("total", v.getTotal());
-
                 map.put("estado", v.getEstadoVenta() != null ? v.getEstadoVenta() : "COMPLETADO");
+
+                // NUEVO: Agregamos los detalles de los productos para ventas locales
+                if (v.getDetalles() != null) {
+                    List<Map<String, Object>> detallesList = new ArrayList<>();
+                    for (DetalleVenta dv : v.getDetalles()) {
+                        Map<String, Object> detalleMap = new HashMap<>();
+                        // Asumiendo que DetalleVenta tiene relación con Producto o almacena el nombre
+                        detalleMap.put("nombreProducto", dv.getProducto() != null ? dv.getProducto().getNombre() : "Producto");
+                        detalleMap.put("cantidad", dv.getCantidad());
+                        detalleMap.put("precioUnitario", dv.getPrecioUnitario());
+                        detalleMap.put("subtotal", dv.getSubtotal());
+                        detallesList.add(detalleMap);
+                    }
+                    map.put("detalles", detallesList);
+                }
+
                 reporteGlobal.add(map);
             }
 
+            // Procesar Pedidos Web
             List<PedidoWeb> pedidos = pedidoWebRepository.findAll();
             for (PedidoWeb p : pedidos) {
                 Map<String, Object> map = new HashMap<>();
                 map.put("origen", "WEB");
-
                 map.put("idOriginal", p.getId());
-
                 map.put("codigo", "WEB-" + String.format("%04d", p.getId()));
-
                 map.put("fecha", p.getFechaPedido() != null ? p.getFechaPedido().toString() : "");
                 map.put("cliente", p.getNombreCompleto() != null ? p.getNombreCompleto() : "Cliente Web");
                 map.put("total", p.getTotal());
                 map.put("estado", p.getEstado());
+
+                // NUEVO: Agregamos los detalles de los productos para pedidos web
+                if (p.getDetalles() != null) {
+                    List<Map<String, Object>> detallesList = new ArrayList<>();
+                    for (DetallePedidoWeb dpw : p.getDetalles()) {
+                        Map<String, Object> detalleMap = new HashMap<>();
+                        detalleMap.put("nombreProducto", dpw.getNombreProducto());
+                        detalleMap.put("cantidad", dpw.getCantidad());
+                        detalleMap.put("precioUnitario", dpw.getPrecioUnitario());
+                        detalleMap.put("subtotal", dpw.getSubtotal());
+                        detallesList.add(detalleMap);
+                    }
+                    map.put("detalles", detallesList);
+                }
+
                 reporteGlobal.add(map);
             }
 

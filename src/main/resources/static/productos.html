@@ -89,7 +89,7 @@
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Precio de Venta (S/)</label>
-                            <input type="number" id="precioVenta" class="form-control" min="0" step="0.01">
+                            <input type="text" id="precioVenta" class="form-control" placeholder="0.00" oninput="this.value = this.value.replace(/[^0-9.]/g, '').replace(/(\..*)\./g, '$1');">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label fw-bold">Imagen General</label>
@@ -113,17 +113,9 @@
                         </div>
 
                         <!-- STOCK GENERAL (Por si no hay variantes) -->
-                        <!-- NOTA: Se mantiene la lógica de que el stock general no se llena al crear si hay variantes,
-                             pero incluso el stock general ya no debería pedirse al crear. Nace en 0 y se ajusta en Almacén.
-                             Sin embargo, por compatibilidad con la creación de productos simples sin modelos,
-                             podemos dejarlo o quitarlo. Lo ideal arquitectónicamente es quitarlo también
-                             y que todo nazca en 0, pero lo dejaré solo oculto visualmente si hay variantes como estaba,
-                             o directamente solo pedimos Stock Mínimo.
-                             Vamos a dejar SOLO el Stock Mínimo.
-                        -->
                         <div class="col-md-12 mt-3">
                             <label class="form-label fw-bold text-danger">Stock Mínimo (Alerta General)</label>
-                            <input type="number" class="form-control w-50" id="stockMinimoGeneral" min="1" value="5">
+                            <input type="number" class="form-control w-50" id="stockMinimoGeneral" min="0" value="5" oninput="this.value = this.value.replace(/[^0-9]/g, '');">
                         </div>
 
                         <div class="col-12">

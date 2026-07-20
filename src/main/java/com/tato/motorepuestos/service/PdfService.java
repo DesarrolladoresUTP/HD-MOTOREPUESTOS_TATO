@@ -1,8 +1,10 @@
 package com.tato.motorepuestos.service;
 import com.itextpdf.text.*;
+import com.itextpdf.text.pdf.BaseFont;
 import com.itextpdf.text.pdf.PdfPCell;
 import com.itextpdf.text.pdf.PdfPTable;
 import com.itextpdf.text.pdf.PdfWriter;
+import com.itextpdf.text.pdf.draw.LineSeparator;
 import com.tato.motorepuestos.model.Cotizacion;
 import org.springframework.stereotype.Service;
 import java.io.ByteArrayOutputStream;
@@ -10,77 +12,245 @@ import java.util.List;
 import java.util.Map;
 @Service
 public class PdfService {
+
     public byte[] generarComprobantePdf(Map<String, Object> payload, boolean esProforma) throws Exception {
-        Document document = new Document(PageSize.A4);
+        Document document = new Document(PageSize.A4, 40, 40, 40, 40);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         PdfWriter.getInstance(document, out);
         document.open();
-        Font fontTitulo    = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 18, BaseColor.BLACK);
-        Font fontSubtitulo = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, BaseColor.DARK_GRAY);
-        Font fontNormal    = FontFactory.getFont(FontFactory.HELVETICA, 10, BaseColor.BLACK);
-        String tipoDoc   = esProforma ? "NOTA DE VENTA / PRE-CUENTA"
-                : payload.get("tipoComprobante").toString().toUpperCase();
-        String numeroDoc = esProforma ? "PROFORMA"
-                : payload.get("serie").toString() + "-" + payload.get("numeroComprobante").toString();
-        Paragraph titulo = new Paragraph("MOTOREPUESTOS TATO", fontTitulo);
-        titulo.setAlignment(Element.ALIGN_CENTER);
-        document.add(titulo);
-        Paragraph subtitulo = new Paragraph(tipoDoc + " : " + numeroDoc, fontSubtitulo);
-        subtitulo.setAlignment(Element.ALIGN_CENTER);
-        subtitulo.setSpacingAfter(20);
-        document.add(subtitulo);
-        document.add(new Paragraph("Cliente: "        + safe(payload.get("nombreCliente"),    "Público General"), fontNormal));
-        document.add(new Paragraph("Documento: "      + safe(payload.get("documentoCliente"), "00000000"),        fontNormal));
-        document.add(new Paragraph("Método de Pago: " + (esProforma ? "Pendiente" : safe(payload.get("metodoPago"), "Efectivo")), fontNormal));
-        document.add(new Paragraph(" "));
+
+        // 1. Paleta de colores de Motorepuestos Tato
+        BaseColor rojoTato      = new BaseColor(227,  27,  35);
+        BaseColor azulTato      = new BaseColor(3, 105, 161);
+        BaseColor grisFondo     = new BaseColor(248, 249, 250);
+        BaseColor grisBorde     = new BaseColor(222, 226, 230);
+        BaseColor textoOscuro   = new BaseColor(33, 37, 41);
+        BaseColor textoClaro    = new BaseColor(108, 117, 125);
+
+        // Reemplaza tus declaraciones de fuentes actuales con estas:
+        BaseFont bf = BaseFont.createFont(BaseFont.HELVETICA, BaseFont.CP1252, BaseFont.EMBEDDED);
+        Font fontTituloEmpresa = new Font(bf, 24, Font.BOLD, rojoTato);
+        Font fontSlogan        = new Font(bf, 10, Font.NORMAL, textoClaro);
+        Font fontHeader        = new Font(bf, 9, Font.NORMAL, textoOscuro);
+        Font fontCajaComprobante = new Font(bf, 14, Font.BOLD, BaseColor.WHITE);
+        Font fontCajaNumero      = new Font(bf, 12, Font.BOLD, BaseColor.WHITE);
+        Font fontSubtitulo     = new Font(bf, 10, Font.BOLD, azulTato);
+        Font fontNormal        = new Font(bf, 9, Font.NORMAL, textoOscuro);
+        Font fontNormalBold    = new Font(bf, 9, Font.BOLD, textoOscuro);
+        Font fontTablaHeader   = new Font(bf, 9, Font.BOLD, BaseColor.WHITE);
+        Font fontTablaBody     = new Font(bf, 9, Font.NORMAL, textoOscuro);
+        Font fontTotal         = new Font(bf, 14, Font.BOLD, azulTato);
+        Font fontPiePagina     = new Font(bf, 8, Font.NORMAL, textoClaro);
+
+        // --- ENCABEZADO: LOGO/EMPRESA Y CAJA DE COMPROBANTE ---
+        PdfPTable tableHeader = new PdfPTable(2);
+        tableHeader.setWidthPercentage(100);
+        tableHeader.setWidths(new float[]{1.5f, 1f});
+        tableHeader.setSpacingAfter(20);
+
+        // Celda Izquierda: Datos de la empresa
+        PdfPCell cellEmpresa = new PdfPCell();
+        cellEmpresa.setBorder(Rectangle.NO_BORDER);
+        cellEmpresa.addElement(new Paragraph("MOTOREPUESTOS TATO", fontTituloEmpresa));
+        cellEmpresa.addElement(new Paragraph("Las mejores piezas para tu motor", fontSlogan));
+        cellEmpresa.addElement(new Paragraph("RUC: 20000000000", fontHeader));
+        cellEmpresa.addElement(new Paragraph("Av. Principal 123, Lambayeque", fontHeader));
+        cellEmpresa.addElement(new Paragraph("Teléfono: +51 987 654 321", fontHeader));
+        tableHeader.addCell(cellEmpresa);
+
+        // Celda Derecha: Caja del Comprobante
+        String tipoDoc = esProforma ? "NOTA DE VENTA" : payload.get("tipoComprobante").toString().toUpperCase();
+        String numeroDoc = esProforma ? "PROFORMA" : payload.get("serie").toString() + "-" + payload.get("numeroComprobante").toString();
+
+        PdfPCell cellComprobante = new PdfPCell();
+        cellComprobante.setBorderColor(azulTato);
+        cellComprobante.setBorderWidth(1.5f);
+        cellComprobante.setBackgroundColor(azulTato);
+        cellComprobante.setPadding(10);
+        cellComprobante.setVerticalAlignment(Element.ALIGN_MIDDLE);
+
+        Paragraph pRuc = new Paragraph("R.U.C. 20000000000", fontCajaNumero);
+        pRuc.setAlignment(Element.ALIGN_CENTER);
+
+        Paragraph pTipo = new Paragraph(tipoDoc, fontCajaComprobante);
+        pTipo.setAlignment(Element.ALIGN_CENTER);
+        pTipo.setSpacingBefore(5);
+        pTipo.setSpacingAfter(5);
+
+        Paragraph pNumero = new Paragraph("N° " + numeroDoc, fontCajaNumero);
+        pNumero.setAlignment(Element.ALIGN_CENTER);
+
+        cellComprobante.addElement(pRuc);
+        cellComprobante.addElement(pTipo);
+        cellComprobante.addElement(pNumero);
+        tableHeader.addCell(cellComprobante);
+
+        document.add(tableHeader);
+
+        // --- SEPARADOR ---
+        LineSeparator separator = new LineSeparator();
+        separator.setLineColor(grisBorde);
+        separator.setLineWidth(1);
+        Chunk chunkSep = new Chunk(separator);
+        Paragraph pSep = new Paragraph(chunkSep);
+        pSep.setSpacingAfter(15);
+        document.add(pSep);
+
+        // --- DATOS DEL CLIENTE ---
+        PdfPTable tableCliente = new PdfPTable(2);
+        tableCliente.setWidthPercentage(100);
+        tableCliente.setWidths(new float[]{1f, 1f});
+        tableCliente.setSpacingAfter(20);
+
+        PdfPCell cellClI = new PdfPCell();
+        cellClI.setBorder(Rectangle.NO_BORDER);
+
+        Paragraph pClienteLabel = new Paragraph("DATOS DEL CLIENTE", fontSubtitulo);
+        pClienteLabel.setSpacingAfter(5);
+        cellClI.addElement(pClienteLabel);
+
+        Phrase phNombre = new Phrase();
+        phNombre.add(new Chunk("Señor(es): ", fontNormalBold));
+        phNombre.add(new Chunk(safe(payload.get("nombreCliente"), "Público General"), fontNormal));
+        cellClI.addElement(new Paragraph(phNombre));
+
+        Phrase phDoc = new Phrase();
+        phDoc.add(new Chunk("Documento: ", fontNormalBold));
+        phDoc.add(new Chunk(safe(payload.get("documentoCliente"), "00000000"), fontNormal));
+        cellClI.addElement(new Paragraph(phDoc));
+
+        tableCliente.addCell(cellClI);
+
+        PdfPCell cellClD = new PdfPCell();
+        cellClD.setBorder(Rectangle.NO_BORDER);
+
+        Paragraph pCondLabel = new Paragraph("CONDICIONES", fontSubtitulo);
+        pCondLabel.setSpacingAfter(5);
+        cellClD.addElement(pCondLabel);
+
+        Phrase phFecha = new Phrase();
+        phFecha.add(new Chunk("Fecha Emisión: ", fontNormalBold));
+        phFecha.add(new Chunk(java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("dd/MM/yyyy")), fontNormal));
+        cellClD.addElement(new Paragraph(phFecha));
+
+        Phrase phMetodo = new Phrase();
+        phMetodo.add(new Chunk("Método Pago: ", fontNormalBold));
+        phMetodo.add(new Chunk((esProforma ? "Pendiente" : safe(payload.get("metodoPago"), "Efectivo")), fontNormal));
+        cellClD.addElement(new Paragraph(phMetodo));
+
+        tableCliente.addCell(cellClD);
+        document.add(tableCliente);
+
+        // --- TABLA DE DETALLES ---
         PdfPTable table = new PdfPTable(4);
         table.setWidthPercentage(100);
         table.setWidths(new float[]{1.5f, 5f, 1.5f, 2f});
-        String[] cabeceras = {"CÓDIGO", "DESCRIPCIÓN", "CANT.", "IMPORTE (S/)"};
+        table.setSpacingAfter(15);
+
+        // CORRECCIÓN: "CÓDIGO" y "DESCRIPCIÓN" sin errores de codificación
+        String[] cabeceras = {"Código", "Descripción", "Cant.", "Importe (S/)"};
         for (String cabecera : cabeceras) {
-            PdfPCell cell = new PdfPCell(new Phrase(cabecera, fontSubtitulo));
-            cell.setBackgroundColor(BaseColor.LIGHT_GRAY);
+            PdfPCell cell = new PdfPCell(new Phrase(cabecera, fontTablaHeader));
+            cell.setBackgroundColor(azulTato);
+            cell.setBorderColor(azulTato);
             cell.setHorizontalAlignment(Element.ALIGN_CENTER);
-            cell.setPadding(5);
+            cell.setPadding(8);
             table.addCell(cell);
         }
+
         List<Map<String, Object>> items = (List<Map<String, Object>>) payload.get("items");
+        boolean altRow = false;
         if (items != null && !items.isEmpty()) {
             for (Map<String, Object> item : items) {
-                table.addCell(new Phrase(safe(item.get("codigo"), "-"),       fontNormal));
-                table.addCell(new Phrase(safe(item.get("nombre"), "Producto"), fontNormal));
-                PdfPCell cellCant = new PdfPCell(new Phrase(safe(item.get("cantidad"), "1"), fontNormal));
-                cellCant.setHorizontalAlignment(Element.ALIGN_CENTER);
-                table.addCell(cellCant);
-                PdfPCell cellImporte = new PdfPCell(new Phrase(
-                        String.format("%.2f", Double.parseDouble(safe(item.get("importe"), "0"))), fontNormal));
-                cellImporte.setHorizontalAlignment(Element.ALIGN_RIGHT);
-                table.addCell(cellImporte);
+                BaseColor bg = altRow ? grisFondo : BaseColor.WHITE;
+
+                PdfPCell c1 = new PdfPCell(new Phrase(safe(item.get("codigo"), "-"), fontTablaBody));
+                c1.setBackgroundColor(bg); c1.setBorderColor(grisBorde); c1.setPadding(6); c1.setHorizontalAlignment(Element.ALIGN_CENTER);
+                table.addCell(c1);
+
+                PdfPCell c2 = new PdfPCell(new Phrase(safe(item.get("nombre"), "Producto"), fontTablaBody));
+                c2.setBackgroundColor(bg); c2.setBorderColor(grisBorde); c2.setPadding(6);
+                table.addCell(c2);
+
+                PdfPCell c3 = new PdfPCell(new Phrase(safe(item.get("cantidad"), "1"), fontTablaBody));
+                c3.setBackgroundColor(bg); c3.setBorderColor(grisBorde); c3.setPadding(6); c3.setHorizontalAlignment(Element.ALIGN_CENTER);
+                table.addCell(c3);
+
+                PdfPCell c4 = new PdfPCell(new Phrase(String.format("%.2f", Double.parseDouble(safe(item.get("importe"), "0"))), fontTablaBody));
+                c4.setBackgroundColor(bg); c4.setBorderColor(grisBorde); c4.setPadding(6); c4.setHorizontalAlignment(Element.ALIGN_RIGHT);
+                table.addCell(c4);
+
+                altRow = !altRow;
             }
         } else {
-            table.addCell(new Phrase("-", fontNormal));
-            table.addCell(new Phrase("Artículos de Venta", fontNormal));
-            PdfPCell cellCant = new PdfPCell(new Phrase("1", fontNormal));
-            cellCant.setHorizontalAlignment(Element.ALIGN_CENTER);
-            table.addCell(cellCant);
-            PdfPCell cellImporte = new PdfPCell(new Phrase(
-                    String.format("%.2f", Double.parseDouble(payload.get("total").toString())), fontNormal));
-            cellImporte.setHorizontalAlignment(Element.ALIGN_RIGHT);
-            table.addCell(cellImporte);
+            PdfPCell c1 = new PdfPCell(new Phrase("-", fontTablaBody));
+            c1.setBorderColor(grisBorde); c1.setPadding(6); c1.setHorizontalAlignment(Element.ALIGN_CENTER);
+            table.addCell(c1);
+
+            PdfPCell c2 = new PdfPCell(new Phrase("Artículos de Venta", fontTablaBody));
+            c2.setBorderColor(grisBorde); c2.setPadding(6);
+            table.addCell(c2);
+
+            PdfPCell c3 = new PdfPCell(new Phrase("1", fontTablaBody));
+            c3.setBorderColor(grisBorde); c3.setPadding(6); c3.setHorizontalAlignment(Element.ALIGN_CENTER);
+            table.addCell(c3);
+
+            PdfPCell c4 = new PdfPCell(new Phrase(String.format("%.2f", Double.parseDouble(payload.get("total").toString())), fontTablaBody));
+            c4.setBorderColor(grisBorde); c4.setPadding(6); c4.setHorizontalAlignment(Element.ALIGN_RIGHT);
+            table.addCell(c4);
         }
         document.add(table);
-        document.add(new Paragraph(" "));
-        Paragraph total = new Paragraph("TOTAL A PAGAR: S/ " +
-                String.format("%.2f", Double.parseDouble(payload.get("total").toString())), fontTitulo);
-        total.setAlignment(Element.ALIGN_RIGHT);
-        document.add(total);
+
+        // --- TOTALES ---
+        PdfPTable tableTotales = new PdfPTable(2);
+        tableTotales.setWidthPercentage(100);
+        tableTotales.setWidths(new float[]{7f, 3f});
+
+        PdfPCell cVacio = new PdfPCell(new Phrase(""));
+        cVacio.setBorder(Rectangle.NO_BORDER);
+        tableTotales.addCell(cVacio);
+
+        PdfPCell cTotalContainer = new PdfPCell();
+        cTotalContainer.setBorder(Rectangle.NO_BORDER);
+        cTotalContainer.setHorizontalAlignment(Element.ALIGN_RIGHT);
+
+        PdfPTable innerTotal = new PdfPTable(2);
+        innerTotal.setWidthPercentage(100);
+        innerTotal.setWidths(new float[]{1f, 1f});
+
+        PdfPCell ctLabel = new PdfPCell(new Phrase("TOTAL (S/)", fontTablaBody));
+        ctLabel.setBorder(Rectangle.NO_BORDER); ctLabel.setHorizontalAlignment(Element.ALIGN_RIGHT); ctLabel.setPadding(5);
+        innerTotal.addCell(ctLabel);
+
+        PdfPCell ctValue = new PdfPCell(new Phrase(String.format("%.2f", Double.parseDouble(payload.get("total").toString())), fontTotal));
+        ctValue.setBorder(Rectangle.NO_BORDER); ctValue.setHorizontalAlignment(Element.ALIGN_RIGHT); ctValue.setPadding(5);
+        innerTotal.addCell(ctValue);
+
+        cTotalContainer.addElement(innerTotal);
+        tableTotales.addCell(cTotalContainer);
+
+        document.add(tableTotales);
+
+        document.add(pSep);
+
+        String msgPie = esProforma
+                ? "Este documento es una proforma informativa y no posee validez tributaria ante SUNAT."
+                : "";
+
+        Paragraph footer = new Paragraph(msgPie + "¡Gracias por su preferencia!", fontPiePagina);
+        footer.setAlignment(Element.ALIGN_CENTER);
+        document.add(footer);
+
         document.close();
         return out.toByteArray();
     }
+
     private String safe(Object value, String fallback) {
         return (value != null && !value.toString().trim().isEmpty())
                 ? value.toString().trim() : fallback;
     }
+
+
     public byte[] generarResumenCajasPdf(Map<String, Object> resumen) throws Exception {
         Document document = new Document(PageSize.A4);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -362,7 +532,7 @@ public class PdfService {
         cEmpresa.setPaddingBottom(10);
         cEmpresa.addElement(new Paragraph("MOTOREPUESTOS TATO", fEmpresa));
         cEmpresa.addElement(new Paragraph("RUC: 20000000000", fNormal));
-        cEmpresa.addElement(new Paragraph("Av. Principal 123, Ciudad", fNormal));
+        cEmpresa.addElement(new Paragraph("Lambayeque, Peru", fNormal));
         cEmpresa.addElement(new Paragraph("Telefono: +51 987 654 321", fNormal));
         cEmpresa.addElement(new Paragraph("Correo: ventas@motorepuestostato.com", fNormal));
         header.addCell(cEmpresa);

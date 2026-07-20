@@ -103,6 +103,17 @@
         const sucursalInfo = p.sucursalNombre
             ? `<p class="mb-1"><small class="text-muted">Sucursal: <strong>${p.sucursalNombre}</strong></small></p>`
             : '';
+
+        // FASE 3: Validación para mostrar u ocultar la boleta
+        let botonBoleta = '';
+        if (p.estado === 'Confirmando Pago' || p.estado === 'PENDIENTE' || p.estado === 'CANCELADO') {
+             botonBoleta = '<p class="text-danger small mb-0 fw-bold"><i class="bi bi-info-circle me-1"></i>Boleta disponible tras verificar pago.</p>';
+        } else {
+             botonBoleta = `<button class="btn btn-success" onclick="window.open('/api/pedidos-web/${p.id}/boleta-pdf', '_blank')">
+                                <i class="bi bi-file-earmark-pdf"></i> Descargar Boleta
+                            </button>`;
+        }
+
         Swal.fire({
             title: `<strong>Orden #000${p.id}</strong>`,
             width: 640,
@@ -125,19 +136,16 @@
                         </thead>
                         <tbody>${detallesHTML}</tbody>
                     </table>
-                    <div class="text-end fw-bold fs-5">Total: <span style="color:#e31b23;">S/ ${parseFloat(p.total).toFixed(2)}</span></div>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div>${botonBoleta}</div>
+                        <div class="text-end fw-bold fs-5">Total: <span style="color:#e31b23;">S/ ${parseFloat(p.total).toFixed(2)}</span></div>
+                    </div>
                 </div>
             `,
-            confirmButtonColor: '#e31b23',
-            showDenyButton: true,
-            denyButtonText: '<i class="bi bi-file-earmark-pdf"></i> Descargar Boleta',
-            denyButtonColor: '#198754',
+            confirmButtonColor: '#dc3545', // Usamos rojo para el botón de cerrar
+            showDenyButton: false, // Ocultamos el viejo botón de deny
             confirmButtonText: 'Cerrar',
             customClass: { htmlContainer: 'text-start' }
-        }).then((result) => {
-            if (result.isDenied) {
-                window.open(`/api/pedidos-web/${p.id}/boleta-pdf`, '_blank');
-            }
         });
     }
 

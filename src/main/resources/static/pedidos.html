@@ -199,30 +199,46 @@
                     </div>
                 </div>
 
-                <div class="mb-4">
-                    <p class="fw-bold text-dark mb-2 small"></i> Avance rápido de fase:</p>
-                    <div id="gstFasesRapidas" class="d-flex flex-wrap gap-2"></div>
+                <!-- FASE 4: Botones claros para confirmar o rechazar pago inicial -->
+                <div id="zonaAprobacionPago" class="mb-4 text-center p-3 border rounded bg-light" style="display: none;">
+                    <h6 class="fw-bold text-dark mb-3">Revisión Inicial de Pago</h6>
+                    <div class="d-flex justify-content-center gap-2">
+                        <button type="button" class="btn btn-success fw-bold flex-grow-1" onclick="ejecutarCambioEstadoDirecto('PREPARANDO')">
+                            <i class="bi bi-check-circle me-1"></i> Aprobar Pago
+                        </button>
+                        <button type="button" class="btn btn-danger fw-bold flex-grow-1" onclick="confirmarRechazoPago()">
+                            <i class="bi bi-x-circle me-1"></i> Rechazar Foto
+                        </button>
+                    </div>
+                    <small class="text-muted mt-2 d-block"><i class="bi bi-info-circle me-1"></i>Aprobar descontará el stock de inmediato.</small>
                 </div>
 
-                <hr class="my-3">
+                <div id="zonaAvanceNormal">
+                    <div class="mb-4">
+                        <p class="fw-bold text-dark mb-2 small"></i> Avance rápido de fase:</p>
+                        <div id="gstFasesRapidas" class="d-flex flex-wrap gap-2"></div>
+                    </div>
 
-                <div class="mb-3">
-                    <label class="form-label fw-bold small text-dark mb-2">O selecciona un estado manualmente:</label>
-                    <select class="form-select fw-bold" id="gstSelectEstado"></select>
+                    <hr class="my-3">
+
+                    <div class="mb-3">
+                        <label class="form-label fw-bold small text-dark mb-2">O selecciona un estado manualmente:</label>
+                        <select class="form-select fw-bold" id="gstSelectEstado"></select>
+                    </div>
+
+                    <button type="button" class="btn btn-primary w-100 fw-bold py-2" onclick="ejecutarCambioEstado()">
+                        <i class="bi bi-arrow-repeat me-1"></i> Aplicar Estado Seleccionado
+                    </button>
+
+                    <hr class="my-3">
+
+                    <button type="button" class="btn btn-outline-danger w-100 fw-bold" onclick="confirmarCancelarPedido()">
+                        <i class="bi bi-x-circle me-1"></i> Cancelar este Pedido
+                    </button>
+                    <p class="text-muted small text-center mt-2 mb-0">
+                        <i class="bi bi-exclamation-triangle me-1"></i>La cancelación es una acción irreversible.
+                    </p>
                 </div>
-
-                <button type="button" class="btn btn-primary w-100 fw-bold py-2" onclick="ejecutarCambioEstado()">
-                    <i class="bi bi-arrow-repeat me-1"></i> Aplicar Estado Seleccionado
-                </button>
-
-                <hr class="my-3">
-
-                <button type="button" class="btn btn-outline-danger w-100 fw-bold" onclick="confirmarCancelarPedido()">
-                    <i class="bi bi-x-circle me-1"></i> Cancelar este Pedido
-                </button>
-                <p class="text-muted small text-center mt-2 mb-0">
-                    <i class="bi bi-exclamation-triangle me-1"></i>La cancelación es una acción irreversible.
-                </p>
             </div>
         </div>
     </div>
@@ -239,7 +255,6 @@
     let pedidoMap = null;
     let pedidoMarker = null;
 
-    // MODIFICADO: Agregamos Confirmando Pago
     const FLUJO_DELIVERY = ['Confirmando Pago', 'PENDIENTE', 'EN_PREPARACION', 'ENVIADO', 'ENTREGADO'];
     const FLUJO_RECOJO   = ['Confirmando Pago', 'PENDIENTE', 'EN_PREPARACION', 'LISTO_RECOJO', 'ENTREGADO'];
 
@@ -247,6 +262,7 @@
         'Confirmando Pago': 'Confirmando Pago',
         PENDIENTE:       'Pendiente',
         EN_PREPARACION:  'En preparación',
+        PREPARANDO:      'En preparación', // Alias
         ENVIADO:         'Enviado',
         LISTO_RECOJO:    'Listo para recojo',
         ENTREGADO:       'Entregado',
@@ -257,6 +273,7 @@
         'Confirmando Pago': 'bg-dark text-white',
         PENDIENTE:       'bg-warning text-dark',
         EN_PREPARACION:  'bg-info text-dark',
+        PREPARANDO:      'bg-info text-dark',
         LISTO_RECOJO:    'bg-primary text-white',
         ENVIADO:         'bg-secondary text-white',
         ENTREGADO:       'bg-success text-white',
@@ -267,6 +284,7 @@
         'Confirmando Pago': 'bi-cash-coin',
         PENDIENTE:       'bi-hourglass-split',
         EN_PREPARACION:  'bi-box-seam',
+        PREPARANDO:      'bi-box-seam',
         ENVIADO:         'bi-truck',
         LISTO_RECOJO:    'bi-shop',
         ENTREGADO:       'bi-check-circle-fill',
@@ -341,7 +359,6 @@
                 : (p.sucursalNombre ? `Sucursal: ${p.sucursalNombre}` : 'Retira en local');
         document.getElementById('detTotal').innerText = `S/ ${p.total.toFixed(2)}`;
 
-        // MODIFICADO: Mostrar comprobante de pago urlComprobante
         const compContainer = document.getElementById('detComprobanteContainer');
         if (p.urlComprobante) {
             compContainer.innerHTML = `<img src="${p.urlComprobante}" class="img-fluid rounded shadow-sm" style="max-height: 250px; cursor: pointer; border: 1px solid #dee2e6;" onclick="window.open('${p.urlComprobante}', '_blank')" title="Clic para ampliar imagen">`;
@@ -376,7 +393,9 @@
         const flujo = p.estado === 'CANCELADO'
             ? ['CANCELADO']
             : (p.metodoEntrega === 'DELIVERY' ? FLUJO_DELIVERY : FLUJO_RECOJO);
-        const idxActual = flujo.indexOf(p.estado);
+        let idxActual = flujo.indexOf(p.estado);
+        if (p.estado === 'PREPARANDO') idxActual = flujo.indexOf('EN_PREPARACION');
+
         const timeline = document.getElementById('timelineEstado');
         timeline.innerHTML = '';
         flujo.forEach((est, i) => {
@@ -433,50 +452,61 @@
         const panel = document.getElementById('gstEstadoActualPanel');
         const textoEstado = document.getElementById('gstEstadoActualTexto');
         textoEstado.innerText = ESTADO_LABEL[p.estado] || p.estado;
-        const colores = { 'Confirmando Pago': '#212529', PENDIENTE: '#f59e0b', EN_PREPARACION: '#0ea5e9', ENVIADO: '#6c757d', LISTO_RECOJO: '#0369a1', ENTREGADO: '#198754', CANCELADO: '#dc3545' };
+        const colores = { 'Confirmando Pago': '#212529', PENDIENTE: '#f59e0b', EN_PREPARACION: '#0ea5e9', PREPARANDO: '#0ea5e9', ENVIADO: '#6c757d', LISTO_RECOJO: '#0369a1', ENTREGADO: '#198754', CANCELADO: '#dc3545' };
         panel.style.borderLeftColor = colores[p.estado] || '#0369a1';
         textoEstado.style.color = colores[p.estado] || '#0369a1';
 
-        const flujo = p.metodoEntrega === 'DELIVERY' ? FLUJO_DELIVERY : FLUJO_RECOJO;
-        const idxActual = flujo.indexOf(p.estado);
+        // FASE 4: Si el estado es "Confirmando Pago", mostrar botones especiales y ocultar el resto
+        if (p.estado === 'Confirmando Pago' || p.estado === 'PENDIENTE') {
+            document.getElementById('zonaAprobacionPago').style.display = 'block';
+            document.getElementById('zonaAvanceNormal').style.display = 'none';
+        } else {
+            document.getElementById('zonaAprobacionPago').style.display = 'none';
+            document.getElementById('zonaAvanceNormal').style.display = 'block';
 
-        const fasesDiv = document.getElementById('gstFasesRapidas');
-        fasesDiv.innerHTML = '';
-        if (idxActual >= 0 && idxActual < flujo.length - 1) {
-            const siguiente = flujo[idxActual + 1];
-            const btnSig = document.createElement('button');
-            btnSig.className = 'btn btn-success btn-fase';
-            btnSig.innerHTML = `<i class="bi bi-arrow-right-circle me-1"></i> Pasar a: ${ESTADO_LABEL[siguiente]}`;
-            btnSig.onclick = () => aplicarEstadoRapido(siguiente);
-            fasesDiv.appendChild(btnSig);
+            const flujo = p.metodoEntrega === 'DELIVERY' ? FLUJO_DELIVERY : FLUJO_RECOJO;
+            let idxActual = flujo.indexOf(p.estado);
+            if (p.estado === 'PREPARANDO') idxActual = flujo.indexOf('EN_PREPARACION');
 
-            if (idxActual < flujo.length - 2) {
-                const ultima = flujo[flujo.length - 1];
-                const btnUlt = document.createElement('button');
-                btnUlt.className = 'btn btn-outline-success btn-fase';
-                btnUlt.innerHTML = `<i class="bi bi-skip-end-circle me-1"></i> Marcar como: ${ESTADO_LABEL[ultima]}`;
-                btnUlt.onclick = () => aplicarEstadoRapido(ultima);
-                fasesDiv.appendChild(btnUlt);
+            const fasesDiv = document.getElementById('gstFasesRapidas');
+            fasesDiv.innerHTML = '';
+            if (idxActual >= 0 && idxActual < flujo.length - 1) {
+                const siguiente = flujo[idxActual + 1];
+                const btnSig = document.createElement('button');
+                btnSig.className = 'btn btn-success btn-fase';
+                btnSig.innerHTML = `<i class="bi bi-arrow-right-circle me-1"></i> Pasar a: ${ESTADO_LABEL[siguiente]}`;
+                btnSig.onclick = () => aplicarEstadoRapido(siguiente);
+                fasesDiv.appendChild(btnSig);
+
+                if (idxActual < flujo.length - 2) {
+                    const ultima = flujo[flujo.length - 1];
+                    const btnUlt = document.createElement('button');
+                    btnUlt.className = 'btn btn-outline-success btn-fase';
+                    btnUlt.innerHTML = `<i class="bi bi-skip-end-circle me-1"></i> Marcar como: ${ESTADO_LABEL[ultima]}`;
+                    btnUlt.onclick = () => aplicarEstadoRapido(ultima);
+                    fasesDiv.appendChild(btnUlt);
+                }
+            } else if (idxActual === flujo.length - 1) {
+                fasesDiv.innerHTML = '<span class="text-success fw-bold small"><i class="bi bi-check-circle-fill me-1"></i>Este pedido ya está en su estado final.</span>';
             }
-        } else if (idxActual === flujo.length - 1) {
-            fasesDiv.innerHTML = '<span class="text-success fw-bold small"><i class="bi bi-check-circle-fill me-1"></i>Este pedido ya está en su estado final.</span>';
-        }
 
-        const select = document.getElementById('gstSelectEstado');
-        select.innerHTML = '';
-        const opcionesValidas = flujo;
-        opcionesValidas.forEach(est => {
-            const opt = document.createElement('option');
-            opt.value = est;
-            opt.textContent = ESTADO_LABEL[est];
-            if (est === p.estado) opt.selected = true;
-            select.appendChild(opt);
-        });
+            const select = document.getElementById('gstSelectEstado');
+            select.innerHTML = '';
+            const opcionesValidas = flujo;
+            opcionesValidas.forEach(est => {
+                const opt = document.createElement('option');
+                opt.value = est === 'EN_PREPARACION' ? 'PREPARANDO' : est;
+                opt.textContent = ESTADO_LABEL[est];
+                if (est === p.estado || (p.estado === 'PREPARANDO' && est === 'EN_PREPARACION')) opt.selected = true;
+                select.appendChild(opt);
+            });
+        }
 
         modalGestion.show();
     }
 
     async function aplicarEstadoRapido(estado) {
+        if(estado === 'EN_PREPARACION') estado = 'PREPARANDO';
         await guardarEstado(estado);
     }
 
@@ -485,7 +515,12 @@
         await guardarEstado(nuevoEstado);
     }
 
+    async function ejecutarCambioEstadoDirecto(nuevoEstado) {
+        await guardarEstado(nuevoEstado);
+    }
+
     async function guardarEstado(nuevoEstado) {
+        Swal.fire({ title: 'Actualizando...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
         try {
             const res = await fetch(`/api/pedidos-web/${idPedidoSeleccionado}/estado?estado=${nuevoEstado}`, {
                 method: 'PUT'
@@ -501,11 +536,31 @@
                 });
                 cargarPedidosWeb();
             } else {
-                throw new Error("No se pudo guardar en el servidor.");
+                const err = await res.text();
+                throw new Error(err || "No se pudo guardar en el servidor.");
             }
         } catch (e) {
             Swal.fire('Error', e.message, 'error');
         }
+    }
+
+    function confirmarRechazoPago() {
+        Swal.fire({
+            title: '¿Rechazar comprobante?',
+            html: `<p class="mb-1">El pedido pasará a CANCELADO.</p>
+                   <p class="text-muted small mb-0">El stock nunca fue descontado, por lo que el inventario queda intacto.</p>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc3545',
+            cancelButtonColor: '#6c757d',
+            confirmButtonText: '<i class="bi bi-x-circle me-1"></i> Sí, rechazar',
+            cancelButtonText: 'Cancelar',
+            reverseButtons: true
+        }).then(async (result) => {
+            if (result.isConfirmed) {
+                await guardarEstado('CANCELADO');
+            }
+        });
     }
 
     function confirmarCancelarPedido() {
