@@ -9,22 +9,76 @@
     <link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet">
     <style>
         :root { --fondo-app:#f0f9ff; --azul-oscuro:#0369a1; --logo-rojo:#e31b23; --logo-naranja:#f97316; }
-        body { background-color:var(--fondo-app); font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; height:100vh; display:flex; align-items:center; justify-content:center; }
-        .login-card { background:white; border-radius:15px; box-shadow:0 10px 25px rgba(3,105,161,0.1); padding:40px 30px; width:100%; max-width:400px; }
-        .logo-container { text-align:center; margin-bottom:30px; }
+
+        html, body { height:100%; }
+        body {
+            margin:0;
+            font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;
+            display:flex; align-items:center; justify-content:center;
+            position:relative;
+            overflow:hidden;
+        }
+
+        /* Fondo con imagen + difuminado gris profesional */
+        body::before {
+            content:"";
+            position:fixed; inset:0;
+            background:
+                linear-gradient(160deg, rgba(15,23,42,0.55), rgba(15,23,42,0.72)),
+                url('/imagen/fondo.png') center/cover no-repeat;
+            filter: blur(2px);
+            transform: scale(1.03); /* evita bordes en blanco por el blur */
+            z-index:-1;
+        }
+
+        .login-card {
+            background:rgba(255,255,255,0.97);
+            backdrop-filter: blur(6px);
+            border-radius:16px;
+            box-shadow:0 20px 45px rgba(0,0,0,0.35);
+            padding:44px 36px;
+            width:100%; max-width:410px;
+            animation: fadeIn .35s ease-out;
+        }
+
+        .logo-container { text-align:center; margin-bottom:26px; }
         .casco-logo { color:var(--logo-naranja); font-size:3rem; }
         .tato-rojo { color:var(--logo-rojo); font-weight:900; font-size:2.5rem; letter-spacing:-1px; }
-        .texto-motorepuestos { color:var(--azul-oscuro); font-weight:700; font-size:1rem; display:block; margin-top:-10px; }
-        .form-control:focus,.form-select:focus { border-color:var(--logo-naranja); box-shadow:0 0 0 0.25rem rgba(249,115,22,0.25); }
-        .btn-ingresar { background-color:var(--logo-rojo); color:white; font-weight:bold; padding:12px; border:none; transition:all 0.3s; }
-        .btn-ingresar:hover { background-color:#c8161d; transform:translateY(-2px); }
-        body {
-        animation: fadeIn 0.1s ease-in;
+        .texto-motorepuestos { color:var(--azul-oscuro); font-weight:700; font-size:1rem; display:block; margin-top:-10px; letter-spacing:1px; }
+        .subtitulo-login { text-align:center; color:#94a3b8; font-size:0.82rem; margin-bottom:26px; margin-top:-4px; }
+
+        .form-label { font-weight:bold; color:#475569; font-size:0.85rem; }
+        .input-group-text { background:#f8fafc; border-right:none; color:#94a3b8; }
+        .form-control, .form-select { border-left:none; }
+        .form-control:focus, .form-select:focus { border-color:var(--logo-naranja); box-shadow:0 0 0 0.2rem rgba(249,115,22,0.2); }
+        .input-group:focus-within .input-group-text { border-color:var(--logo-naranja); color:var(--logo-naranja); }
+        .input-group.is-invalid .form-control,
+        .input-group.is-invalid .input-group-text { border-color:var(--logo-rojo) !important; }
+        .mensaje-error-campo { color:var(--logo-rojo); font-size:0.78rem; margin-top:4px; display:none; }
+
+        .btn-toggle-pass { background:#f8fafc; border-left:none; color:#94a3b8; cursor:pointer; }
+        .btn-toggle-pass:hover { color:#475569; }
+
+        .btn-ingresar {
+            background-color:var(--logo-rojo); color:white; font-weight:bold; padding:13px;
+            border:none; border-radius:8px; transition:all 0.25s; letter-spacing:0.5px;
         }
+        .btn-ingresar:hover:not(:disabled) { background-color:#c8161d; transform:translateY(-2px); box-shadow:0 8px 16px rgba(227,27,35,0.3); }
+        .btn-ingresar:disabled { opacity:0.75; cursor:not-allowed; transform:none; }
+
+        .form-control.shake { animation: shake .35s; }
+        @keyframes shake {
+            25% { transform: translateX(-6px); }
+            75% { transform: translateX(6px); }
+        }
+
+        .login-card { animation: fadeIn 0.35s ease-out; }
         @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(4px); }
-        to   { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
+
+        .footer-login { text-align:center; margin-top:22px; color:#cbd5e1; font-size:0.75rem; }
     </style>
 </head>
 <body>
@@ -36,38 +90,59 @@
             <span class="texto-motorepuestos">MOTOREPUESTOS</span>
         </div>
     </div>
-    <form id="formLogin">
+    <p class="subtitulo-login">Panel de gestión — ingresa tus credenciales para continuar</p>
+
+    <form id="formLogin" novalidate>
         <div class="mb-3">
-            <label class="form-label fw-bold text-secondary">Usuario (Correo):</label>
-            <div class="input-group">
-                <span class="input-group-text bg-light"><i class="bi bi-person"></i></span>
-                <input type="email" class="form-control" id="correo" required>
+            <label class="form-label">Correo electrónico</label>
+            <div class="input-group" id="grupoCorreo">
+                <span class="input-group-text"><i class="bi bi-envelope"></i></span>
+                <input type="email" class="form-control" id="correo" placeholder="correo@gmail.com" autocomplete="username" autofocus required>
             </div>
+            <div class="mensaje-error-campo" id="errorCorreo">Ingresa un correo válido.</div>
         </div>
+
         <div class="mb-3">
-            <label class="form-label fw-bold text-secondary">Contraseña:</label>
-            <div class="input-group">
-                <span class="input-group-text bg-light"><i class="bi bi-lock"></i></span>
-                <input type="password" class="form-control" id="password" required>
+            <label class="form-label">Contraseña</label>
+            <div class="input-group" id="grupoPassword">
+                <span class="input-group-text"><i class="bi bi-lock"></i></span>
+                <input type="password" class="form-control" id="password" placeholder="••••••••" autocomplete="current-password" required>
+                <span class="input-group-text btn-toggle-pass" id="togglePassword">
+                    <i class="bi bi-eye"></i>
+                </span>
             </div>
+            <div class="mensaje-error-campo" id="errorPassword">Ingresa tu contraseña.</div>
         </div>
+
         <div class="mb-4">
-            <label class="form-label fw-bold text-secondary">Local:</label>
-            <div class="input-group">
-                <span class="input-group-text bg-light"><i class="bi bi-shop"></i></span>
+            <label class="form-label">Local</label>
+            <div class="input-group" id="grupoLocal">
+                <span class="input-group-text"><i class="bi bi-shop"></i></span>
                 <select class="form-select" id="local" required>
                     <option value="" selected disabled>Cargando locales...</option>
                 </select>
             </div>
+            <div class="mensaje-error-campo" id="errorLocal">Selecciona tu local.</div>
         </div>
-        <button type="button" class="btn btn-ingresar w-100" onclick="iniciarSesion()">
-            INGRESAR AL SISTEMA
+
+        <button type="submit" class="btn btn-ingresar w-100" id="btnIngresar">
+            <span id="btnTexto">INGRESAR AL SISTEMA</span>
+            <span id="btnSpinner" class="spinner-border spinner-border-sm ms-2" style="display:none;"></span>
         </button>
     </form>
 </div>
 
+<div class="footer-login">Motorepuestos Tato · Acceso restringido a personal autorizado</div>
+
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
+    const inputCorreo = document.getElementById('correo');
+    const inputPassword = document.getElementById('password');
+    const selectLocal = document.getElementById('local');
+    const btnIngresar = document.getElementById('btnIngresar');
+    const btnTexto = document.getElementById('btnTexto');
+    const btnSpinner = document.getElementById('btnSpinner');
+
     document.addEventListener('DOMContentLoaded', cargarSucursales);
 
     async function cargarSucursales() {
@@ -75,46 +150,122 @@
             const res = await fetch('/api/sucursales/activas');
             if (res.ok) {
                 const sucursales = await res.json();
-                const sel = document.getElementById('local');
                 if (sucursales.length === 0) {
-                    sel.innerHTML = '<option value="" disabled>No hay locales activos</option>';
+                    selectLocal.innerHTML = '<option value="" disabled selected>No hay locales activos</option>';
                     return;
                 }
-                sel.innerHTML = '<option value="" selected disabled>Seleccione su local...</option>';
+                selectLocal.innerHTML = '<option value="" selected disabled>Selecciona tu local...</option>';
                 sucursales.forEach(s => {
                     const o = document.createElement('option');
                     o.value = s.id;
                     o.textContent = s.nombre;
-                    sel.appendChild(o);
+                    selectLocal.appendChild(o);
                 });
+            } else {
+                selectLocal.innerHTML = '<option value="" disabled selected>No se pudieron cargar los locales</option>';
             }
-        } catch (e) {}
+        } catch (e) {
+            selectLocal.innerHTML = '<option value="" disabled selected>Sin conexión — recarga la página</option>';
+        }
     }
+
+    // Toggle mostrar/ocultar contraseña
+    document.getElementById('togglePassword').addEventListener('click', () => {
+        const esPassword = inputPassword.type === 'password';
+        inputPassword.type = esPassword ? 'text' : 'password';
+        document.querySelector('#togglePassword i').className = esPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+    });
+
+    // Limpia el estado de error de un campo apenas el usuario empieza a corregirlo
+    function limpiarError(grupoId, errorId) {
+        document.getElementById(grupoId).classList.remove('is-invalid');
+        document.getElementById(errorId).style.display = 'none';
+    }
+    function marcarError(grupoId, errorId, campoEl) {
+        document.getElementById(grupoId).classList.add('is-invalid');
+        document.getElementById(errorId).style.display = 'block';
+        if (campoEl) {
+            campoEl.classList.add('shake');
+            setTimeout(() => campoEl.classList.remove('shake'), 350);
+        }
+    }
+    inputCorreo.addEventListener('input', () => limpiarError('grupoCorreo', 'errorCorreo'));
+    inputPassword.addEventListener('input', () => limpiarError('grupoPassword', 'errorPassword'));
+    selectLocal.addEventListener('change', () => limpiarError('grupoLocal', 'errorLocal'));
+
+    function validarFormulario() {
+        let valido = true;
+        const correo = inputCorreo.value.trim();
+        const correoValido = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
+
+        if (!correoValido) {
+            marcarError('grupoCorreo', 'errorCorreo', inputCorreo);
+            valido = false;
+        }
+        if (!inputPassword.value) {
+            marcarError('grupoPassword', 'errorPassword', inputPassword);
+            valido = false;
+        }
+        if (!selectLocal.value) {
+            marcarError('grupoLocal', 'errorLocal', selectLocal);
+            valido = false;
+        }
+        return valido;
+    }
+
+    function setCargando(cargando) {
+        btnIngresar.disabled = cargando;
+        btnTexto.textContent = cargando ? 'INGRESANDO...' : 'INGRESAR AL SISTEMA';
+        btnSpinner.style.display = cargando ? 'inline-block' : 'none';
+    }
+
+    document.getElementById('formLogin').addEventListener('submit', e => {
+        e.preventDefault();
+        iniciarSesion();
+    });
 
     async function iniciarSesion() {
-        const correo   = document.getElementById('correo').value;
-        const password = document.getElementById('password').value;
-        const local    = document.getElementById('local').value;
-        if (!correo || !password || !local) {
-            Swal.fire({ icon:'warning', title:'Datos Incompletos', text:'Ingrese usuario, contraseña y local.', confirmButtonColor:'#e31b23' });
-            return;
-        }
+        if (!validarFormulario()) return;
+
+        const correo = inputCorreo.value.trim();
+        const password = inputPassword.value;
+        const local = selectLocal.value;
+
+        setCargando(true);
         try {
             const res = await fetch('/api/auth/login', {
-                method:'POST',
-                headers:{'Content-Type':'application/json'},
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ correo, password, local })
             });
+
             if (res.ok) {
+                btnTexto.textContent = 'ACCESO CORRECTO';
                 window.location.href = '/inicio';
-            } else {
-                Swal.fire({ icon:'error', title:'Acceso Denegado', text:'Credenciales incorrectas.', confirmButtonColor:'#e31b23' });
+                return; // deja el botón deshabilitado mientras redirige
             }
-        } catch (e) {}
+
+            marcarError('grupoPassword', 'errorPassword', inputPassword);
+            document.getElementById('errorPassword').textContent = 'Correo o contraseña incorrectos.';
+            Swal.fire({ icon: 'error', title: 'Acceso denegado', text: 'Revisa tus credenciales e intenta nuevamente.', confirmButtonColor: '#e31b23' });
+            inputPassword.value = '';
+            inputPassword.focus();
+        } catch (e) {
+            Swal.fire({ icon: 'error', title: 'Sin conexión', text: 'No se pudo contactar al servidor. Verifica tu conexión e intenta de nuevo.', confirmButtonColor: '#e31b23' });
+        } finally {
+            setCargando(false);
+        }
     }
 
-    document.getElementById('password').addEventListener('keypress', e => {
-        if (e.key === 'Enter') iniciarSesion();
+    // Enter avanza de campo en campo, y en el último (local) envía el formulario
+    inputCorreo.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); inputPassword.focus(); }
+    });
+    inputPassword.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); selectLocal.focus(); }
+    });
+    selectLocal.addEventListener('keydown', e => {
+        if (e.key === 'Enter') { e.preventDefault(); iniciarSesion(); }
     });
 </script>
 </body>
