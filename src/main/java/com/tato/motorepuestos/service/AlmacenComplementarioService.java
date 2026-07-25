@@ -20,7 +20,8 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
-
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 /**
  * Orquesta todo lo que necesita el panel de "Configuracion Almacen
  * Complementario" y el flujo de venta con espera de almacenero.
@@ -183,7 +184,6 @@ public class AlmacenComplementarioService {
                     .findByProductoIdAndSucursalId(detalleVenta.getProducto().getId(), venta.getSucursal().getId())
                     .map(u -> "E" + u.getEstante() + " - F" + u.getFila() + " - C" + u.getColumna())
                     .orElse("Sin ubicación asignada");
-
             DetallePedidoAlmacen detallePedido = new DetallePedidoAlmacen();
             detallePedido.setPedidoAlmacen(pedido);
             detallePedido.setProducto(detalleVenta.getProducto());
@@ -193,13 +193,20 @@ public class AlmacenComplementarioService {
             detallePedidoAlmacenRepository.save(detallePedido);
         }
 
-        try {
-            String url = almacenBackendUrl + "/api/almacen/pedidos/" + pedido.getId() + "/notificar";
-            HttpEntity<Void> entity = new HttpEntity<>(construirHeadersInternos(0L, venta.getSucursal().getId()));
-            restTemplate.postForEntity(url, entity, Void.class);
-        } catch (Exception e) {
-            // No revertimos la venta ni el pedido si la notificacion push falla.
-            System.err.println("No se pudo notificar al almacenero (el pedido igual quedo creado): " + e.getMessage());
+        final Long pedidoId = pedido.getId();
+        final Long sucursalId = venta.getSucursal().getId();
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            // Difiere el POST hasta que la transacción de la venta haga commit
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    notificarAlmacenero(pedidoId, sucursalId);
+                }
+            });
+        } else {
+            // Por si algún día se llama fuera de una transacción
+            notificarAlmacenero(pedidoId, sucursalId);
         }
 
         return pedido;
@@ -254,5 +261,15 @@ public class AlmacenComplementarioService {
         String url = almacenBackendUrl + "/api/almacen/pedidos/" + pedido.getId() + "/notificar";
         HttpEntity<Void> entity = new HttpEntity<>(construirHeadersInternos(usuarioId, sucursalId));
         restTemplate.postForEntity(url, entity, Void.class);
+    }
+
+    private void notificarAlmacenero(Long pedidoId, Long sucursalId) {
+        try {
+            String url = almacenBackendUrl + "/api/almacen/pedidos/" + pedidoId + "/notificar";
+            HttpEntity<Void> entity = new HttpEntity<>(construirHeadersInternos(0L, sucursalId));
+            restTemplate.postForEntity(url, entity, Void.class);
+        } catch (Exception e) {
+            System.err.println("No se pudo notificar al almacenero (el pedido igual quedo creado): " + e.getMessage());
+        }
     }
 }

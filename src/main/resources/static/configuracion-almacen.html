@@ -10,105 +10,162 @@
     <style>
         :root { --fondo-app:#f0f9ff; --azul-primario:#0ea5e9; --azul-oscuro:#0369a1; --logo-rojo:#e31b23; }
         body { background-color: var(--fondo-app); font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif; font-size:0.9rem; }
-        .panel-erp { background:#fff; border-radius:8px; box-shadow:0 2px 4px rgba(0,0,0,0.05); border-top:4px solid var(--azul-primario); padding:20px; margin-bottom:20px; }
+
+        .panel-erp { background:#fff; border-radius:10px; box-shadow:0 2px 4px rgba(0,0,0,0.05); border:1px solid #e2e8f0; margin-bottom:20px; overflow:hidden; }
+        .panel-erp.panel-acento { border-top:4px solid var(--azul-primario); }
+        .panel-header { background:#f8fafc; border-bottom:1px solid #e2e8f0; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; }
+        .panel-header h6 { margin:0; color:#334155; font-weight:700; }
+        .panel-body { padding:20px; }
+
         .form-label { font-weight:bold; color:#475569; font-size:0.85rem; }
-        .table-erp th { background:var(--azul-primario); color:#fff; font-weight:500; font-size:0.85rem; padding:10px; }
-        .table-erp td { vertical-align:middle; padding:8px; }
-        .input-coord { width:70px; display:inline-block; }
-        .form-switch .form-check-input { width:3em; height:1.5em; }
+        .table-erp th { background:var(--azul-primario); color:#fff; font-weight:500; font-size:0.82rem; padding:10px; border:none; }
+        .table-erp td { vertical-align:middle; padding:10px; }
+        .input-coord { width:100%; text-align:center; }
+        .form-switch .form-check-input { width:3em; height:1.5em; cursor:pointer; }
+
+        .badge-count { font-size:0.8rem; font-weight:700; border-radius:20px; padding:5px 12px; }
         .badge-pendiente { background:#fef9c3; color:#92400e; }
+        .badge-ok { background:#dcfce7; color:#15803d; }
+
+        .selector-sucursal-card { border-top:4px solid var(--azul-primario); }
+
+        .estado-vacio { text-align:center; padding:48px 20px; color:#94a3b8; }
+        .estado-vacio i { font-size:2.2rem; display:block; margin-bottom:10px; opacity:.6; }
+
+        .placeholder-glow .placeholder { border-radius:4px; }
+
+        .tabla-scroll { max-height:420px; overflow-y:auto; }
+        .tabla-scroll thead th { position:sticky; top:0; z-index:1; }
+
+        .aviso-espera { background:#f0f9ff; border:1px solid #bae6fd; border-radius:8px; padding:12px 16px; font-size:0.83rem; color:#0369a1; }
+
+        .fade-enter { animation: fadeIn .25s ease; }
+        @keyframes fadeIn { from{opacity:0; transform:translateY(4px);} to{opacity:1; transform:translateY(0);} }
+
+        .nav-pills-erp .nav-link { color:#64748b; font-weight:600; font-size:0.85rem; border-radius:8px; }
+        .nav-pills-erp .nav-link.active { background:var(--azul-primario); color:#fff; }
+        .nav-pills-erp .nav-link .badge { margin-left:6px; }
     </style>
 </head>
 <body>
 <div id="navbar-container"></div>
-
 <div class="container-fluid px-4 py-4">
     <h4 style="color:var(--azul-oscuro);">
         <i class="bi bi-diagram-3 me-2 text-secondary"></i>Configuración del <span style="color:var(--logo-rojo);font-weight:900;">Almacén Complementario</span>
     </h4>
     <p class="text-muted">Configura el grid del almacén, asigna ubicaciones a productos, genera perfiles IA y activa la espera de confirmación del almacenero por sucursal.</p>
 
-    <div class="panel-erp">
-        <div class="row g-3 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label">Sucursal</label>
-                <select id="selectSucursal" class="form-select" onchange="cambiarSucursal()"></select>
+    <!-- Selector de sucursal -->
+    <div class="panel-erp selector-sucursal-card">
+        <div class="panel-body py-3">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label"><i class="bi bi-shop me-1"></i>Sucursal</label>
+                    <select id="selectSucursal" class="form-select" onchange="cambiarSucursal()"></select>
+                </div>
+                <div class="col-md-7" id="resumenSucursal"></div>
             </div>
+        </div>
+    </div>
+
+    <!-- Estado vacío inicial -->
+    <div id="sinSucursal" class="panel-erp">
+        <div class="estado-vacio">
+            <i class="bi bi-arrow-up-circle"></i>
+            Selecciona una sucursal arriba para ver y editar su configuración.
         </div>
     </div>
 
     <div id="contenidoSucursal" style="display:none;">
 
-        <div class="panel-erp">
-            <h6 class="fw-bold border-bottom pb-2 text-secondary"><i class="bi bi-grid-3x3-gap me-1"></i> Grid del almacén y modo de espera</h6>
-            <div class="row g-3">
-                <div class="col-md-2">
-                    <label class="form-label">Estantes</label>
-                    <input type="number" id="inputEstantes" class="form-control" min="1">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Filas</label>
-                    <input type="number" id="inputFilas" class="form-control" min="1">
-                </div>
-                <div class="col-md-2">
-                    <label class="form-label">Columnas</label>
-                    <input type="number" id="inputColumnas" class="form-control" min="1">
-                </div>
-                <div class="col-md-4 d-flex align-items-center">
-                    <div class="form-check form-switch mt-4">
-                        <input class="form-check-input" type="checkbox" id="switchEspera">
-                        <label class="form-check-label fw-bold" for="switchEspera">
-                            Requiere confirmación del almacenero en ventas presenciales
-                        </label>
+        <!-- Grid del almacén y modo de espera -->
+        <div class="panel-erp panel-acento fade-enter">
+            <div class="panel-header">
+                <h6><i class="bi bi-grid-3x3-gap me-1"></i> Grid del almacén y modo de espera</h6>
+                <button class="btn btn-sm btn-success fw-bold" onclick="guardarConfig()">
+                    <i class="bi bi-save me-1"></i>Guardar cambios
+                </button>
+            </div>
+            <div class="panel-body">
+                <div class="row g-3">
+                    <div class="col-6 col-md-2">
+                        <label class="form-label">Estantes</label>
+                        <input type="number" id="inputEstantes" class="form-control" min="1">
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label">Filas</label>
+                        <input type="number" id="inputFilas" class="form-control" min="1">
+                    </div>
+                    <div class="col-6 col-md-2">
+                        <label class="form-label">Columnas</label>
+                        <input type="number" id="inputColumnas" class="form-control" min="1">
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label d-block">Confirmación del almacenero</label>
+                        <div class="form-check form-switch mt-1">
+                            <input class="form-check-input" type="checkbox" id="switchEspera">
+                            <label class="form-check-label fw-bold" for="switchEspera">
+                                Requiere confirmación en ventas presenciales
+                            </label>
+                        </div>
                     </div>
                 </div>
-                <div class="col-md-2 d-flex align-items-end">
-                    <button class="btn btn-success w-100 fw-bold" onclick="guardarConfig()">
-                        <i class="bi bi-save me-1"></i>Guardar
-                    </button>
+                <div class="aviso-espera mt-3">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Si activas esto, al procesar una venta presencial en esta sucursal el stock <b>no</b> se descuenta
+                    de inmediato: se crea un pedido en la app del almacenero y el stock recién se descuenta cuando
+                    él confirma la entrega. El cajero verá una pantalla de espera mientras tanto.
                 </div>
             </div>
-            <small class="text-muted">
-                Si activas esto, al procesar una venta presencial en esta sucursal el stock NO se descuenta
-                inmediatamente: se crea un pedido en la app del almacenero y el stock recién se descuenta
-                cuando él confirma la entrega. El cajero verá una pantalla de espera mientras tanto.
-            </small>
         </div>
 
-        <div class="panel-erp p-0 overflow-hidden">
-            <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 fw-bold text-secondary"><i class="bi bi-geo-alt me-1"></i> Productos sin ubicación asignada</h6>
-                <span class="badge badge-pendiente" id="badgeSinUbicacion">0</span>
+        <!-- Tabs: ubicaciones / perfil IA -->
+        <ul class="nav nav-pills nav-pills-erp mb-3" id="tabsPendientes">
+            <li class="nav-item">
+                <button class="nav-link active" data-tab="ubicacion" onclick="cambiarTab('ubicacion')">
+                    <i class="bi bi-geo-alt me-1"></i>Sin ubicación
+                    <span class="badge badge-pendiente" id="badgeSinUbicacion">0</span>
+                </button>
+            </li>
+            <li class="nav-item">
+                <button class="nav-link" data-tab="perfil" onclick="cambiarTab('perfil')">
+                    <i class="bi bi-robot me-1"></i>Sin perfil IA
+                    <span class="badge badge-pendiente" id="badgeSinPerfil">0</span>
+                </button>
+            </li>
+        </ul>
+
+        <!-- Panel: productos sin ubicación -->
+        <div class="panel-erp" id="panelUbicacion">
+            <div class="panel-header">
+                <h6><i class="bi bi-geo-alt me-1"></i> Productos sin ubicación asignada</h6>
+                <small class="text-muted">Solo de esta sucursal</small>
             </div>
-            <div class="table-responsive">
+            <div class="tabla-scroll">
                 <table class="table table-erp mb-0">
-                    <thead><tr><th>Código</th><th>Producto</th><th>Marca</th><th>Estante</th><th>Fila</th><th>Columna</th><th></th></tr></thead>
-                    <tbody id="tablaSinUbicacion">
-                    <tr><td colspan="7" class="text-center text-muted py-4">Selecciona una sucursal...</td></tr>
-                    </tbody>
+                    <thead><tr><th>Código</th><th>Producto</th><th>Marca</th><th width="90">Estante</th><th width="90">Fila</th><th width="90">Columna</th><th width="60"></th></tr></thead>
+                    <tbody id="tablaSinUbicacion"></tbody>
                 </table>
             </div>
         </div>
 
-        <div class="panel-erp p-0 overflow-hidden mt-3">
-            <div class="p-3 bg-light border-bottom d-flex justify-content-between align-items-center">
-                <h6 class="mb-0 fw-bold text-secondary"><i class="bi bi-robot me-1"></i> Productos sin perfil IA (identificación por foto)</h6>
-                <span class="badge badge-pendiente" id="badgeSinPerfil">0</span>
+        <!-- Panel: productos sin perfil IA -->
+        <div class="panel-erp" id="panelPerfil" style="display:none;">
+            <div class="panel-header">
+                <h6><i class="bi bi-robot me-1"></i> Productos sin perfil IA (identificación por foto)</h6>
+                <small class="text-muted">Global, todas las sucursales</small>
             </div>
-            <div class="table-responsive">
+            <div class="tabla-scroll">
                 <table class="table table-erp mb-0">
-                    <thead><tr><th>Código</th><th>Producto</th><th>Marca</th><th></th></tr></thead>
-                    <tbody id="tablaSinPerfil">
-                    <tr><td colspan="4" class="text-center text-muted py-4">Cargando...</td></tr>
-                    </tbody>
+                    <thead><tr><th>Código</th><th>Producto</th><th>Marca</th><th width="180"></th></tr></thead>
+                    <tbody id="tablaSinPerfil"></tbody>
                 </table>
             </div>
-            <small class="text-muted d-block p-3 pt-0">
+            <small class="text-muted d-block p-3 pt-2 border-top">
                 Usa la foto que el producto ya tiene guardada (la que subiste al crearlo en "Productos").
                 Si un producto no tiene foto, primero edítalo en Productos y sube una imagen clara.
             </small>
         </div>
-
     </div>
 </div>
 
@@ -117,6 +174,9 @@
 <script src="/navbar.js?v2"></script>
 <script>
     let sucursalActual = null;
+    // Token incremental: evita que una respuesta "vieja" (de una sucursal
+    // que el usuario ya abandonó) pise los datos de la sucursal actual.
+    let loadToken = 0;
 
     document.addEventListener('DOMContentLoaded', async () => {
         await initNavbar();
@@ -136,28 +196,68 @@
         }
     }
 
-    async function cambiarSucursal() {
-        const sucursalId = document.getElementById('selectSucursal').value;
-        if (!sucursalId) {
-            document.getElementById('contenidoSucursal').style.display = 'none';
-            return;
-        }
-        sucursalActual = sucursalId;
-        document.getElementById('contenidoSucursal').style.display = '';
-        await cargarConfig(sucursalId);
-        await cargarProductosSinUbicacion(sucursalId);
+    function skeletonForm() {
+        ['inputEstantes','inputFilas','inputColumnas'].forEach(id => document.getElementById(id).value = '');
+        document.getElementById('switchEspera').checked = false;
+        document.getElementById('resumenSucursal').innerHTML = '';
     }
 
-    async function cargarConfig(sucursalId) {
+    function skeletonTabla(tbodyId, cols) {
+        const filas = Array.from({length: 3}, () =>
+            `<tr>${'<td><span class="placeholder col-8"></span></td>'.repeat(cols)}</tr>`
+        ).join('');
+        document.getElementById(tbodyId).innerHTML = `<tbody class="placeholder-glow">${filas}</tbody>`.replace(/<\/?tbody[^>]*>/g, '');
+        document.getElementById(tbodyId).classList.add('placeholder-glow');
+    }
+
+    async function cambiarSucursal() {
+        const sucursalId = document.getElementById('selectSucursal').value;
+        const miToken = ++loadToken;
+
+        if (!sucursalId) {
+            sucursalActual = null;
+            document.getElementById('contenidoSucursal').style.display = 'none';
+            document.getElementById('sinSucursal').style.display = '';
+            return;
+        }
+
+        sucursalActual = sucursalId;
+        document.getElementById('sinSucursal').style.display = 'none';
+        document.getElementById('contenidoSucursal').style.display = '';
+
+        // Reset inmediato para que nunca se vea el dato de otra sucursal,
+        // ni siquiera mientras llega la respuesta nueva.
+        skeletonForm();
+        skeletonTabla('tablaSinUbicacion', 7);
+        document.getElementById('badgeSinUbicacion').textContent = '…';
+
+        await Promise.all([
+            cargarConfig(sucursalId, miToken),
+            cargarProductosSinUbicacion(sucursalId, miToken)
+        ]);
+    }
+
+    async function cargarConfig(sucursalId, miToken) {
         try {
             const res = await fetch(`/api/admin/almacen-config/${sucursalId}`);
+            if (miToken !== loadToken) return; // el usuario ya cambió de sucursal, descartar
+            if (!res.ok) throw new Error(await res.text());
             const data = await res.json();
+            if (miToken !== loadToken) return;
+
             document.getElementById('inputEstantes').value = data.totalEstantes;
             document.getElementById('inputFilas').value = data.totalFilas;
             document.getElementById('inputColumnas').value = data.totalColumnas;
             document.getElementById('switchEspera').checked = data.requiereConfirmacionAlmacenero;
+
+            document.getElementById('resumenSucursal').innerHTML = data.requiereConfirmacionAlmacenero
+                ? `<span class="badge badge-ok"><i class="bi bi-check-circle me-1"></i>Confirmación de almacenero activa</span>`
+                : `<span class="badge bg-light text-secondary border"><i class="bi bi-dash-circle me-1"></i>Confirmación de almacenero desactivada</span>`;
         } catch (e) {
-            Swal.fire({ icon: 'error', title: 'Error', text: 'No se pudo cargar la configuración.' });
+            if (miToken !== loadToken) return;
+            // Un fallo real (red/servidor) se avisa suave, sin bloquear la pantalla:
+            // que esta sucursal no tenga config guardada todavía NO es un error.
+            Swal.fire({ toast: true, position: 'top-end', icon: 'warning', title: 'No se pudo cargar la configuración de grid', showConfirmButton: false, timer: 2500 });
         }
     }
 
@@ -178,6 +278,7 @@
             });
             if (res.ok) {
                 Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Configuración guardada', showConfirmButton: false, timer: 1800 });
+                cargarConfig(sucursalActual, loadToken);
             } else {
                 Swal.fire({ icon: 'error', title: 'Error', text: await res.text() });
             }
@@ -186,20 +287,31 @@
         }
     }
 
-    async function cargarProductosSinUbicacion(sucursalId) {
+    function cambiarTab(tab) {
+        document.querySelectorAll('#tabsPendientes .nav-link').forEach(b => b.classList.remove('active'));
+        document.querySelector(`#tabsPendientes [data-tab="${tab}"]`).classList.add('active');
+        document.getElementById('panelUbicacion').style.display = tab === 'ubicacion' ? '' : 'none';
+        document.getElementById('panelPerfil').style.display = tab === 'perfil' ? '' : 'none';
+    }
+
+    async function cargarProductosSinUbicacion(sucursalId, miToken) {
         const tbody = document.getElementById('tablaSinUbicacion');
-        tbody.innerHTML = '<tr><td colspan="7" class="text-center text-muted py-4">Cargando...</td></tr>';
         try {
             const res = await fetch(`/api/admin/almacen-config/productos-sin-ubicacion?sucursalId=${sucursalId}`);
+            if (miToken !== loadToken) return;
             if (!res.ok) throw new Error(await res.text());
             const productos = await res.json();
+            if (miToken !== loadToken) return;
+
+            tbody.classList.remove('placeholder-glow');
             document.getElementById('badgeSinUbicacion').textContent = productos.length;
+
             if (productos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="7" class="text-center text-success py-4"><i class="bi bi-check-circle me-1"></i>Todos los productos de esta sucursal ya tienen ubicación.</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="7"><div class="estado-vacio py-3"><i class="bi bi-check-circle text-success"></i>Todos los productos de esta sucursal ya tienen ubicación.</div></td></tr>`;
                 return;
             }
             tbody.innerHTML = productos.map(p => `
-                <tr data-producto-id="${p.id}">
+                <tr data-producto-id="${p.id}" class="fade-enter">
                     <td>${p.codigoInterno}</td>
                     <td>${p.nombre}</td>
                     <td>${p.marca}</td>
@@ -209,7 +321,10 @@
                     <td><button class="btn btn-sm btn-primary" onclick="guardarUbicacion(this, ${p.id})"><i class="bi bi-save"></i></button></td>
                 </tr>`).join('');
         } catch (e) {
-            tbody.innerHTML = `<tr><td colspan="7" class="text-center text-danger py-4">Error: ${e.message}</td></tr>`;
+            if (miToken !== loadToken) return;
+            tbody.classList.remove('placeholder-glow');
+            tbody.innerHTML = `<tr><td colspan="7"><div class="estado-vacio py-3"><i class="bi bi-exclamation-triangle text-danger"></i>No se pudo conectar con el almacén complementario.</div></td></tr>`;
+            document.getElementById('badgeSinUbicacion').textContent = '?';
         }
     }
 
@@ -229,8 +344,12 @@
             });
             if (res.ok) {
                 fila.remove();
-                document.getElementById('badgeSinUbicacion').textContent =
-                    document.querySelectorAll('#tablaSinUbicacion tr[data-producto-id]').length;
+                const restantes = document.querySelectorAll('#tablaSinUbicacion tr[data-producto-id]').length;
+                document.getElementById('badgeSinUbicacion').textContent = restantes;
+                if (restantes === 0) {
+                    document.getElementById('tablaSinUbicacion').innerHTML =
+                        `<tr><td colspan="7"><div class="estado-vacio py-3"><i class="bi bi-check-circle text-success"></i>Todos los productos de esta sucursal ya tienen ubicación.</div></td></tr>`;
+                }
                 Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Ubicación guardada', showConfirmButton: false, timer: 1500 });
             } else {
                 Swal.fire({ icon: 'error', title: 'Error', text: await res.text() });
@@ -242,24 +361,29 @@
 
     async function cargarProductosSinPerfil() {
         const tbody = document.getElementById('tablaSinPerfil');
+        skeletonTabla('tablaSinPerfil', 4);
         try {
             const res = await fetch('/api/admin/almacen-config/productos-sin-perfil-ia');
             if (!res.ok) throw new Error(await res.text());
             const productos = await res.json();
+            tbody.classList.remove('placeholder-glow');
             document.getElementById('badgeSinPerfil').textContent = productos.length;
+
             if (productos.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="text-center text-success py-4"><i class="bi bi-check-circle me-1"></i>Todos los productos ya tienen perfil IA.</td></tr>';
+                tbody.innerHTML = `<tr><td colspan="4"><div class="estado-vacio py-3"><i class="bi bi-check-circle text-success"></i>Todos los productos ya tienen perfil IA.</div></td></tr>`;
                 return;
             }
             tbody.innerHTML = productos.map(p => `
-                <tr data-producto-id="${p.id}">
+                <tr data-producto-id="${p.id}" class="fade-enter">
                     <td>${p.codigoInterno}</td>
                     <td>${p.nombre}</td>
                     <td>${p.marca}</td>
-                    <td><button class="btn btn-sm btn-outline-primary" onclick="generarPerfil(this, ${p.id})"><i class="bi bi-magic me-1"></i>Generar perfil IA</button></td>
+                    <td><button class="btn btn-sm btn-outline-primary w-100" onclick="generarPerfil(this, ${p.id})"><i class="bi bi-magic me-1"></i>Generar perfil IA</button></td>
                 </tr>`).join('');
         } catch (e) {
-            tbody.innerHTML = `<tr><td colspan="4" class="text-center text-danger py-4">Error: ${e.message}</td></tr>`;
+            tbody.classList.remove('placeholder-glow');
+            tbody.innerHTML = `<tr><td colspan="4"><div class="estado-vacio py-3"><i class="bi bi-exclamation-triangle text-danger"></i>No se pudo conectar con el almacén complementario.</div></td></tr>`;
+            document.getElementById('badgeSinPerfil').textContent = '?';
         }
     }
 
@@ -269,9 +393,14 @@
         try {
             const res = await fetch(`/api/admin/almacen-config/productos/${productoId}/generar-perfil-ia`, { method: 'POST' });
             if (res.ok) {
-                btn.closest('tr').remove();
-                document.getElementById('badgeSinPerfil').textContent =
-                    document.querySelectorAll('#tablaSinPerfil tr[data-producto-id]').length;
+                const fila = btn.closest('tr');
+                fila.remove();
+                const restantes = document.querySelectorAll('#tablaSinPerfil tr[data-producto-id]').length;
+                document.getElementById('badgeSinPerfil').textContent = restantes;
+                if (restantes === 0) {
+                    document.getElementById('tablaSinPerfil').innerHTML =
+                        `<tr><td colspan="4"><div class="estado-vacio py-3"><i class="bi bi-check-circle text-success"></i>Todos los productos ya tienen perfil IA.</div></td></tr>`;
+                }
                 Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Perfil IA generado', showConfirmButton: false, timer: 2000 });
             } else {
                 Swal.fire({ icon: 'error', title: 'No se pudo generar', text: await res.text() });
