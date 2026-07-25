@@ -275,4 +275,54 @@ public class VentaRestController {
         String estado = almacenComplementarioService.getEstadoPedidoPorVenta(id);
         return ResponseEntity.ok(Map.of("estado", estado != null ? estado : "N/A"));
     }
+
+    @PostMapping("/{id}/cancelar-espera-almacen")
+    public ResponseEntity<?> cancelarEsperaAlmacen(@PathVariable Long id, HttpSession session) {
+        Long usuarioId  = (Long) session.getAttribute("usuarioId");
+        Long sucursalId = (Long) session.getAttribute("sucursalId");
+        try {
+            Venta venta = ventaRepository.findById(id).orElseThrow();
+            almacenComplementarioService.cancelarPedidoDeVenta(id, usuarioId, sucursalId);
+            venta.setEstadoVenta("ANULADA");
+            ventaRepository.save(venta);
+            historialService.registrarAccion("Ventas", "Cancelación de pedido almacén",
+                    "Se canceló la espera de almacén para la venta " + venta.getSerie() + "-" + venta.getNumeroComprobante(),
+                    usuarioId, sucursalId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PostMapping("/{id}/reenviar-notificacion-almacen")
+    public ResponseEntity<?> reenviarNotificacionAlmacen(@PathVariable Long id, HttpSession session) {
+        Long usuarioId  = (Long) session.getAttribute("usuarioId");
+        Long sucursalId = (Long) session.getAttribute("sucursalId");
+        try {
+            almacenComplementarioService.renotificarPedidoDeVenta(id, usuarioId, sucursalId);
+            return ResponseEntity.ok().build();
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @GetMapping("/pendientes-almacen")
+    public ResponseEntity<?> pendientesAlmacen(HttpSession session) {
+        Long sucursalId = (Long) session.getAttribute("sucursalId");
+        Long usuarioId  = (Long) session.getAttribute("usuarioId");
+        List<Map<String, Object>> resultado = ventaRepository.findBySucursalIdOrderByFechaDesc(sucursalId).stream()
+                .filter(v -> v.getUsuario().getId().equals(usuarioId))
+                .filter(v -> "PENDIENTE_ALMACEN".equals(v.getEstadoVenta()))
+                .map(v -> {
+                    Map<String, Object> m = new java.util.LinkedHashMap<>();
+                    m.put("ventaId", v.getId());
+                    m.put("cliente", v.getCliente() != null ? v.getCliente().getRazonSocialNombre() : "Público General");
+                    m.put("total", v.getTotal());
+                    Map<String, Object> detalle = almacenComplementarioService.getEstadoDetalladoPedidoPorVenta(v.getId());
+                    if (detalle != null) m.putAll(detalle);
+                    return m;
+                })
+                .collect(java.util.stream.Collectors.toList());
+        return ResponseEntity.ok(resultado);
+    }
 }

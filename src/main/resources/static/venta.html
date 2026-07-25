@@ -25,12 +25,10 @@
             animation: fadeIn 0.1s ease-in;
         }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
-
         .navbar-custom { background-color: var(--azul-oscuro); box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         .navbar-custom .navbar-brand, .navbar-custom .nav-link { color: #fff; font-weight: 500; font-size: 1rem; }
         .navbar-custom .nav-link.active, .navbar-custom .nav-link:hover { color: #38bdf8; }
         .tato-rojo { color: var(--logo-rojo); font-weight: 900; margin-right: 5px; }
-
         .panel-erp {
             background-color: white;
             border-radius: 8px;
@@ -47,11 +45,9 @@
         .totales-caja { background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 15px; }
         .totales-fila { display: flex; justify-content: space-between; margin-bottom: 8px; font-weight: bold; color: #334155; }
         .totales-fila.gran-total { font-size: 1.5rem; color: var(--logo-rojo); border-top: 2px solid #cbd5e1; padding-top: 8px; margin-bottom: 0; }
-
         /* ── SECCIONES ── */
         #seccion-venta-bloqueada { padding-top: 40px; }
         #seccion-venta-activa    { padding-top: 40px; }
-
         /* ── STRIP CAJA ACTIVA ── */
         .caja-strip {
             background: white;
@@ -97,7 +93,6 @@
         .caja-stat .cs-value.verde   { color: var(--verde); }
         .caja-stat .cs-value.azul    { color: var(--azul-oscuro); }
         .caja-stat .cs-value.amarillo { color: var(--amarillo); }
-
         /* ── SECCIÓN BLOQUEADA ── */
         .bloqueo-wrap {
             max-width: 480px;
@@ -136,6 +131,15 @@
             margin-bottom: 20px;
             text-align: left;
         }
+        /* ── PANEL PEDIDOS ESPERANDO ALMACÉN (no bloqueante) ── */
+        #panelEsperaAlmacen .panel-erp { padding: 16px 20px; margin-bottom: 20px; }
+        .item-pendiente-almacen {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: 8px;
+            padding: 10px 14px;
+        }
+        .item-pendiente-almacen .fw-bold { color: #92400e; }
     </style>
 </head>
 <body>
@@ -172,13 +176,11 @@
 
 <!-- ══════════ SECCIÓN VENTA ACTIVA ══════════ -->
 <div id="seccion-venta-activa" class="container-fluid px-4" style="display:none;">
-
     <!-- Strip caja -->
     <div class="caja-strip" id="cajaDashboard">
         <span class="badge-abierta">
             <i class="bi bi-circle-fill me-1" style="font-size:0.45rem;vertical-align:middle;"></i>CAJA ABIERTA
         </span>
-
         <div class="caja-stat">
             <span class="cs-label">Monto inicial</span>
             <span class="cs-value azul" id="cajaMontoInicial">S/ 0.00</span>
@@ -199,7 +201,6 @@
             <span class="cs-label">Hora apertura</span>
             <span class="cs-value amarillo" id="cajaHoraApertura">--:--</span>
         </div>
-
         <div class="ms-auto d-flex gap-2">
             <button class="btn btn-outline-primary btn-sm fw-bold" onclick="abrirModalMovimientos()">
                 <i class="bi bi-list-ul me-1"></i>Movimientos de caja
@@ -207,6 +208,17 @@
             <button class="btn btn-outline-danger btn-sm fw-bold" onclick="abrirModalCerrarCaja()">
                 <i class="bi bi-box-arrow-right me-1"></i>Cerrar Caja
             </button>
+        </div>
+    </div>
+
+    <!-- Panel no bloqueante: pedidos esperando confirmación de almacén -->
+    <div id="panelEsperaAlmacen" style="display:none;">
+        <div class="panel-erp" style="border-top-color:#f59e0b;">
+            <h6 class="fw-bold border-bottom pb-2 text-secondary d-flex justify-content-between align-items-center mb-3">
+                <span><i class="bi bi-hourglass-split me-2 text-warning"></i>Pedidos esperando al almacenero</span>
+                <span class="badge bg-warning text-dark" id="contadorPendientesAlmacen">0</span>
+            </h6>
+            <div id="listaPendientesAlmacen" class="d-flex flex-column gap-2"></div>
         </div>
     </div>
 
@@ -280,6 +292,7 @@
                     </button>
                 </div>
             </div>
+
             <div class="panel-erp p-0 overflow-hidden mb-3">
                 <div class="d-flex justify-content-between align-items-center p-2 bg-light border-bottom flex-wrap gap-2">
                     <h6 class="mb-0 ms-2 fw-bold text-secondary"><i class="bi bi-cart3 me-2"></i>Carrito</h6>
@@ -313,6 +326,7 @@
                     </table>
                 </div>
             </div>
+
             <div class="row justify-content-end">
                 <div class="col-md-5 col-lg-4">
                     <div class="totales-caja shadow-sm">
@@ -441,21 +455,6 @@
     </div>
 </div>
 
-
-
-<div class="modal fade" id="modalEsperaAlmacen" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
-    <div class="modal-dialog modal-sm">
-        <div class="modal-content border-0 shadow-lg text-center py-4">
-            <div class="modal-body">
-                <div class="spinner-border text-primary mb-3" style="width:3rem;height:3rem;" role="status"></div>
-                <h6 class="fw-bold">Esperando al almacenero...</h6>
-                <p class="text-muted small mb-0">El pedido ya fue enviado. La venta se confirmará automáticamente cuando el almacenero entregue los productos.</p>
-            </div>
-        </div>
-    </div>
-</div>
-
-
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
@@ -467,6 +466,10 @@
     let cajaActual         = null;
     let modalBuscador, modalCamaraObj, modalCerrarCaja, modalMovimientos, html5QrcodeScanner;
     let gSubtotal = 0, gIgv = 0, gTotal = 0;
+
+    // ── Estado del panel de pedidos esperando almacén ────────────────
+    let intervaloPendientesAlmacen = null;
+    const cooldownReenvio = {}; // ventaId -> timestamp del ultimo click en "reenviar"
 
     // ── Inicialización ─────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', async () => {
@@ -492,6 +495,7 @@
                 cajaActual = data;
                 mostrarSeccion('activa');
                 renderizarDashboardCaja();
+                iniciarPollingPendientesAlmacen();
                 document.getElementById('inputScan').focus();
             } else {
                 mostrarSeccion('bloqueada');
@@ -504,6 +508,10 @@
     function mostrarSeccion(cual) {
         document.getElementById('seccion-venta-bloqueada').style.display = cual === 'bloqueada' ? '' : 'none';
         document.getElementById('seccion-venta-activa').style.display    = cual === 'activa'    ? '' : 'none';
+        if (cual !== 'activa' && intervaloPendientesAlmacen) {
+            clearInterval(intervaloPendientesAlmacen);
+            intervaloPendientesAlmacen = null;
+        }
     }
 
     function renderizarDashboardCaja() {
@@ -548,6 +556,7 @@
                 Swal.close();
                 mostrarSeccion('activa');
                 renderizarDashboardCaja();
+                iniciarPollingPendientesAlmacen();
                 document.getElementById('inputScan').focus();
             } else {
                 Swal.fire({ icon: 'error', title: 'Error', text: await res.text() });
@@ -651,17 +660,14 @@
                 if (anulada) countAnuladas++;
                 else totalGeneral += parseFloat(v.total || 0);
                 if (!anulada && v.metodoPago === 'Efectivo') totalEfectivo += parseFloat(v.total || 0);
-
                 const badgeVenta = anulada
                     ? '<span style="background:#fee2e2;color:#dc2626;border:1px solid #fca5a5;font-size:0.75rem;padding:2px 8px;border-radius:12px;font-weight:700;">ANULADA</span>'
                     : '<span style="background:#dcfce7;color:#16a34a;border:1px solid #bbf7d0;font-size:0.75rem;padding:2px 8px;border-radius:12px;font-weight:700;">REGISTRADA</span>';
-
                 const badgeSunat = v.estadoSunat === 'ACEPTADO'
                     ? '<span style="background:#dbeafe;color:#1d4ed8;font-size:0.72rem;padding:2px 6px;border-radius:10px;">ACEPTADO</span>'
                     : v.estadoSunat === 'PENDIENTE'
                     ? '<span style="background:#fef9c3;color:#92400e;font-size:0.72rem;padding:2px 6px;border-radius:10px;">PENDIENTE</span>'
                     : '<span style="background:#f1f5f9;color:#64748b;font-size:0.72rem;padding:2px 6px;border-radius:10px;">SIN EMITIR</span>';
-
                 tbody.innerHTML += `
                 <tr style="${anulada ? 'opacity:0.55;' : ''}">
                     <td class="fw-semibold" style="color:#0369a1;">${v.numeroComprobante}</td>
@@ -684,6 +690,100 @@
         } catch (e) {
             document.getElementById('movimientosBody').innerHTML =
                 '<tr><td colspan="8" class="text-center text-danger py-4">Error al cargar los movimientos.</td></tr>';
+        }
+    }
+
+    // ── PANEL: PEDIDOS ESPERANDO ALMACÉN (no bloqueante) ──────────
+    function iniciarPollingPendientesAlmacen() {
+        cargarPendientesAlmacen();
+        if (intervaloPendientesAlmacen) clearInterval(intervaloPendientesAlmacen);
+        intervaloPendientesAlmacen = setInterval(cargarPendientesAlmacen, 5000);
+    }
+
+    async function cargarPendientesAlmacen() {
+        try {
+            const res = await fetch('/api/ventas/pendientes-almacen');
+            if (!res.ok) return;
+            renderizarPendientesAlmacen(await res.json());
+        } catch (e) {
+            // si falla una consulta puntual, se reintenta en el siguiente tick
+        }
+    }
+
+    function renderizarPendientesAlmacen(pendientes) {
+        const panel = document.getElementById('panelEsperaAlmacen');
+        const cont  = document.getElementById('listaPendientesAlmacen');
+        document.getElementById('contadorPendientesAlmacen').textContent = pendientes.length;
+
+        if (!pendientes || pendientes.length === 0) {
+            panel.style.display = 'none';
+            cont.innerHTML = '';
+            return;
+        }
+
+        panel.style.display = '';
+        cont.innerHTML = '';
+        pendientes.forEach(p => {
+            const asignado = !!p.almaceneroNombre;
+            const puedeReenviar = !asignado && (!cooldownReenvio[p.ventaId] || (Date.now() - cooldownReenvio[p.ventaId] > 10000));
+
+            const div = document.createElement('div');
+            div.className = 'item-pendiente-almacen d-flex justify-content-between align-items-center';
+            div.innerHTML = `
+                <div>
+                    <div class="fw-bold">${p.cliente} — S/ ${parseFloat(p.total).toFixed(2)}</div>
+                    <small class="text-muted">
+                        ${asignado
+                            ? `<i class="bi bi-person-check-fill text-success me-1"></i>Preparando: <b>${p.almaceneroNombre}</b>`
+                            : `<i class="bi bi-clock-history me-1"></i>Esperando que un almacenero lo tome...`}
+                    </small>
+                </div>
+                <div class="d-flex gap-1">
+                    ${!asignado ? `
+                        <button class="btn btn-sm btn-outline-warning" ${puedeReenviar ? '' : 'disabled'}
+                            onclick="reenviarNotificacion(${p.ventaId}, this)" title="Reenviar notificación al almacén">
+                            <i class="bi bi-bell-fill"></i>
+                        </button>` : ''}
+                    <button class="btn btn-sm btn-outline-danger" onclick="cancelarEsperaAlmacen(${p.ventaId})" title="Cancelar pedido">
+                        <i class="bi bi-x-lg"></i>
+                    </button>
+                </div>`;
+            cont.appendChild(div);
+        });
+    }
+
+    async function reenviarNotificacion(ventaId, btn) {
+        btn.disabled = true;
+        cooldownReenvio[ventaId] = Date.now();
+        try {
+            await fetch(`/api/ventas/${ventaId}/reenviar-notificacion-almacen`, { method: 'POST' });
+            Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Notificación reenviada', showConfirmButton: false, timer: 1500 });
+        } catch (e) {
+            Swal.fire({ toast: true, position: 'top-end', icon: 'error', title: 'No se pudo reenviar', showConfirmButton: false, timer: 1500 });
+        }
+        setTimeout(cargarPendientesAlmacen, 10000);
+    }
+
+    async function cancelarEsperaAlmacen(ventaId) {
+        const r = await Swal.fire({
+            title: '¿Cancelar este pedido?',
+            text: 'La venta quedará anulada. Podrás volver a registrarla si lo necesitas.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#dc2626',
+            confirmButtonText: 'Sí, cancelar'
+        });
+        if (!r.isConfirmed) return;
+        try {
+            const res = await fetch(`/api/ventas/${ventaId}/cancelar-espera-almacen`, { method: 'POST' });
+            if (res.ok) {
+                Swal.fire({ toast: true, position: 'top-end', icon: 'success', title: 'Pedido cancelado', showConfirmButton: false, timer: 1500 });
+                cargarPendientesAlmacen();
+            } else {
+                Swal.fire({ icon: 'error', title: 'No se pudo cancelar', text: await res.text() });
+            }
+        } catch (e) {
+            Swal.fire({ icon: 'error', title: 'Error de red' });
         }
     }
 
@@ -957,10 +1057,8 @@
     async function procesarVenta() {
         if (carritoVenta.length === 0)
             return Swal.fire({ icon: 'warning', title: 'Carrito Vacío' });
-
         const docCliente = document.getElementById('documentoCliente').value.trim() || '00000000';
         const nomCliente = document.getElementById('nombreCliente').value.trim()    || 'Público General';
-
         const payload = {
             tipoComprobante:   'Nota de Venta',
             serie:             'T001',
@@ -980,7 +1078,6 @@
                 nombre:         i.nombre
             }))
         };
-
         Swal.fire({
             title: `Procesar Venta de S/ ${gTotal.toFixed(2)}`,
             text: 'Se descontará del Almacén.',
@@ -999,7 +1096,6 @@
                 });
                 if (res.ok) {
                     const data = await res.json(); // { ventaId, esperaAlmacen }
-
                     carritoVenta = [];
                     actualizarTabla();
                     document.getElementById('documentoCliente').value = '';
@@ -1007,9 +1103,12 @@
                     document.getElementById('clienteIdSeleccionado').value = '';
                     await refrescarDashboardCaja();
                     Swal.close();
-
                     if (data.esperaAlmacen) {
-                        await esperarConfirmacionAlmacenero(data.ventaId);
+                        // Ya NO se bloquea el POS: la venta queda visible en el panel
+                        // de "Pedidos esperando al almacenero" y el vendedor puede
+                        // seguir atendiendo de inmediato.
+                        Swal.fire({ toast: true, position: 'top-end', icon: 'info', title: 'Venta enviada, esperando almacén', showConfirmButton: false, timer: 2000 });
+                        cargarPendientesAlmacen();
                     } else {
                         Swal.fire({ icon: 'success', title: '¡Venta Exitosa!', confirmButtonColor: '#198754' });
                     }
@@ -1026,27 +1125,6 @@
                 Swal.fire({ icon: 'error', title: 'Error de red' });
             }
         });
-    }
-
-
-    async function esperarConfirmacionAlmacenero(ventaId) {
-        const modalEspera = new bootstrap.Modal(document.getElementById('modalEsperaAlmacen'));
-        modalEspera.show();
-
-        const intervalo = setInterval(async () => {
-            try {
-                const res = await fetch(`/api/ventas/${ventaId}/estado-almacen`);
-                const data = await res.json();
-                if (data.estado === 'ENTREGADO') {
-                    clearInterval(intervalo);
-                    modalEspera.hide();
-                    Swal.fire({ icon: 'success', title: '¡Venta Confirmada!', text: 'El almacenero ya entregó los productos.', confirmButtonColor: '#198754' });
-                }
-                // Si estado es CANCELADO, tambien podrias manejarlo aqui mostrando un aviso.
-            } catch (e) {
-                // si falla una consulta puntual, simplemente reintenta en el siguiente tick
-            }
-        }, 4000); // consulta cada 4 segundos
     }
 
     // ── CÁMARA ────────────────────────────────────────────────────
