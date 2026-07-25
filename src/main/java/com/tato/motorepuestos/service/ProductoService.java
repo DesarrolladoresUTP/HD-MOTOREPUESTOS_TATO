@@ -106,35 +106,29 @@ public class ProductoService {
                                                  BigDecimal precioCompra, BigDecimal precioVenta,
                                                  Integer stock, Integer stockMinimo,
                                                  MultipartFile imagen, Long usuarioId, Long sucursalId) {
-
         InventarioSucursal inventario = inventarioRepository.findById(inventarioId)
                 .orElseThrow(() -> new RuntimeException("Inventario no encontrado"));
-
         Producto producto = inventario.getProducto();
-
         if (productoRepository.existsByNombreAndIdNot(nombre, producto.getId())) {
             throw new RuntimeException("Ya existe un producto con el nombre: " + nombre);
         }
-
         Categoria categoria = categoriaRepository.findById(categoriaId)
                 .orElseThrow(() -> new RuntimeException("Categoría no encontrada"));
-
         producto.setNombre(nombre);
         producto.setDescripcion(descripcion);
         producto.setMarca(marca);
         producto.setCategoria(categoria);
         guardarConImagen(producto, imagen);
 
-        inventario.setPrecioCompra(precioCompra != null ? precioCompra : BigDecimal.ZERO);
+        if (precioCompra != null) inventario.setPrecioCompra(precioCompra);
+        if (stock != null) inventario.setStock(stock);
+        if (stockMinimo != null) inventario.setStockMinimo(stockMinimo);
         inventario.setPrecioVenta(precioVenta);
-        inventario.setStock(stock != null ? stock : 0);
-        inventario.setStockMinimo(stockMinimo != null ? stockMinimo : 5);
-        InventarioSucursal actualizado = inventarioRepository.save(inventario);
 
+        InventarioSucursal actualizado = inventarioRepository.save(inventario);
         historialService.registrarAccion("Productos", "Actualización",
                 "Se actualizaron los datos del producto: " + nombre,
                 usuarioId, sucursalId);
-
         return actualizado;
     }
 

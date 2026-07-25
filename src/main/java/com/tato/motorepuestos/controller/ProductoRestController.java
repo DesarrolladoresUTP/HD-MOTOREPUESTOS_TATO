@@ -73,10 +73,10 @@ public class ProductoRestController {
             @RequestParam(value = "descripcion", required = false) String descripcion,
             @RequestParam("categoriaId") Long categoriaId,
             @RequestParam("marca") String marca,
-            @RequestParam(value = "precioCompra", required = false, defaultValue = "0") BigDecimal precioCompra,
+            @RequestParam(value = "precioCompra", required = false) BigDecimal precioCompra,
             @RequestParam("precioVenta") BigDecimal precioVenta,
-            @RequestParam(value = "stock", required = false, defaultValue = "0") Integer stock,
-            @RequestParam(value = "stockMinimo", required = false, defaultValue = "5") Integer stockMinimo,
+            @RequestParam(value = "stock", required = false) Integer stock,
+            @RequestParam(value = "stockMinimo", required = false) Integer stockMinimo,
             @RequestParam(value = "imagen", required = false) MultipartFile imagen,
             HttpSession session) {
         try {
