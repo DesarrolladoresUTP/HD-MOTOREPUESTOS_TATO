@@ -221,4 +221,38 @@ public class AlmacenComplementarioService {
         headers.set("X-Sucursal-Id", String.valueOf(sucursalId));
         return headers;
     }
+
+    public Map<String, Object> getEstadoDetalladoPedidoPorVenta(Long ventaId) {
+        return pedidoAlmacenRepository.findByVentaId(ventaId)
+                .map(p -> {
+                    Map<String, Object> m = new java.util.LinkedHashMap<>();
+                    m.put("pedidoId", p.getId());
+                    m.put("estado", p.getEstado());
+                    m.put("almaceneroNombre", p.getAlmacenero() != null
+                            ? p.getAlmacenero().getNombres() + " " + p.getAlmacenero().getApellidos() : null);
+                    m.put("fechaAsignacion", p.getFechaAsignacion());
+                    m.put("fechaCreacion", p.getFechaCreacion());
+                    return m;
+                })
+                .orElse(null);
+    }
+
+    public void cancelarPedidoDeVenta(Long ventaId, Long usuarioId, Long sucursalId) {
+        PedidoAlmacen pedido = pedidoAlmacenRepository.findByVentaId(ventaId)
+                .orElseThrow(() -> new RuntimeException("No hay pedido de almacén asociado a esta venta"));
+        String url = almacenBackendUrl + "/api/almacen/pedidos/" + pedido.getId() + "/cancelar";
+        HttpEntity<Void> entity = new HttpEntity<>(construirHeadersInternos(usuarioId, sucursalId));
+        restTemplate.postForEntity(url, entity, Void.class);
+    }
+
+    public void renotificarPedidoDeVenta(Long ventaId, Long usuarioId, Long sucursalId) {
+        PedidoAlmacen pedido = pedidoAlmacenRepository.findByVentaId(ventaId)
+                .orElseThrow(() -> new RuntimeException("No hay pedido de almacén asociado a esta venta"));
+        if (!"PENDIENTE".equals(pedido.getEstado())) {
+            throw new RuntimeException("Este pedido ya fue tomado, no hace falta reenviar la notificación");
+        }
+        String url = almacenBackendUrl + "/api/almacen/pedidos/" + pedido.getId() + "/notificar";
+        HttpEntity<Void> entity = new HttpEntity<>(construirHeadersInternos(usuarioId, sucursalId));
+        restTemplate.postForEntity(url, entity, Void.class);
+    }
 }
